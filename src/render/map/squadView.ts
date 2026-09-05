@@ -6,12 +6,17 @@
  *
  * All drawing here is in the view's own local space, which tracks the
  * squad's *interpolated* position (`MapScene`/`interpolate.ts` own the
- * lerp/snap decision; this class just renders wherever it's told to be).
+ * lerp/snap decision; this class just renders wherever it's told to be) —
+ * projected through `iso.ts#toIso`. The icon is anchored bottom-center at
+ * that projected ground point (Ogre Battle 64 style: the unit "stands" on
+ * its tile), with bars/label/effects arranged around that anchor instead of
+ * around a center point.
  */
 import { Circle, Container, Graphics, Sprite, Text, Texture, type FederatedPointerEvent } from 'pixi.js';
 import type { Id, Squad, Vec2 } from '@sim/types';
-import { TILE_SIZE, VISIBILITY_FADE_SECONDS } from './constants';
+import { VISIBILITY_FADE_SECONDS } from './constants';
 import { dashedLine, diamondPoints, drawBar, drawCornerBrackets } from './shapes';
+import { isoRadii, toIso } from './iso';
 import { lerpTowards, stepTowards } from './interpolate';
 
 export interface SquadVisualInfo {
@@ -24,8 +29,17 @@ export interface SquadVisualInfo {
   selected: boolean;
 }
 
-function toLocalTile(p: Vec2, origin: Vec2): Vec2 {
-  return { x: (p.x - origin.x) * TILE_SIZE, y: (p.y - origin.y) * TILE_SIZE };
+/** Target on-screen height of the leader icon; width follows the texture's own aspect ratio. */
+const ICON_HEIGHT = 40;
+const BAR_WIDTH = 34;
+const BAR_Y = 4;
+const CHIP_Y = 14;
+const HIT_RADIUS = 22;
+/** Effects anchor near the icon's vertical middle rather than its (ground-level) origin. */
+const EFFECT_Y = -ICON_HEIGHT * 0.5;
+
+function toLocalIso(p: Vec2, origin: Vec2): { x: number; y: number } {
+  return toIso({ x: p.x - origin.x, y: p.y - origin.y });
 }
 
 export class SquadView {
@@ -53,18 +67,17 @@ export class SquadView {
     this.pos = { ...squad.pos };
 
     this.iconSprite = new Sprite(texture);
-    this.iconSprite.anchor.set(0.5);
-    this.iconSprite.width = TILE_SIZE * 0.8;
-    this.iconSprite.height = TILE_SIZE * 0.8;
+    this.iconSprite.anchor.set(0.5, 1);
+    this.applyIconScale();
 
     this.chip = new Text({ text: '', style: { fontSize: 9, fontWeight: 'bold', fill: 0xffffff, fontFamily: 'sans-serif' } });
     this.chip.anchor.set(0.5, 0);
-    this.chip.y = TILE_SIZE * 0.42;
+    this.chip.y = CHIP_Y;
 
     this.container.addChild(this.pathGfx, this.selectionRing, this.effectsGfx, this.iconSprite, this.hoverRing, this.bars, this.chip);
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
-    this.container.hitArea = new Circle(0, 0, TILE_SIZE * 0.55);
+    this.container.hitArea = new Circle(0, -ICON_HEIGHT * 0.5, HIT_RADIUS);
     this.container.on('pointerover', () => {
       this.hoveredInternal = true;
     });
@@ -76,8 +89,9 @@ export class SquadView {
       this.onTap?.(e);
     });
 
-    this.container.x = this.pos.x * TILE_SIZE;
-    this.container.y = this.pos.y * TILE_SIZE;
+    const iso = toIso(this.pos);
+    this.container.x = iso.x;
+    this.container.y = iso.y;
   }
 
   private hoveredInternal = false;
@@ -85,24 +99,33 @@ export class SquadView {
     return this.hoveredInternal;
   }
 
+  /** Scales the icon to `ICON_HEIGHT` tall, preserving the texture's aspect ratio and the current facing flip. */
+  private applyIconScale(): void {
+    const tex = this.iconSprite.texture;
+    const s = tex.height > 0 ? ICON_HEIGHT / tex.height : 1;
+    this.iconSprite.scale.set(s * this.facing, s);
+  }
+
   setTexture(texture: Texture): void {
-    const wasFlipped = this.facing < 0;
     this.iconSprite.texture = texture;
-    this.iconSprite.width = TILE_SIZE * 0.8;
-    this.iconSprite.height = TILE_SIZE * 0.8;
-    if (wasFlipped) this.iconSprite.scale.x = -Math.abs(this.iconSprite.scale.x);
+    this.applyIconScale();
   }
 
   update(dt: number, squad: Squad, info: SquadVisualInfo): void {
     this.clock += dt;
 
-    const dx = squad.pos.x - this.pos.x;
-    if (Math.abs(dx) > 1e-3) this.facing = dx > 0 ? 1 : -1;
+    // Facing flips on the *projected* (screen) x delta, not the raw tile
+    // delta — e.g. moving purely "north" in tile-space (dx===dy) still
+    // reads as moving left on screen, so it should flip.
+    const rawDelta = { x: squad.pos.x - this.pos.x, y: squad.pos.y - this.pos.y };
+    const projDelta = toIso(rawDelta);
+    if (Math.abs(projDelta.x) > 1e-3) this.facing = projDelta.x > 0 ? 1 : -1;
 
     this.pos = lerpTowards(this.pos, squad.pos, dt);
-    this.container.x = this.pos.x * TILE_SIZE;
-    this.container.y = this.pos.y * TILE_SIZE;
-    this.iconSprite.scale.x = Math.abs(this.iconSprite.scale.x) * this.facing;
+    const iso = toIso(this.pos);
+    this.container.x = iso.x;
+    this.container.y = iso.y;
+    this.applyIconScale();
 
     const targetAlpha = info.visible ? 1 : 0;
     this.alpha = stepTowards(this.alpha, targetAlpha, dt / VISIBILITY_FADE_SECONDS);
@@ -121,12 +144,11 @@ export class SquadView {
   private drawBars(squad: Squad, info: SquadVisualInfo): void {
     this.bars.clear();
     if (info.maxHp <= 0) return;
-    const barW = TILE_SIZE * 0.8;
     const hpRatio = info.hp / info.maxHp;
     const hpColor = hpRatio > 0.5 ? 0x4caf6d : hpRatio > 0.2 ? 0xffa53c : 0xd9534f;
-    drawBar(this.bars, -barW / 2, TILE_SIZE * 0.3, barW, 3, hpRatio, { fg: hpColor });
+    drawBar(this.bars, -BAR_WIDTH / 2, BAR_Y, BAR_WIDTH, 3, hpRatio, { fg: hpColor });
     if (info.isPlayer) {
-      drawBar(this.bars, -barW / 2, TILE_SIZE * 0.3 + 5, barW, 2, squad.fuel / Math.max(1, squad.maxFuel), { fg: 0xffc36a });
+      drawBar(this.bars, -BAR_WIDTH / 2, BAR_Y + 5, BAR_WIDTH, 2, squad.fuel / Math.max(1, squad.maxFuel), { fg: 0xffc36a });
     }
   }
 
@@ -145,11 +167,13 @@ export class SquadView {
     this.selectionRing.clear();
     if (info.selected) {
       const pulse = 0.5 + 0.5 * Math.sin(this.clock * 4);
-      this.selectionRing.circle(0, 0, TILE_SIZE * 0.5 + pulse * 2).stroke({ width: 2, color: 0xffffff, alpha: 0.6 + 0.4 * pulse });
+      const r = isoRadii(0.45 + pulse * 0.04);
+      this.selectionRing.ellipse(0, 0, r.rx, r.ry).stroke({ width: 2, color: 0xffffff, alpha: 0.6 + 0.4 * pulse });
     }
     this.hoverRing.clear();
     if (this.hoveredInternal && !info.selected) {
-      this.hoverRing.circle(0, 0, TILE_SIZE * 0.5).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 });
+      const r = isoRadii(0.45);
+      this.hoverRing.ellipse(0, 0, r.rx, r.ry).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 });
     }
   }
 
@@ -157,33 +181,35 @@ export class SquadView {
     this.effectsGfx.clear();
     if (squad.effects.length === 0) return;
 
-    // Generic "has an active effect" radio-wave pulse.
+    // Generic "has an active effect" radio-wave pulse on the ground beneath the squad.
     const pulse = (Math.sin(this.clock * 3) + 1) / 2;
-    this.effectsGfx.circle(0, 0, TILE_SIZE * 0.45 + pulse * 4).stroke({ width: 1, color: 0xffffff, alpha: 0.12 + 0.15 * pulse });
+    const genericRing = isoRadii(0.4 + pulse * 0.08);
+    this.effectsGfx.ellipse(0, 0, genericRing.rx, genericRing.ry).stroke({ width: 1, color: 0xffffff, alpha: 0.12 + 0.15 * pulse });
 
     for (const effect of squad.effects) {
       switch (effect.type) {
         case 'burn': {
           const flicker = 0.7 + 0.3 * Math.sin(this.clock * 20);
-          const bx = -this.facing * TILE_SIZE * 0.5;
-          const tipX = bx - this.facing * 10 * flicker;
-          this.effectsGfx.poly([bx, -4, tipX, 0, bx, 4], true).fill({ color: 0xff8a3c, alpha: 0.8 });
+          const bx = -this.facing * ICON_HEIGHT * 0.45;
+          const tipX = bx - this.facing * 9 * flicker;
+          this.effectsGfx.poly([bx, EFFECT_Y - 4, tipX, EFFECT_Y, bx, EFFECT_Y + 4], true).fill({ color: 0xff8a3c, alpha: 0.8 });
           break;
         }
         case 'pinged':
         case 'revealed': {
           const t = this.clock % 1;
-          this.effectsGfx.circle(0, 0, TILE_SIZE * 0.3 + t * TILE_SIZE * 0.9).stroke({ width: 1.5, color: 0x6fd1ff, alpha: 1 - t });
+          const r = isoRadii(0.25 + t * 0.75);
+          this.effectsGfx.ellipse(0, 0, r.rx, r.ry).stroke({ width: 1.5, color: 0x6fd1ff, alpha: 1 - t });
           break;
         }
         case 'bait': {
           if (Math.sin(this.clock * 8) > 0) {
-            this.effectsGfx.poly(diamondPoints(0, -TILE_SIZE * 0.6, 4), true).fill({ color: 0xff3344 });
+            this.effectsGfx.poly(diamondPoints(0, -ICON_HEIGHT - 10, 4), true).fill({ color: 0xff3344 });
           }
           break;
         }
         case 'marked': {
-          drawCornerBrackets(this.effectsGfx, TILE_SIZE * 0.42, 7, 0xdd3344);
+          drawCornerBrackets(this.effectsGfx, 0, EFFECT_Y, ICON_HEIGHT * 0.45, 7, 0xdd3344, 2, 0.9);
           break;
         }
         default:
@@ -200,7 +226,7 @@ export class SquadView {
 
     let prev = this.pos;
     for (const wp of waypoints) {
-      dashedLine(this.pathGfx, toLocalTile(prev, this.pos), toLocalTile(wp, this.pos), {
+      dashedLine(this.pathGfx, toLocalIso(prev, this.pos), toLocalIso(wp, this.pos), {
         color: 0xffffff,
         alpha: 0.6,
         dash: 5,
@@ -210,7 +236,7 @@ export class SquadView {
       prev = wp;
     }
     const last = waypoints[waypoints.length - 1];
-    const lp = toLocalTile(last, this.pos);
+    const lp = toLocalIso(last, this.pos);
     this.pathGfx.poly(diamondPoints(lp.x, lp.y, 5), true).stroke({ width: 1.5, color: 0xffffff, alpha: 0.8 });
   }
 

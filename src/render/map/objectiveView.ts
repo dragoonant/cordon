@@ -1,16 +1,39 @@
 /**
- * Display object for one objective marker: radius ring (static), progress
- * arc + status icon (redrawn on change), HP bar (if the def has HP), and a
- * name label. Position interpolates toward `ObjectiveState.pos` each frame
- * (convoys move; a `destroy_target` crosshair tracks its target squad if the
- * sim keeps `pos` in sync for it too).
+ * Display object for one objective marker: radius ring (static ellipse),
+ * progress arc + status icon (redrawn on change), HP bar (if the def has
+ * HP), and a name label. Position interpolates toward `ObjectiveState.pos`
+ * each frame (convoys move; a `destroy_target` crosshair tracks its target
+ * squad if the sim keeps `pos` in sync for it too).
+ *
+ * Prefers a hand-authored `/sprites/map/obj_<key>.png` (chroma-keyed,
+ * anchored bottom-center at the projected ground point) over the procedural
+ * glyph from `objectiveIcons.ts`; falls back to the glyph when that asset
+ * isn't published (`destroy_target` never has art — it's always the red
+ * crosshair over the target).
  */
-import { Circle, Container, Graphics, Text, type FederatedPointerEvent } from 'pixi.js';
-import type { Id, ObjectiveDef, ObjectiveState, ObjectiveStatus, Vec2 } from '@sim/types';
-import { STATUS_COLOR, TILE_SIZE } from './constants';
+import { Circle, Container, Graphics, Sprite, Text, type FederatedPointerEvent } from 'pixi.js';
+import type { Id, ObjectiveDef, ObjectiveKind, ObjectiveState, ObjectiveStatus, Vec2 } from '@sim/types';
+import { loadChromaKeyedTexture } from '@render/sprites/chromaKey';
+import { STATUS_COLOR } from './constants';
+import { isoRadii, toIso } from './iso';
 import { lerpTowards } from './interpolate';
 import { DESTROY_TARGET_COLOR, drawObjectiveIcon } from './objectiveIcons';
-import { dashedCircle, drawBar, progressArc } from './shapes';
+import { dashedEllipse, drawBar, progressEllipseArc } from './shapes';
+
+/** Hitbox / hit-test reference size for objectives with a very small radius. */
+const MIN_HIT_RADIUS = 28;
+/** Fallback procedural glyph size and the reference size used to place status badges, regardless of whether the real icon ends up bigger/smaller. */
+const ICON_REF_SIZE = 64;
+const ICON_TARGET_HEIGHT = 72;
+
+const OBJ_SPRITE_KEY: Partial<Record<ObjectiveKind, string>> = {
+  evac_station: 'station',
+  evac_colony: 'colony',
+  convoy: 'convoy',
+  derelict: 'derelict',
+  relay: 'relay',
+  reach_exit: 'exit',
+};
 
 export class ObjectiveView {
   readonly container = new Container();
@@ -19,8 +42,7 @@ export class ObjectiveView {
   onTap: ((e: FederatedPointerEvent) => void) | null = null;
 
   private readonly def: ObjectiveDef;
-  private readonly radiusPx: number;
-  private readonly iconColor: number;
+  private readonly radii: { rx: number; ry: number };
 
   private readonly progressRing = new Graphics();
   private readonly iconGfx = new Graphics();
@@ -33,30 +55,32 @@ export class ObjectiveView {
   private lastStatus: ObjectiveStatus | null = null;
   private lastProgress = -1;
   private lastHpRatio = -1;
+  private destroyed = false;
 
   constructor(def: ObjectiveDef, initial: ObjectiveState) {
     this.def = def;
     this.pos = { ...initial.pos };
-    this.radiusPx = def.radius * TILE_SIZE;
-    this.iconColor = def.kind === 'destroy_target' ? DESTROY_TARGET_COLOR : STATUS_COLOR.pending;
+    this.radii = isoRadii(def.radius);
 
     const radiusRing = new Graphics();
-    dashedCircle(radiusRing, 0, 0, this.radiusPx, { color: 0xffffff, alpha: 0.25, dash: 6, gap: 5, width: 1 });
+    dashedEllipse(radiusRing, 0, 0, this.radii.rx, this.radii.ry, { color: 0xffffff, alpha: 0.25, dash: 6, gap: 5, width: 1 });
 
     this.label = new Text({
       text: def.name,
       style: { fontSize: 11, fill: 0xe8e8ec, align: 'center', fontFamily: 'sans-serif' },
     });
     this.label.anchor.set(0.5, 0);
-    this.label.y = this.radiusPx + 10;
+    this.label.y = this.radii.ry + 10;
 
     this.container.addChild(radiusRing, this.progressRing, this.iconGfx, this.statusMarkGfx, this.hpBarGfx, this.label);
-    this.container.x = this.pos.x * TILE_SIZE;
-    this.container.y = this.pos.y * TILE_SIZE;
+    const iso = toIso(this.pos);
+    this.container.x = iso.x;
+    this.container.y = iso.y;
 
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
-    this.container.hitArea = new Circle(0, 0, Math.max(TILE_SIZE * 0.4, this.radiusPx));
+    // Circle hit area sized to whichever is bigger: the radius ring or a sane minimum for tiny objectives.
+    this.container.hitArea = new Circle(0, 0, Math.max(MIN_HIT_RADIUS, this.radii.rx, this.radii.ry));
     this.container.on('pointertap', (e: FederatedPointerEvent) => {
       e.stopPropagation();
       this.onTap?.(e);
@@ -64,12 +88,28 @@ export class ObjectiveView {
 
     this.id = def.id;
     this.redrawIcon('pending');
+    this.loadIconSprite();
+  }
+
+  private loadIconSprite(): void {
+    const spriteKey = OBJ_SPRITE_KEY[this.def.kind];
+    if (!spriteKey) return; // destroy_target: always the procedural crosshair
+    void loadChromaKeyedTexture(`/sprites/map/obj_${spriteKey}`, ICON_TARGET_HEIGHT).then((tex) => {
+      if (this.destroyed || !tex) return;
+      const sprite = new Sprite(tex);
+      sprite.anchor.set(0.5, 1);
+      sprite.y = 0;
+      this.container.addChildAt(sprite, this.container.getChildIndex(this.iconGfx));
+      this.iconGfx.visible = false;
+      if (this.questionMark) this.questionMark.visible = false;
+    });
   }
 
   update(state: ObjectiveState, dt: number): void {
     this.pos = lerpTowards(this.pos, state.pos, dt);
-    this.container.x = this.pos.x * TILE_SIZE;
-    this.container.y = this.pos.y * TILE_SIZE;
+    const iso = toIso(this.pos);
+    this.container.x = iso.x;
+    this.container.y = iso.y;
 
     const statusChanged = state.status !== this.lastStatus;
     if (statusChanged) {
@@ -78,7 +118,11 @@ export class ObjectiveView {
     }
     if (statusChanged || state.progress !== this.lastProgress) {
       this.progressRing.clear();
-      progressArc(this.progressRing, 0, 0, this.radiusPx, state.progress, { color: STATUS_COLOR[state.status], width: 3, alpha: 0.9 });
+      progressEllipseArc(this.progressRing, 0, 0, this.radii.rx, this.radii.ry, state.progress, {
+        color: STATUS_COLOR[state.status],
+        width: 3,
+        alpha: 0.9,
+      });
       this.lastProgress = state.progress;
     }
 
@@ -87,7 +131,7 @@ export class ObjectiveView {
       this.hpBarGfx.clear();
       if (hpRatio >= 0) {
         const w = 36;
-        drawBar(this.hpBarGfx, -w / 2, -this.radiusPx - 14, w, 4, hpRatio, {
+        drawBar(this.hpBarGfx, -w / 2, -this.radii.ry - 14, w, 4, hpRatio, {
           fg: hpRatio > 0.5 ? 0x4caf6d : hpRatio > 0.2 ? 0xffa53c : 0xd9534f,
         });
       }
@@ -98,7 +142,9 @@ export class ObjectiveView {
   private redrawIcon(status: ObjectiveStatus): void {
     this.iconGfx.clear();
     const color = this.def.kind === 'destroy_target' ? DESTROY_TARGET_COLOR : STATUS_COLOR[status];
-    drawObjectiveIcon(this.iconGfx, this.def.kind, 0, 0, TILE_SIZE * 0.7, color);
+    // Fallback glyph draws centered at the ground point; hidden outright once
+    // a real PNG loads (see loadIconSprite), so its own offset stays simple.
+    drawObjectiveIcon(this.iconGfx, this.def.kind, 0, 0, ICON_REF_SIZE * 0.7, color);
 
     if (this.def.kind === 'derelict' && !this.questionMark) {
       this.questionMark = new Text({ text: '?', style: { fontSize: 15, fontWeight: 'bold', fill: color, fontFamily: 'sans-serif' } });
@@ -108,8 +154,8 @@ export class ObjectiveView {
     if (this.questionMark) this.questionMark.style.fill = color;
 
     this.statusMarkGfx.clear();
-    const bx = TILE_SIZE * 0.38;
-    const by = -TILE_SIZE * 0.38;
+    const bx = ICON_REF_SIZE * 0.38;
+    const by = -ICON_REF_SIZE * 0.38;
     if (status === 'complete') {
       this.statusMarkGfx
         .moveTo(bx - 6, by)
@@ -124,6 +170,7 @@ export class ObjectiveView {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.container.destroy({ children: true });
   }
 }

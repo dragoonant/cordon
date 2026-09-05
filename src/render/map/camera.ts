@@ -1,5 +1,6 @@
 import type { Vec2 } from '@sim/types';
 import { CAMERA_MARGIN, ZOOM_MAX, ZOOM_MIN } from './constants';
+import type { IsoBounds } from './iso';
 
 function clampNum(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
@@ -7,8 +8,10 @@ function clampNum(v: number, min: number, max: number): number {
 
 /**
  * Screen<->world transform for MapScene's `worldLayer`. `x`/`y` are the
- * world-space (px) point currently centered in the viewport; `zoom` scales
- * world px to screen px. World px = tiles * TILE_SIZE (see constants.ts).
+ * projected iso pixel point (see `iso.ts#toIso`) currently centered in the
+ * viewport; `zoom` scales world px to screen px. The world bounds are the
+ * map's projected diamond (`iso.ts#mapIsoBounds`), not a plain rectangle —
+ * an iso map's diamond isn't centered on the origin unless width === height.
  */
 export class Camera {
   x = 0;
@@ -17,16 +20,20 @@ export class Camera {
   readonly minZoom = ZOOM_MIN;
   readonly maxZoom = ZOOM_MAX;
 
-  private worldWidth: number;
-  private worldHeight: number;
+  private bounds: IsoBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
   viewWidth = 0;
   viewHeight = 0;
 
-  constructor(worldWidth: number, worldHeight: number) {
-    this.worldWidth = worldWidth;
-    this.worldHeight = worldHeight;
-    this.x = worldWidth / 2;
-    this.y = worldHeight / 2;
+  constructor(bounds: IsoBounds) {
+    this.setBounds(bounds);
+  }
+
+  /** Re-centers on the new bounds' midpoint (called once per `load()`, so a mid-pan reset here is fine). */
+  setBounds(bounds: IsoBounds): void {
+    this.bounds = bounds;
+    this.x = (bounds.minX + bounds.maxX) / 2;
+    this.y = (bounds.minY + bounds.maxY) / 2;
+    this.clamp();
   }
 
   setViewport(w: number, h: number): void {
@@ -35,15 +42,18 @@ export class Camera {
     this.clamp();
   }
 
-  /** Fits the whole map in the viewport (used as the initial view, and by the `fitToMap()` extra). */
+  /** Fits the whole map's projected diamond in the viewport (used as the initial view, and by the `fitToMap()` extra). */
   fit(): void {
-    if (this.viewWidth <= 0 || this.viewHeight <= 0 || this.worldWidth <= 0 || this.worldHeight <= 0) return;
+    const { minX, maxX, minY, maxY } = this.bounds;
+    const worldW = maxX - minX;
+    const worldH = maxY - minY;
+    if (this.viewWidth <= 0 || this.viewHeight <= 0 || worldW <= 0 || worldH <= 0) return;
     const margin = 32;
-    const zx = (this.viewWidth - margin * 2) / this.worldWidth;
-    const zy = (this.viewHeight - margin * 2) / this.worldHeight;
+    const zx = (this.viewWidth - margin * 2) / worldW;
+    const zy = (this.viewHeight - margin * 2) / worldH;
     this.zoom = clampNum(Math.min(zx, zy), this.minZoom, this.maxZoom);
-    this.x = this.worldWidth / 2;
-    this.y = this.worldHeight / 2;
+    this.x = (minX + maxX) / 2;
+    this.y = (minY + maxY) / 2;
     this.clamp();
   }
 
@@ -81,10 +91,10 @@ export class Camera {
   private clamp(): void {
     const halfW = this.viewWidth / 2 / this.zoom;
     const halfH = this.viewHeight / 2 / this.zoom;
-    const minX = -CAMERA_MARGIN + halfW;
-    const maxX = this.worldWidth + CAMERA_MARGIN - halfW;
-    const minY = -CAMERA_MARGIN + halfH;
-    const maxY = this.worldHeight + CAMERA_MARGIN - halfH;
+    const minX = this.bounds.minX - CAMERA_MARGIN + halfW;
+    const maxX = this.bounds.maxX + CAMERA_MARGIN - halfW;
+    const minY = this.bounds.minY - CAMERA_MARGIN + halfH;
+    const maxY = this.bounds.maxY + CAMERA_MARGIN - halfH;
     this.x = minX > maxX ? (minX + maxX) / 2 : clampNum(this.x, minX, maxX);
     this.y = minY > maxY ? (minY + maxY) / 2 : clampNum(this.y, minY, maxY);
   }

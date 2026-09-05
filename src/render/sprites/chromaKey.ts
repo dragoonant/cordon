@@ -76,7 +76,7 @@ function sampleKeyColor(data: Uint8ClampedArray, w: number, h: number): [number,
       const i = (y * w + x) * 4;
       return [data[i], data[i + 1], data[i + 2]] as [number, number, number];
     })
-    .filter(([r, g, b]) => g > 100 && g > r * 1.15 && g > b * 1.15);
+    .filter(([r, g, b]) => g > 55 && g > r * 1.25 && g > b * 1.25); // dark greens too (obj_* art keys on ~(25,90,50))
   // Need a clear majority of the border to be green, else this isn't a keyed image.
   if (greens.length < pts.length * 0.6) return null;
   greens.sort((a, b) => a[1] - b[1]);

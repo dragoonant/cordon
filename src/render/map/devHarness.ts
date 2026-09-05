@@ -316,7 +316,12 @@ export function mountMapHarness(el: HTMLElement): MapHarnessHandle {
     let last = performance.now();
     const step = (now: number): void => {
       if (destroyed) return;
-      const dt = Math.min(0.1, (now - last) / 1000);
+      // Clamp to >=0: a rAF callback's timestamp can land just *before* the
+      // `performance.now()` read above (both are monotonic, but the frame
+      // timestamp is latched at the start of the frame, not at our call
+      // site), which produced a hairline-negative dt on the very first frame
+      // and sent `pathT` negative — enough to index `patrolPath[-1]`.
+      const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
       last = now;
 
       // Animate squadP1 back and forth along patrolPath so movement/interpolation is visible.

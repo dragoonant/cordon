@@ -14,33 +14,57 @@ export interface DashOpts {
   alpha?: number;
 }
 
-/** Dashed ring, built as a series of short arcs so it reads as a "radius" outline. */
-export function dashedCircle(g: Graphics, cx: number, cy: number, r: number, opts: DashOpts): void {
-  if (r <= 0) return;
+/**
+ * Dashed ellipse ring — the iso ground-plane equivalent of a flat map's
+ * "radius" circle (rx/ry are typically `isoRadii(tiles)` from `iso.ts`).
+ * Graphics has no native elliptical arc, so each dash is a short polyline.
+ */
+export function dashedEllipse(g: Graphics, cx: number, cy: number, rx: number, ry: number, opts: DashOpts): void {
+  if (rx <= 0 || ry <= 0) return;
   const dash = opts.dash ?? 6;
   const gap = opts.gap ?? 4;
-  const circumference = 2 * Math.PI * r;
+  // Ramanujan's approximation — exact circumference isn't needed, just a
+  // reasonable dash count for the ellipse's actual size.
+  const h = (rx - ry) ** 2 / (rx + ry) ** 2;
+  const circumference = Math.PI * (rx + ry) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
   const step = dash + gap;
   const count = Math.max(4, Math.round(circumference / step));
   const angleStep = (Math.PI * 2) / count;
   const dashAngle = angleStep * (dash / step);
+  const segs = 3; // short line segments approximating each dash's curve
+  const pointAt = (a: number): Vec2 => ({ x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry });
   for (let i = 0; i < count; i++) {
     const a0 = i * angleStep;
-    const a1 = a0 + dashAngle;
-    g.moveTo(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
-    g.arc(cx, cy, r, a0, a1);
+    const p0 = pointAt(a0);
+    g.moveTo(p0.x, p0.y);
+    for (let s = 1; s <= segs; s++) {
+      const p = pointAt(a0 + (dashAngle * s) / segs);
+      g.lineTo(p.x, p.y);
+    }
   }
   g.stroke({ width: opts.width ?? 1.5, color: opts.color, alpha: opts.alpha ?? 1 });
 }
 
-/** A clockwise progress ring starting at 12 o'clock, filling as `progress` (0..1) grows. */
-export function progressArc(g: Graphics, cx: number, cy: number, r: number, progress: number, opts: DashOpts): void {
+/** A clockwise elliptical progress ring starting at 12 o'clock, filling as `progress` (0..1) grows. Approximated as a polyline (no native elliptical arc). */
+export function progressEllipseArc(
+  g: Graphics,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  progress: number,
+  opts: DashOpts
+): void {
   const p = Math.max(0, Math.min(1, progress));
-  if (p <= 0 || r <= 0) return;
+  if (p <= 0 || rx <= 0 || ry <= 0) return;
   const start = -Math.PI / 2;
   const end = start + Math.PI * 2 * p;
-  g.moveTo(cx + Math.cos(start) * r, cy + Math.sin(start) * r);
-  g.arc(cx, cy, r, start, end);
+  const segs = Math.max(2, Math.round(32 * p));
+  g.moveTo(cx + Math.cos(start) * rx, cy + Math.sin(start) * ry);
+  for (let i = 1; i <= segs; i++) {
+    const a = start + (end - start) * (i / segs);
+    g.lineTo(cx + Math.cos(a) * rx, cy + Math.sin(a) * ry);
+  }
   g.stroke({ width: opts.width ?? 3, color: opts.color, alpha: opts.alpha ?? 1 });
 }
 
@@ -93,17 +117,17 @@ export function diamondPoints(cx: number, cy: number, r: number): number[] {
   return [cx, cy - r, cx + r, cy, cx, cy + r, cx - r, cy];
 }
 
-/** Four corner-bracket strokes around a square of half-size `s` — the "marked" reticle. */
-export function drawCornerBrackets(g: Graphics, s: number, len: number, color: number, width = 2, alpha = 0.9): void {
+/** Four corner-bracket strokes around a square of half-size `s` centered at `(cx, cy)` — the "marked" reticle. */
+export function drawCornerBrackets(g: Graphics, cx: number, cy: number, s: number, len: number, color: number, width = 2, alpha = 0.9): void {
   const corners: Array<[number, number, number, number]> = [
-    [-s, -s, 1, 1],
-    [s, -s, -1, 1],
-    [s, s, -1, -1],
-    [-s, s, 1, -1],
+    [cx - s, cy - s, 1, 1],
+    [cx + s, cy - s, -1, 1],
+    [cx + s, cy + s, -1, -1],
+    [cx - s, cy + s, 1, -1],
   ];
-  for (const [cx, cy, dx, dy] of corners) {
-    g.moveTo(cx, cy).lineTo(cx + len * dx, cy);
-    g.moveTo(cx, cy).lineTo(cx, cy + len * dy);
+  for (const [x, y, dx, dy] of corners) {
+    g.moveTo(x, y).lineTo(x + len * dx, y);
+    g.moveTo(x, y).lineTo(x, y + len * dy);
   }
   g.stroke({ width, color, alpha });
 }

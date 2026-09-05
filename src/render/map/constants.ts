@@ -1,19 +1,23 @@
 /**
  * CORDON — map renderer constants.
  *
- * TILE_SIZE is the single source of truth for the world-space scale: every
- * `Vec2` coming out of `src/sim` is in fractional tiles, and every Pixi
- * display object in `src/render/map` lives in the `worldLayer`'s pixel space,
- * which is `tiles * TILE_SIZE`.
+ * The map renders as a 2:1 isometric projection (Ogre Battle 64 style):
+ * every `Vec2` coming out of `src/sim` is in fractional tiles, and
+ * `iso.ts#toIso` turns that into the projected pixel space that every Pixi
+ * display object in `src/render/map` actually lives in (the `worldLayer`).
+ * `TILE_W`/`TILE_H` are the single source of truth for that projection — see
+ * `iso.ts` for the forward/inverse transform and depth-sort key.
  */
 
-export const TILE_SIZE = 48;
+/** Full diamond width/height of one tile in the 2:1 isometric projection. */
+export const TILE_W = 96;
+export const TILE_H = 48;
 
 export const ZOOM_MIN = 0.5;
 export const ZOOM_MAX = 2.0;
 
-/** Extra world-space (px) the camera is allowed to pan past the map edge. */
-export const CAMERA_MARGIN = TILE_SIZE * 2;
+/** Extra world-space (px) the camera is allowed to pan past the map's projected diamond. */
+export const CAMERA_MARGIN = TILE_H * 2;
 
 /** How fast interpolated positions chase their sim target, in "per second". */
 export const POSITION_LERP_RATE = 12;

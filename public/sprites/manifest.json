@@ -2,88 +2,60 @@
   "version": 1,
   "images": [
     {
-      "key": "frame_skirmish_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, lightweight scout mech silhouette, slim limbs, angular thruster fins, gunmetal and bone white with amber-orange accents, dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_skirmish_attack.png",
-      "generatedAt": "2026-09-05T14:00:11.994Z"
+      "key": "obj_station",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a small hexagonal orbital relief station module, docking struts, amber warning lights, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_station.png",
+      "generatedAt": "2026-09-05T19:37:48.095Z"
     },
     {
-      "key": "frame_recon_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, agile light mech silhouette, sensor-array head, long whip antenna, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_recon_attack.png",
-      "generatedAt": "2026-09-05T14:00:11.997Z"
+      "key": "obj_colony",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of an O'Neill cylinder colony habitat, domed cap, rotating ring hull, viewports glowing pale amber, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_colony.png",
+      "generatedAt": "2026-09-05T19:37:48.099Z"
     },
     {
-      "key": "frame_interceptor_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, lightweight scout mech silhouette, slim limbs, angular thruster fins, gunmetal and bone white with amber-orange accents, dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_interceptor_attack.png",
-      "generatedAt": "2026-09-05T14:00:11.997Z"
+      "key": "obj_convoy",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a chunky armored refugee transport truck/hauler, boxy cargo container, thick tires, amber running lights, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_convoy.png",
+      "generatedAt": "2026-09-05T19:37:48.100Z"
     },
     {
-      "key": "frame_line_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, balanced medium mech silhouette, standard-issue proportions, twin shoulder vents, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_line_attack.png",
-      "generatedAt": "2026-09-05T14:00:11.998Z"
+      "key": "obj_derelict",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a broken derelict spacecraft hull wreck missing a chunk of its hull, a jagged torn-open gash exposing broken skeletal girders inside, dark scorch burn marks and rust streaks all over the plating, one antenna snapped and dangling, listing at a broken angle, powered down, no crew, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_derelict.png",
+      "generatedAt": "2026-09-05T19:37:48.100Z"
     },
     {
-      "key": "frame_trooper_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, balanced medium mech silhouette, standard-issue proportions, twin shoulder vents, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_trooper_attack.png",
-      "generatedAt": "2026-09-05T14:00:11.999Z"
+      "key": "obj_relay",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a comm relay mast: a tall antenna on a squat equipment base, dish and a single blinking amber light, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_relay.png",
+      "generatedAt": "2026-09-05T19:37:48.101Z"
     },
     {
-      "key": "frame_aeroline_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, balanced medium mech silhouette, standard-issue proportions, twin shoulder vents, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_aeroline_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.000Z"
+      "key": "obj_exit",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a jump-gate beacon: a tall arch of glowing amber energy conduits framing an open gate, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_exit.png",
+      "generatedAt": "2026-09-05T19:37:48.102Z"
     },
     {
-      "key": "frame_bastion_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, heavy defensive mech silhouette, thick armor plating, wide planted stance, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_bastion_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.001Z"
+      "key": "obj_carrier",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a long gunmetal rescue carrier spaceship with amber running lights, docking bays, and sensor masts, 3/4 elevated view, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_carrier.png",
+      "generatedAt": "2026-09-05T19:37:48.102Z"
     },
     {
-      "key": "frame_siege_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, heavy siege mech silhouette, oversized shoulder cannon, reinforced stance, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_siege_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.001Z"
-    },
-    {
-      "key": "frame_assault_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, heavy defensive mech silhouette, thick armor plating, wide planted stance, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_assault_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.002Z"
-    },
-    {
-      "key": "frame_compact_line_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, enemy line mech silhouette, blocky uniform plating, angular joints, steel grey and white with steel-blue accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_compact_line_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.003Z"
-    },
-    {
-      "key": "frame_compact_ace_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, sleek enemy ace mech silhouette, sharp angular armor, distinctive head horn, steel grey and white with steel-blue accents, dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_compact_ace_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.003Z"
-    },
-    {
-      "key": "frame_compact_skirmisher_attack",
-      "kind": "pose",
-      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, enemy line mech silhouette, blocky uniform plating, angular joints, steel grey and white with steel-blue accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_compact_skirmisher_attack.png",
-      "generatedAt": "2026-09-05T14:00:12.004Z"
+      "key": "obj_landing_zone",
+      "kind": "object",
+      "prompt": "SD anime isometric 3/4 view illustration of a landing pad platform marked with amber directional lighting stripes and a central beacon, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_landing_zone.png",
+      "generatedAt": "2026-09-05T19:37:48.103Z"
     }
   ]
 }

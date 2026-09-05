@@ -9,13 +9,18 @@
  * (not `setState`'s cadence) drives interpolation and per-frame animation
  * (pulses, fades, path lines), so the map stays smooth even if `setState` is
  * only called once per sim tick at 30Hz while the display runs at 60+fps.
+ *
+ * Rendering is a 2:1 isometric projection (Ogre Battle 64 style) — every
+ * tile-space `Vec2` is projected through `iso.ts#toIso` before it becomes a
+ * Pixi coordinate, and `iso.ts#fromIso` does the inverse for pointer input.
+ * See `iso.ts`'s header comment for the transform itself.
  */
-import { Application, Container, Graphics, Rectangle, Texture, type FederatedPointerEvent } from 'pixi.js';
+import { Application, Container, Graphics, Rectangle, Sprite, Texture, type FederatedPointerEvent } from 'pixi.js';
 import type { GameData, Id, MapDef, ObjectiveDef, Squad, Vec2, WorldState } from '@sim/types';
-import { TILE_SIZE } from './constants';
 import { Camera } from './camera';
 import { bakeTiles } from './tiles';
 import { DeployZoneView } from './deployZone';
+import { fromIso, mapIsoBounds, toIso } from './iso';
 import { ObjectiveView } from './objectiveView';
 import { PendingBattleView } from './pendingBattleView';
 import { SquadView } from './squadView';
@@ -47,16 +52,16 @@ export class MapScene {
 
   private map: MapDef | null = null;
   private objectiveDefs = new Map<Id, ObjectiveDef>();
-  private camera = new Camera(1, 1);
+  private camera = new Camera({ minX: -1, minY: -1, maxX: 1, maxY: 1 });
   private ready = false;
 
   private readonly worldLayer = new Container();
   private readonly tilesLayer = new Container();
-  private readonly groundLayer = new Container();
-  private readonly squadsLayer = new Container();
-  private readonly topLayer = new Container();
+  /** Squads, objectives, the deploy zone, and the pending-battle marker all live here so they can be depth-sorted together by projected y. */
+  private readonly entitiesLayer = new Container();
   private readonly dimOverlay = new Graphics();
 
+  private tileSprite: Sprite | null = null;
   private deployZoneView: DeployZoneView | null = null;
   private readonly objectiveViews = new Map<Id, ObjectiveView>();
   private readonly squadViews = new Map<Id, SquadView>();
@@ -104,7 +109,7 @@ export class MapScene {
     if (wasRightClick && this.selectedSquadId) {
       const rect = this.app.canvas.getBoundingClientRect();
       const world = this.camera.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-      this.emitIntent({ t: 'move', squadId: this.selectedSquadId, target: tileCenter({ x: world.x / TILE_SIZE, y: world.y / TILE_SIZE }) });
+      this.emitIntent({ t: 'move', squadId: this.selectedSquadId, target: tileCenter(fromIso(world.x, world.y)) });
     }
   };
   private readonly onWheel = (e: WheelEvent): void => {
@@ -148,8 +153,9 @@ export class MapScene {
       this.app.canvas.style.display = 'block';
       this.app.canvas.style.touchAction = 'none';
 
-      this.worldLayer.addChild(this.tilesLayer, this.groundLayer, this.squadsLayer, this.topLayer);
-      this.topLayer.addChild(this.pendingBattleView.container);
+      this.entitiesLayer.sortableChildren = true;
+      this.worldLayer.addChild(this.tilesLayer, this.entitiesLayer);
+      this.entitiesLayer.addChild(this.pendingBattleView.container);
       this.app.stage.addChild(this.worldLayer, this.dimOverlay);
       this.dimOverlay.eventMode = 'none';
 
@@ -159,34 +165,52 @@ export class MapScene {
       this.app.ticker.add((ticker) => this.tick(ticker.deltaMS / 1000));
       this.ready = true;
     }
-    this.resetSceneForMap(map);
+    await this.resetSceneForMap(map);
     this.resize();
   }
 
-  private resetSceneForMap(map: MapDef): void {
+  private async resetSceneForMap(map: MapDef): Promise<void> {
     this.map = map;
     this.objectiveDefs = new Map(map.objectives.map((d) => [d.id, d]));
 
-    this.tilesLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
+    this.disposeTileSprite();
     this.deployZoneView?.destroy();
     for (const v of this.objectiveViews.values()) v.destroy();
     this.objectiveViews.clear();
     for (const v of this.squadViews.values()) v.destroy();
     this.squadViews.clear();
     this.squadTextureKeys.clear();
-    this.groundLayer.removeChildren();
-    this.squadsLayer.removeChildren();
     this.selectedSquadId = null;
     this.latestWorld = null;
 
-    this.tilesLayer.addChild(bakeTiles(this.app, map));
     this.deployZoneView = new DeployZoneView(map);
-    this.groundLayer.addChild(this.deployZoneView.container);
+    this.entitiesLayer.addChild(this.deployZoneView.container);
+    // Static position: set its depth-sort key once instead of every tick.
+    this.deployZoneView.container.zIndex = this.deployZoneView.container.y;
 
-    this.camera = new Camera(map.width * TILE_SIZE, map.height * TILE_SIZE);
+    const bounds = mapIsoBounds(map);
+    this.camera = new Camera(bounds);
     this.camera.setViewport(this.app.renderer.width, this.app.renderer.height);
     this.camera.fit();
     this.applyCameraTransform();
+
+    const tileSprite = await bakeTiles(this.app, map);
+    // A newer load() may have started (and possibly already been destroyed)
+    // while the bake was in flight — don't resurrect a stale tile layer.
+    if (this.destroyed || this.map !== map) {
+      tileSprite.destroy({ children: true, texture: true, textureSource: true });
+      return;
+    }
+    this.tileSprite = tileSprite;
+    this.tilesLayer.addChild(tileSprite);
+  }
+
+  private disposeTileSprite(): void {
+    if (this.tileSprite) {
+      this.tileSprite.destroy({ children: true, texture: true, textureSource: true });
+      this.tileSprite = null;
+    }
+    this.tilesLayer.removeChildren();
   }
 
   setState(world: WorldState): void {
@@ -201,7 +225,7 @@ export class MapScene {
       const view = new ObjectiveView(def, state);
       view.onTap = (e) => this.handleObjectiveTap(id, e);
       this.objectiveViews.set(id, view);
-      this.groundLayer.addChild(view.container);
+      this.entitiesLayer.addChild(view.container);
     }
     for (const [id, view] of [...this.objectiveViews]) {
       if (!seenObjIds.has(id)) {
@@ -219,7 +243,7 @@ export class MapScene {
       const isPlayer = squad.faction === 'relay';
       view.onTap = () => this.handleSquadTap(squad.id, isPlayer);
       this.squadViews.set(squad.id, view);
-      this.squadsLayer.addChild(view.container);
+      this.entitiesLayer.addChild(view.container);
       void this.refreshSquadTexture(squad);
     }
     for (const [id, view] of [...this.squadViews]) {
@@ -255,7 +279,7 @@ export class MapScene {
 
   /** Extra: recenter the camera on a world position (tiles) without changing zoom. */
   centerOn(pos: Vec2): void {
-    this.camera.centerOn({ x: pos.x * TILE_SIZE, y: pos.y * TILE_SIZE });
+    this.camera.centerOn(toIso(pos));
     this.applyCameraTransform();
   }
 
@@ -285,6 +309,11 @@ export class MapScene {
     // Destroying views individually and then again via the app double-destroys
     // Pixi containers and throws inside React's cleanup.
     this.app.ticker.stop();
+    // The baked terrain RenderTexture is a GPU resource tied to this app's
+    // renderer (unlike the shared canvas-backed textures in render/sprites),
+    // so it needs an explicit destroy — app.destroy(texture:false) below
+    // deliberately skips it to protect that shared cache.
+    this.disposeTileSprite();
     this.objectiveViews.clear();
     this.squadViews.clear();
     this.deployZoneView = null;
@@ -307,7 +336,10 @@ export class MapScene {
 
     for (const [id, view] of this.objectiveViews) {
       const state = world.objectives[id];
-      if (state) view.update(state, dt);
+      if (state) {
+        view.update(state, dt);
+        view.container.zIndex = view.container.y;
+      }
     }
 
     for (const squad of Object.values(world.squads)) {
@@ -330,6 +362,7 @@ export class MapScene {
         visible,
         selected: squad.id === this.selectedSquadId,
       });
+      view.container.zIndex = view.container.y;
     }
 
     this.deployZoneView?.update(world.carrierHp, world.carrierMaxHp);
@@ -337,8 +370,10 @@ export class MapScene {
     if (world.phase === 'battle_pending' && world.pendingBattle) {
       const a = world.squads[world.pendingBattle.squadAId];
       const b = world.squads[world.pendingBattle.squadBId];
-      if (a && b) this.pendingBattleView.show(a.pos, b.pos, dt);
-      else this.pendingBattleView.hide();
+      if (a && b) {
+        this.pendingBattleView.show(a.pos, b.pos, dt);
+        this.pendingBattleView.container.zIndex = this.pendingBattleView.container.y;
+      } else this.pendingBattleView.hide();
     } else {
       this.pendingBattleView.hide();
     }
@@ -431,7 +466,7 @@ export class MapScene {
 
   private handleBackgroundTap(e: FederatedPointerEvent): void {
     const local = e.getLocalPosition(this.worldLayer);
-    const tile = { x: local.x / TILE_SIZE, y: local.y / TILE_SIZE };
+    const tile = fromIso(local.x, local.y);
     if (this.selectedSquadId) {
       this.emitIntent({ t: 'move', squadId: this.selectedSquadId, target: tileCenter(tile) });
     } else {
@@ -451,7 +486,7 @@ export class MapScene {
   private handleObjectiveTap(objectiveId: Id, e: FederatedPointerEvent): void {
     if (this.selectedSquadId) {
       const local = e.getLocalPosition(this.worldLayer);
-      const tile = { x: local.x / TILE_SIZE, y: local.y / TILE_SIZE };
+      const tile = fromIso(local.x, local.y);
       this.emitIntent({ t: 'move', squadId: this.selectedSquadId, target: tileCenter(tile) });
     } else {
       this.emitIntent({ t: 'inspect_objective', objectiveId });
