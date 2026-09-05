@@ -2,74 +2,158 @@
   "version": 1,
   "images": [
     {
-      "key": "deco_rock_a",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a single weathered grey boulder, jagged rock formation, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_rock_a.png",
-      "generatedAt": "2026-09-05T20:59:15.476Z"
+      "key": "terrain_open_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, dry cracked earth seen directly from above, deep mud-crack fissure patterns across parched hardpan, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_1.png",
+      "generatedAt": "2026-09-05T21:49:25.533Z"
     },
     {
-      "key": "deco_rock_b",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a small cluster of two to three jagged grey rocks, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_rock_b.png",
-      "generatedAt": "2026-09-05T20:59:15.480Z"
+      "key": "terrain_open_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, sparse dry scrubland seen directly from above, scattered low bushes and tufts on bare dirt, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_2.png",
+      "generatedAt": "2026-09-05T21:49:25.537Z"
     },
     {
-      "key": "deco_tree_clump",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a dense clump of dark green alien scrub trees, tight tangled canopy, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_tree_clump.png",
-      "generatedAt": "2026-09-05T20:59:15.480Z"
+      "key": "terrain_open_3",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, wind-rippled sand dunes seen directly from above, soft undulating dune ridges and shadowed troughs, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_3.png",
+      "generatedAt": "2026-09-05T21:49:25.537Z"
     },
     {
-      "key": "deco_crater",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a shallow round impact crater, scorched blackened rim, cracked bare ground inside, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_crater.png",
-      "generatedAt": "2026-09-05T20:59:15.481Z"
+      "key": "terrain_open_4",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, a flat white salt crust seen directly from above, hexagonal salt-pan cracking patterns, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_4.png",
+      "generatedAt": "2026-09-05T21:49:25.538Z"
     },
     {
-      "key": "deco_ruin_wall",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a broken chunk of a collapsed concrete building wall, exposed rebar, rubble at its base, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_ruin_wall.png",
-      "generatedAt": "2026-09-05T20:59:15.481Z"
+      "key": "terrain_forest_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, dense unbroken forest canopy seen directly from above, tight overlapping treetops, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_forest_1.png",
+      "generatedAt": "2026-09-05T21:49:25.539Z"
     },
     {
-      "key": "deco_wreck_small",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a small burnt-out wrecked vehicle husk, twisted scorched metal, no wheels, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_wreck_small.png",
-      "generatedAt": "2026-09-05T20:59:15.482Z"
+      "key": "terrain_forest_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, a forest clearing seen directly from above, fallen tree logs scattered across bare ground ringed by canopy, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_forest_2.png",
+      "generatedAt": "2026-09-05T21:49:25.539Z"
     },
     {
-      "key": "deco_asteroid_a",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a single small jagged grey asteroid chunk, cratered pitted surface, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_asteroid_a.png",
-      "generatedAt": "2026-09-05T20:59:15.483Z"
+      "key": "terrain_forest_3",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, mixed autumn forest canopy seen directly from above, a blend of orange, red, and green treetops, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_forest_3.png",
+      "generatedAt": "2026-09-05T21:49:25.540Z"
     },
     {
-      "key": "deco_asteroid_b",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a small cluster of two jagged grey asteroid fragments, cratered pitted surfaces, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_asteroid_b.png",
-      "generatedAt": "2026-09-05T20:59:15.484Z"
+      "key": "terrain_urban_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, densely packed rooftops seen directly from above, small tightly clustered buildings, many rooftop vents and AC units, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_1.png",
+      "generatedAt": "2026-09-05T21:49:25.541Z"
     },
     {
-      "key": "deco_crystal_shard",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a jagged cluster of glowing violet crystal shards jutting from the ground, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_crystal_shard.png",
-      "generatedAt": "2026-09-05T20:59:15.484Z"
+      "key": "terrain_urban_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, a broad empty asphalt road with painted white and yellow lane-divider lines, viewed straight down from directly overhead, low rooftops visible along both edges, no cars, no pedestrians, no text, no numbers, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_2.png",
+      "generatedAt": "2026-09-05T21:49:25.541Z"
     },
     {
-      "key": "deco_antenna_small",
-      "kind": "decor",
-      "prompt": "SD anime isometric 3/4 view illustration of a small standalone comm antenna mast on a narrow tripod base, one blinking amber light, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_antenna_small.png",
-      "generatedAt": "2026-09-05T20:59:15.485Z"
+      "key": "terrain_urban_3",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, a large expanse of flat cracked concrete pavement viewed straight down from directly overhead, network of thin fracture cracks and scattered broken rubble chunks across the bare surface, empty industrial courtyard, no people, no flags, no signage, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_3.png",
+      "generatedAt": "2026-09-05T21:49:25.542Z"
+    },
+    {
+      "key": "terrain_urban_4",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, industrial factory rooftops seen directly from above, large cylindrical storage tanks and clustered pipework, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_4.png",
+      "generatedAt": "2026-09-05T21:49:25.542Z"
+    },
+    {
+      "key": "terrain_urban_5",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, bombed-out city blocks seen directly from above, collapsed roofs, scorch marks, exposed building interiors, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_5.png",
+      "generatedAt": "2026-09-05T21:49:25.543Z"
+    },
+    {
+      "key": "terrain_urban_6",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, a rail yard seen directly from above, parallel train tracks, boxcars, gravel ballast between the rails, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_6.png",
+      "generatedAt": "2026-09-05T21:49:25.544Z"
+    },
+    {
+      "key": "terrain_mountain_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, a grey rocky scree slope seen directly from above, loose broken stone fragments, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_mountain_1.png",
+      "generatedAt": "2026-09-05T21:49:25.544Z"
+    },
+    {
+      "key": "terrain_mountain_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, snow-dusted rocky mountain terrain seen directly from above, patches of snow over dark stone, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_mountain_2.png",
+      "generatedAt": "2026-09-05T21:49:25.545Z"
+    },
+    {
+      "key": "terrain_void_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, deep space, near-black background with a dense field of countless bright distant stars, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_void_1.png",
+      "generatedAt": "2026-09-05T21:49:25.546Z"
+    },
+    {
+      "key": "terrain_void_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, deep space, near-black background with faint scattered stars and a faint dark drifting dust cloud, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_void_2.png",
+      "generatedAt": "2026-09-05T21:49:25.546Z"
+    },
+    {
+      "key": "terrain_debris_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, flat lay overhead view of very fine scattered metal wreckage shards and dust, sparse tiny fragments on a plain black background, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_debris_1.png",
+      "generatedAt": "2026-09-05T21:49:25.547Z"
+    },
+    {
+      "key": "terrain_debris_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, flat lay overhead view of large broken curved hull plate fragments and torn metal panels scattered sparsely on a plain black background, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_debris_2.png",
+      "generatedAt": "2026-09-05T21:49:25.547Z"
+    },
+    {
+      "key": "terrain_radiation_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, deep space with a dense pulsing violet-red radioactive haze and drifting glowing particulate, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_radiation_1.png",
+      "generatedAt": "2026-09-05T21:49:25.548Z"
+    },
+    {
+      "key": "terrain_structure_1",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, steel space station hull plating, riveted panels with rows of small vents and grilles, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_structure_1.png",
+      "generatedAt": "2026-09-05T21:49:25.549Z"
+    },
+    {
+      "key": "terrain_structure_2",
+      "kind": "terrainVariant",
+      "prompt": "seamless tileable texture, top-down, steel space station exterior, an exposed lattice of crossing structural girders and beams, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_structure_2.png",
+      "generatedAt": "2026-09-05T21:49:25.549Z"
     }
   ]
 }

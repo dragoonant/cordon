@@ -102,9 +102,39 @@
       "path": "sprites/map/terrain_debris.png"
     },
     {
+      "key": "terrain_debris_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_debris_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_debris_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_debris_2.png",
+      "variant": 2
+    },
+    {
       "key": "terrain_forest",
       "kind": "terrain",
       "path": "sprites/map/terrain_forest.png"
+    },
+    {
+      "key": "terrain_forest_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_forest_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_forest_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_forest_2.png",
+      "variant": 2
+    },
+    {
+      "key": "terrain_forest_3",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_forest_3.png",
+      "variant": 3
     },
     {
       "key": "terrain_gravity",
@@ -117,9 +147,45 @@
       "path": "sprites/map/terrain_mountain.png"
     },
     {
+      "key": "terrain_mountain_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_mountain_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_mountain_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_mountain_2.png",
+      "variant": 2
+    },
+    {
       "key": "terrain_open",
       "kind": "terrain",
       "path": "sprites/map/terrain_open.png"
+    },
+    {
+      "key": "terrain_open_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_open_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_open_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_open_2.png",
+      "variant": 2
+    },
+    {
+      "key": "terrain_open_3",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_open_3.png",
+      "variant": 3
+    },
+    {
+      "key": "terrain_open_4",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_open_4.png",
+      "variant": 4
     },
     {
       "key": "terrain_radiation",
@@ -127,9 +193,27 @@
       "path": "sprites/map/terrain_radiation.png"
     },
     {
+      "key": "terrain_radiation_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_radiation_1.png",
+      "variant": 1
+    },
+    {
       "key": "terrain_structure",
       "kind": "terrain",
       "path": "sprites/map/terrain_structure.png"
+    },
+    {
+      "key": "terrain_structure_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_structure_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_structure_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_structure_2.png",
+      "variant": 2
     },
     {
       "key": "terrain_urban",
@@ -137,9 +221,57 @@
       "path": "sprites/map/terrain_urban.png"
     },
     {
+      "key": "terrain_urban_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_urban_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban_2.png",
+      "variant": 2
+    },
+    {
+      "key": "terrain_urban_3",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban_3.png",
+      "variant": 3
+    },
+    {
+      "key": "terrain_urban_4",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban_4.png",
+      "variant": 4
+    },
+    {
+      "key": "terrain_urban_5",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban_5.png",
+      "variant": 5
+    },
+    {
+      "key": "terrain_urban_6",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban_6.png",
+      "variant": 6
+    },
+    {
       "key": "terrain_void",
       "kind": "terrain",
       "path": "sprites/map/terrain_void.png"
+    },
+    {
+      "key": "terrain_void_1",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_void_1.png",
+      "variant": 1
+    },
+    {
+      "key": "terrain_void_2",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_void_2.png",
+      "variant": 2
     },
     {
       "key": "terrain_water",

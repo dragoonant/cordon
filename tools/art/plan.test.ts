@@ -14,10 +14,12 @@ import {
   buildPortraitPrompt,
   buildPosePrompt,
   buildTerrainPrompt,
+  buildTerrainVariantPrompt,
   DECOR_KEYS,
   eligiblePortraitPilots,
   OBJECT_KEYS,
   TERRAIN_KINDS,
+  TERRAIN_VARIANT_COUNTS,
 } from './plan';
 
 // ---------------------------------------------------------------------------
@@ -201,23 +203,23 @@ describe('eligiblePortraitPilots', () => {
 describe('buildArtPlan', () => {
   it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 6 backdrops = 54 total (poses/terrain/objects/decor excluded by default)', () => {
     const plan = buildArtPlan(data);
-    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, poses: 0, terrain: 0, objects: 0, decor: 0, total: 54 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 54 });
     expect(plan.jobs).toHaveLength(54);
   });
 
   it('--only frames restricts to just frame jobs', () => {
     const plan = buildArtPlan(data, { only: ['frames'] });
-    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 0, decor: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 12 });
   });
 
   it('--only portraits restricts to just portrait jobs', () => {
     const plan = buildArtPlan(data, { only: ['portraits'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, terrain: 0, objects: 0, decor: 0, total: 36 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 36 });
   });
 
   it('--only poses restricts to just the 12 combat-pose jobs, one per frame', () => {
     const plan = buildArtPlan(data, { only: ['poses'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, terrain: 0, objects: 0, decor: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 12 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(
       Object.keys(frames)
         .map((id) => `${frames[id].spriteKey}_attack`)
@@ -227,19 +229,35 @@ describe('buildArtPlan', () => {
 
   it('--only terrain restricts to just the 11 terrain jobs, one per Terrain kind', () => {
     const plan = buildArtPlan(data, { only: ['terrain'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 11, objects: 0, decor: 0, total: 11 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 11, terrainVariants: 0, objects: 0, decor: 0, total: 11 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(TERRAIN_KINDS.map((k) => `terrain_${k}`).sort());
+  });
+
+  it('--only terrain-variants restricts to just the 22 terrain variant jobs', () => {
+    const plan = buildArtPlan(data, { only: ['terrain-variants'] });
+    expect(plan.counts).toEqual({
+      frames: 0,
+      portraits: 0,
+      backdrops: 0,
+      poses: 0,
+      terrain: 0,
+      terrainVariants: 22,
+      objects: 0,
+      decor: 0,
+      total: 22,
+    });
+    expect(plan.jobs.every((j) => j.kind === 'terrainVariant')).toBe(true);
   });
 
   it('--only objects restricts to just the 8 map object jobs', () => {
     const plan = buildArtPlan(data, { only: ['objects'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 8, decor: 0, total: 8 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 8, decor: 0, total: 8 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(OBJECT_KEYS.map((k) => `obj_${k}`).sort());
   });
 
   it('--only decor restricts to just the 10 decoration/scenery jobs', () => {
     const plan = buildArtPlan(data, { only: ['decor'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 0, decor: 10, total: 10 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 10, total: 10 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(DECOR_KEYS.map((k) => `deco_${k}`).sort());
   });
 
@@ -288,6 +306,45 @@ describe('buildTerrainPrompt', () => {
 
   it('is a pure function of the kind (calling twice gives identical output)', () => {
     expect(buildTerrainPrompt('gravity')).toEqual(buildTerrainPrompt('gravity'));
+  });
+});
+
+describe('buildTerrainVariantPrompt', () => {
+  it('sums to 22 variants across urban(6)/open(4)/forest(3)/mountain(2)/debris(2)/void(2)/structure(2)/radiation(1)', () => {
+    expect(TERRAIN_VARIANT_COUNTS).toEqual({
+      urban: 6,
+      open: 4,
+      forest: 3,
+      mountain: 2,
+      debris: 2,
+      void: 2,
+      structure: 2,
+      radiation: 1,
+    });
+    const total = Object.values(TERRAIN_VARIANT_COUNTS).reduce((a, b) => a + (b ?? 0), 0);
+    expect(total).toBe(22);
+  });
+
+  it('keys the job "terrain_<kind>_<n>" and reuses the buildTerrainPrompt scaffold with the given description', () => {
+    const job = buildTerrainVariantPrompt('urban', 2, 'a wide central boulevard');
+    expect(job.key).toBe('terrain_urban_2');
+    expect(job.kind).toBe('terrainVariant');
+    expect(job.prompt).toContain('seamless tileable texture, top-down');
+    expect(job.prompt).toContain('a wide central boulevard');
+    expect(job.prompt).not.toContain('#00ff00');
+    expect(job.width).toBe(512);
+    expect(job.height).toBe(512);
+  });
+
+  it('carries the debris-specific negative-prompt extra (avoid a single hero wreck) same as buildTerrainPrompt', () => {
+    const job = buildTerrainVariantPrompt('debris', 1, 'fine scattered wreckage');
+    expect(job.negativePrompt).toContain('single large vehicle');
+  });
+
+  it('is a pure function of its args (calling twice gives identical output)', () => {
+    expect(buildTerrainVariantPrompt('forest', 1, 'dense canopy')).toEqual(
+      buildTerrainVariantPrompt('forest', 1, 'dense canopy')
+    );
   });
 });
 

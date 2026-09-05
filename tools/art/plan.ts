@@ -48,7 +48,7 @@ const FACTION_PALETTES: Record<Faction, string> = {
   neutral: 'muted grey and rust with salvage-tech violet accents',
 };
 
-export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'object' | 'decor';
+export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'terrainVariant' | 'object' | 'decor';
 
 export interface ImageJob {
   /** Unique per job: frame id, `${pilotId}_${expression}`, or a backdrop key. */
@@ -246,6 +246,95 @@ const OBJECT_NEGATIVE_EXTRA: Partial<Record<ObjectKey, string>> = {
   derelict: 'clean, pristine, intact, undamaged, new, shiny',
 };
 
+/**
+ * Extra same-kind texture variants so a terrain kind's `TilingSprite` repeat
+ * doesn't read as an obvious pattern on large same-kind areas (most visibly
+ * urban's rooftop grid — see src/render/map/tiles.ts, which atlases the base
+ * `terrain_<kind>.png` plus every one of these into one composite per map).
+ * Keyed `terrain_<kind>_<n>` (1-indexed, matching each kind's description
+ * list order below) — the key doubles as the publish basename, same
+ * convention as `buildTerrainPrompt`. Not every Terrain kind has variants:
+ * `water`, `gravity`, and `blocked` are left at just their base texture.
+ */
+const TERRAIN_VARIANT_DESCRIPTIONS: Partial<Record<Terrain, string[]>> = {
+  urban: [
+    'densely packed rooftops seen directly from above, small tightly clustered buildings, many rooftop vents and AC units',
+    'a broad empty asphalt road with painted white and yellow lane-divider lines, viewed straight down from directly overhead, low rooftops visible along both edges, no cars, no pedestrians, no text, no numbers',
+    'a large expanse of flat cracked concrete pavement viewed straight down from directly overhead, network of thin fracture cracks and scattered broken rubble chunks across the bare surface, empty industrial courtyard, no people, no flags, no signage',
+    'industrial factory rooftops seen directly from above, large cylindrical storage tanks and clustered pipework',
+    'bombed-out city blocks seen directly from above, collapsed roofs, scorch marks, exposed building interiors',
+    'a rail yard seen directly from above, parallel train tracks, boxcars, gravel ballast between the rails',
+  ],
+  open: [
+    'dry cracked earth seen directly from above, deep mud-crack fissure patterns across parched hardpan',
+    'sparse dry scrubland seen directly from above, scattered low bushes and tufts on bare dirt',
+    'wind-rippled sand dunes seen directly from above, soft undulating dune ridges and shadowed troughs',
+    'a flat white salt crust seen directly from above, hexagonal salt-pan cracking patterns',
+  ],
+  forest: [
+    'dense unbroken forest canopy seen directly from above, tight overlapping treetops',
+    'a forest clearing seen directly from above, fallen tree logs scattered across bare ground ringed by canopy',
+    'mixed autumn forest canopy seen directly from above, a blend of orange, red, and green treetops',
+  ],
+  mountain: [
+    'a grey rocky scree slope seen directly from above, loose broken stone fragments',
+    'snow-dusted rocky mountain terrain seen directly from above, patches of snow over dark stone',
+  ],
+  debris: [
+    'flat lay overhead view of very fine scattered metal wreckage shards and dust, sparse tiny fragments on a plain black background',
+    'flat lay overhead view of large broken curved hull plate fragments and torn metal panels scattered sparsely on a plain black background',
+  ],
+  void: [
+    'deep space, near-black background with a dense field of countless bright distant stars',
+    'deep space, near-black background with faint scattered stars and a faint dark drifting dust cloud',
+  ],
+  structure: [
+    'steel space station hull plating, riveted panels with rows of small vents and grilles',
+    'steel space station exterior, an exposed lattice of crossing structural girders and beams',
+  ],
+  radiation: ['deep space with a dense pulsing violet-red radioactive haze and drifting glowing particulate'],
+};
+
+/** `terrain_<kind>_<n>` count per kind, derived from the description lists above (exported for tests/tooling). */
+export const TERRAIN_VARIANT_COUNTS: Partial<Record<Terrain, number>> = Object.fromEntries(
+  Object.entries(TERRAIN_VARIANT_DESCRIPTIONS).map(([kind, list]) => [kind, list!.length])
+) as Partial<Record<Terrain, number>>;
+
+/** One extra same-kind terrain texture, `terrain_<kind>_<n>` (1-indexed). Same prompt scaffold as `buildTerrainPrompt`, per-variant description swapped in. */
+export function buildTerrainVariantPrompt(kind: Terrain, n: number, description: string): ImageJob {
+  const prompt =
+    `seamless tileable texture, top-down, ${description}, ` +
+    `painted anime cel-shaded style, muted desaturated industrial palette, flat colors, ` +
+    `no text, no characters, no logo`;
+  const extra = TERRAIN_NEGATIVE_EXTRA[kind];
+  return {
+    key: `terrain_${kind}_${n}`,
+    kind: 'terrainVariant',
+    prompt,
+    negativePrompt: extra ? `${NEGATIVE_PROMPT_MAP_ART}, ${extra}` : NEGATIVE_PROMPT_MAP_ART,
+    width: 512,
+    height: 512,
+  };
+}
+
+/**
+ * All terrain variant jobs, in TERRAIN_KINDS order (kinds without variants
+ * skipped), `n` running 1..count within each kind matching its description
+ * list order — 22 jobs total as of writing (6 urban + 4 open + 3 forest + 2
+ * mountain + 2 debris + 2 void + 2 structure + 1 radiation).
+ */
+function buildTerrainVariantJobs(): ImageJob[] {
+  const jobs: ImageJob[] = [];
+  for (const kind of TERRAIN_KINDS) {
+    const descriptions = TERRAIN_VARIANT_DESCRIPTIONS[kind];
+    if (!descriptions) continue;
+    descriptions.forEach((description, i) => {
+      jobs.push(buildTerrainVariantPrompt(kind, i + 1, description));
+    });
+  }
+  return jobs;
+}
+
 /** One isometric-3/4 object sprite on a #00ff00 key background. Key doubles as the publish basename. */
 export function buildObjectPrompt(key: ObjectKey): ImageJob {
   const prompt =
@@ -330,9 +419,11 @@ export interface ArtData {
 }
 
 export interface ArtPlanOptions {
-  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/objects/decor are opt-in only — see buildArtPlan). */
-  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects' | 'decor')[];
-  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> objects -> decor order). */
+  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/terrain-variants/objects/decor are opt-in only — see buildArtPlan). */
+  only?:
+    | ImageKind[]
+    | ('frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'terrain-variants' | 'objects' | 'decor')[];
+  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> terrain-variants -> objects -> decor order). */
   limit?: number;
 }
 
@@ -342,6 +433,7 @@ export interface ArtPlanCounts {
   backdrops: number;
   poses: number;
   terrain: number;
+  terrainVariants: number;
   objects: number;
   decor: number;
   total: number;
@@ -358,17 +450,20 @@ const CATEGORY_TO_KIND: Record<string, ImageKind> = {
   backdrops: 'backdrop',
   poses: 'pose',
   terrain: 'terrain',
+  'terrain-variants': 'terrainVariant',
   objects: 'object',
   decor: 'decor',
 };
 
 /**
- * Poses, terrain, objects, and decor are deliberately excluded from the "no
- * --only given" default: each is an add-on pass unrelated to the base
- * frames/portraits/backdrops set (terrain, objects, and decor don't even key
- * off frames.json/pilots.json), so a plain `buildArtPlan(data)` stays exactly
+ * Poses, terrain, terrain-variants, objects, and decor are deliberately
+ * excluded from the "no --only given" default: each is an add-on pass
+ * unrelated to the base frames/portraits/backdrops set (terrain,
+ * terrain-variants, objects, and decor don't even key off
+ * frames.json/pilots.json), so a plain `buildArtPlan(data)` stays exactly
  * what it was before they existed. Ask for them explicitly with
- * `--only poses` / `--only terrain` / `--only objects` / `--only decor`.
+ * `--only poses` / `--only terrain` / `--only terrain-variants` /
+ * `--only objects` / `--only decor`.
  */
 export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPlan {
   const wantedKinds = new Set<ImageKind>(
@@ -406,6 +501,9 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
       jobs.push(buildTerrainPrompt(kind));
     }
   }
+  if (wantedKinds.has('terrainVariant')) {
+    jobs.push(...buildTerrainVariantJobs());
+  }
   if (wantedKinds.has('object')) {
     for (const key of OBJECT_KEYS) {
       jobs.push(buildObjectPrompt(key));
@@ -425,6 +523,7 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
     backdrops: limited.filter((j) => j.kind === 'backdrop').length,
     poses: limited.filter((j) => j.kind === 'pose').length,
     terrain: limited.filter((j) => j.kind === 'terrain').length,
+    terrainVariants: limited.filter((j) => j.kind === 'terrainVariant').length,
     objects: limited.filter((j) => j.kind === 'object').length,
     decor: limited.filter((j) => j.kind === 'decor').length,
     total: limited.length,

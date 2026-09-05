@@ -16,25 +16,33 @@
  *   public/sprites/frames/<spriteKey>_attack.<png|jpg> — see buildPosePrompt in plan.ts and
  *   getMechPoseTexture in src/render/sprites/index.ts.
  *
- *   "terrain", "objects", and "decor" are three more opt-in categories, for the overworld map (owned
- *   by this pipeline: tools/art/** and public/sprites/map/**, consumed by the isometric map
- *   renderer). None keys off frames.json/pilots.json:
- *     terrain  11 seamless top-down 512x512 textures, one per Terrain kind (src/sim/types.ts), NO green
- *              key (opaque) — published (with --publish) straight to public/sprites/map/terrain_<kind>.png.
- *     objects  8 isometric-3/4 512x512 sprites on a #00ff00 key background (same convention as frames) —
- *              published straight to public/sprites/map/obj_<key>.png. Loaded at runtime via
- *              loadChromaKeyedTexture('/sprites/map/obj_<key>', targetHeight) — src/render/sprites/chromaKey.ts.
- *     decor    10 small isometric-3/4 512x512 scenery/decoration sprites (rocks, tree clumps, wrecks,
- *              asteroids, ...), same green-key convention as objects — published to
- *              public/sprites/map/deco_<key>.png. Scattered across the map at runtime by
- *              src/render/map/decor.ts. See buildDecorPrompt / DECOR_KEYS in plan.ts.
- *   All three publish paths are fixed at .png (no .jpg fallback): a raw response that isn't a real PNG
+ *   "terrain", "terrain-variants", "objects", and "decor" are four more opt-in categories, for the
+ *   overworld map (owned by this pipeline: tools/art/** and public/sprites/map/**, consumed by the
+ *   isometric map renderer). None keys off frames.json/pilots.json:
+ *     terrain           11 seamless top-down 512x512 textures, one per Terrain kind (src/sim/types.ts),
+ *                       NO green key (opaque) — published (with --publish) straight to
+ *                       public/sprites/map/terrain_<kind>.png.
+ *     terrain-variants  22 extra same-kind textures (terrain_<kind>_<n>.png, 1-indexed), so the map
+ *                       renderer can atlas several textures per kind and break up an otherwise-visible
+ *                       TilingSprite repeat (most visibly urban's rooftop grid) — see
+ *                       buildTerrainVariantPrompt in plan.ts and the atlas step in
+ *                       src/render/map/tiles.ts. Same NO-green-key/.png-only publish contract as
+ *                       "terrain".
+ *     objects           8 isometric-3/4 512x512 sprites on a #00ff00 key background (same convention as
+ *                       frames) — published straight to public/sprites/map/obj_<key>.png. Loaded at
+ *                       runtime via loadChromaKeyedTexture('/sprites/map/obj_<key>', targetHeight) —
+ *                       src/render/sprites/chromaKey.ts.
+ *     decor             10 small isometric-3/4 512x512 scenery/decoration sprites (rocks, tree clumps,
+ *                       wrecks, asteroids, ...), same green-key convention as objects — published to
+ *                       public/sprites/map/deco_<key>.png. Scattered across the map at runtime by
+ *                       src/render/map/decor.ts. See buildDecorPrompt / DECOR_KEYS in plan.ts.
+ *   All four publish paths are fixed at .png (no .jpg fallback): a raw response that isn't a real PNG
  *   by magic bytes is skipped with a warning rather than published under a wrong extension. See
- *   buildTerrainPrompt / buildObjectPrompt / buildDecorPrompt in plan.ts. Running any of the three with
- *   --publish also (re)writes public/sprites/map/manifest.json, rebuilt from whatever
- *   public/sprites/map/terrain_*.png, obj_*.png, and deco_*.png files actually exist on disk (not just
- *   this run's jobs), so running them in separate invocations doesn't clobber each other's manifest
- *   entries.
+ *   buildTerrainPrompt / buildTerrainVariantPrompt / buildObjectPrompt / buildDecorPrompt in plan.ts.
+ *   Running any of the four with --publish also (re)writes public/sprites/map/manifest.json, rebuilt
+ *   from whatever public/sprites/map/terrain_*.png, obj_*.png, and deco_*.png files actually exist on
+ *   disk (not just this run's jobs), so running them in separate invocations doesn't clobber each
+ *   other's manifest entries.
  *
  * PROVIDERS:
  *   fal-ai (default)  POST https://router.huggingface.co/fal-ai/fal-ai/<model> (model defaults to
@@ -109,7 +117,7 @@ const DEFAULT_HF_MODEL = 'black-forest-labs/FLUX.1-schnell';
 // CLI args
 // ---------------------------------------------------------------------------
 
-type Category = 'frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects' | 'decor';
+type Category = 'frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'terrain-variants' | 'objects' | 'decor';
 type Provider = 'fal-ai' | 'hf-inference';
 
 interface CliArgs {
@@ -123,7 +131,16 @@ interface CliArgs {
   provider: Provider;
 }
 
-const VALID_CATEGORIES: Category[] = ['frames', 'portraits', 'backdrops', 'poses', 'terrain', 'objects', 'decor'];
+const VALID_CATEGORIES: Category[] = [
+  'frames',
+  'portraits',
+  'backdrops',
+  'poses',
+  'terrain',
+  'terrain-variants',
+  'objects',
+  'decor',
+];
 
 function defaultModelFor(provider: Provider): string {
   return provider === 'fal-ai' ? DEFAULT_FAL_MODEL : DEFAULT_HF_MODEL;
@@ -484,12 +501,13 @@ function publishPose(job: ImageJob): void {
 }
 
 /**
- * Publishes a terrain job's raw image as public/sprites/map/<key>.png (job.key is already
- * "terrain_<kind>" — see buildTerrainPrompt). Unlike frame/pose/portrait art, terrain has no .jpg
- * fallback in its publish contract (the map renderer loads it directly, no chroma-key extension
- * probing) — so this only publishes when the raw bytes are verified to be a real PNG, warning and
- * skipping otherwise (the fal-ai provider always requests output_format: "png", so this should be
- * the common case; hf-inference has no such parameter and may return something else).
+ * Publishes a terrain (or terrain-variant) job's raw image as public/sprites/map/<key>.png (job.key
+ * is already "terrain_<kind>" or "terrain_<kind>_<n>" — see buildTerrainPrompt /
+ * buildTerrainVariantPrompt). Unlike frame/pose/portrait art, terrain has no .jpg fallback in its
+ * publish contract (the map renderer loads it directly, no chroma-key extension probing) — so this
+ * only publishes when the raw bytes are verified to be a real PNG, warning and skipping otherwise
+ * (the fal-ai provider always requests output_format: "png", so this should be the common case;
+ * hf-inference has no such parameter and may return something else).
  */
 function publishTerrain(job: ImageJob): void {
   const ext = findRawExtension(job.key);
@@ -543,10 +561,19 @@ function publishDecor(job: ImageJob): void {
 /**
  * Rebuilds public/sprites/map/manifest.json from whatever terrain_*.png / obj_*.png / deco_*.png
  * files actually exist in public/sprites/map — not from this run's plan.jobs — so that generating
- * "terrain", "objects", and "decor" in separate invocations (as the budget-constrained workflow
- * does) never clobbers another category's manifest entries.
+ * "terrain", "terrain-variants", "objects", and "decor" in separate invocations (as the
+ * budget-constrained workflow does) never clobbers another category's manifest entries.
+ *
+ * `terrain_<kind>_<n>.png` variant files (see buildTerrainVariantPrompt in plan.ts) are still
+ * `kind: 'terrain'` here — same base texture family, just an extra file the map renderer atlases
+ * alongside `terrain_<kind>.png` (src/render/map/tiles.ts) — but additionally carry a numeric
+ * `variant` field so a consumer can tell a base texture (`terrain_urban.png`, no `variant`) apart
+ * from one of its variants (`terrain_urban_2.png`, `variant: 2`) without re-parsing the key.
  */
-function buildMapManifestFromDisk(): { version: 1; images: { key: string; kind: 'terrain' | 'object' | 'decor'; path: string }[] } {
+function buildMapManifestFromDisk(): {
+  version: 1;
+  images: { key: string; kind: 'terrain' | 'object' | 'decor'; path: string; variant?: number }[];
+} {
   if (!existsSync(MAP_DIR)) return { version: 1, images: [] };
   const files = readdirSync(MAP_DIR).filter(
     (f) => f.endsWith('.png') && (f.startsWith('terrain_') || f.startsWith('obj_') || f.startsWith('deco_'))
@@ -557,7 +584,14 @@ function buildMapManifestFromDisk(): { version: 1; images: { key: string; kind: 
     .map((f) => {
       const key = f.slice(0, -'.png'.length);
       const kind: 'terrain' | 'object' | 'decor' = f.startsWith('terrain_') ? 'terrain' : f.startsWith('obj_') ? 'object' : 'decor';
-      return { key, kind, path: `sprites/map/${f}` };
+      // terrain_<kind>_<n> (n = trailing digits) is a variant of terrain_<kind>; terrain_<kind>
+      // itself (no numeric suffix) has no `variant` field.
+      let variant: number | undefined;
+      if (kind === 'terrain') {
+        const m = /^terrain_[a-z]+_(\d+)$/.exec(key);
+        if (m) variant = Number(m[1]);
+      }
+      return variant !== undefined ? { key, kind, path: `sprites/map/${f}`, variant } : { key, kind, path: `sprites/map/${f}` };
     });
   return { version: 1, images };
 }
@@ -665,7 +699,7 @@ async function main(): Promise<void> {
         }
       } else if (job.kind === 'pose') {
         publishPose(job);
-      } else if (job.kind === 'terrain') {
+      } else if (job.kind === 'terrain' || job.kind === 'terrainVariant') {
         publishTerrain(job);
       } else if (job.kind === 'object') {
         publishObject(job);
@@ -679,7 +713,10 @@ async function main(): Promise<void> {
   const manifest = buildArtManifest(plan, { rawDir: RAW_DIR, fileExtension: (job) => findRawExtension(job.key) });
   writeFileAtomic(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
 
-  if (args.publish && plan.jobs.some((j) => j.kind === 'terrain' || j.kind === 'object' || j.kind === 'decor')) {
+  if (
+    args.publish &&
+    plan.jobs.some((j) => j.kind === 'terrain' || j.kind === 'terrainVariant' || j.kind === 'object' || j.kind === 'decor')
+  ) {
     const mapManifest = buildMapManifestFromDisk();
     writeFileAtomic(MAP_MANIFEST_PATH, JSON.stringify(mapManifest, null, 2));
     info(TAG, `map manifest written to ${MAP_MANIFEST_PATH} (${mapManifest.images.length} file(s))`);

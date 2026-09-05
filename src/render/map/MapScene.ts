@@ -18,7 +18,7 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Texture, type FederatedPointerEvent } from 'pixi.js';
 import type { GameData, Id, MapDef, ObjectiveDef, Squad, Vec2, WorldState } from '@sim/types';
 import { Camera } from './camera';
-import { bakeTiles } from './tiles';
+import { bakeTiles, destroyTerrainAtlases } from './tiles';
 import { buildDecorLayer } from './decor';
 import { DeployZoneView } from './deployZone';
 import { fromIso, mapIsoBounds, toIso } from './iso';
@@ -375,6 +375,11 @@ export class MapScene {
     // so it needs an explicit destroy — app.destroy(texture:false) below
     // deliberately skips it to protect that shared cache.
     this.disposeTileSprite();
+    // The tile layer's per-(map, kind) atlas textures (src/render/map/tiles.ts) are a separate
+    // cache from the baked tile RenderTexture above — normally freed when a NEW map is baked
+    // (purgeAtlasesForOtherMaps), but that never happens if the scene is torn down instead of
+    // switching maps, so free them explicitly here too.
+    destroyTerrainAtlases(this.app);
     this.disposeDecor();
     this.disposeWeather();
     this.objectiveViews.clear();
