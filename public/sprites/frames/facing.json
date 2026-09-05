@@ -1,0 +1,15 @@
+{
+  "_comment": "Which way each generated idle sprite faces as drawn. Hand-checked. The loader mirrors so relay faces right and compact faces left; 'front' is never mirrored.",
+  "frame_skirmish": "right",
+  "frame_interceptor": "left",
+  "frame_line": "left",
+  "frame_trooper": "front",
+  "frame_bastion": "left",
+  "frame_recon": "left",
+  "frame_aeroline": "front",
+  "frame_siege": "front",
+  "frame_assault": "front",
+  "frame_compact_line": "right",
+  "frame_compact_skirmisher": "right",
+  "frame_compact_ace": "front"
+}

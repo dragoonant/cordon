@@ -14,7 +14,7 @@
  * No top-level DOM/fetch/Pixi-application side effects: every exported
  * function only touches the network or the renderer when called.
  */
-import { Application, Assets, Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { Faction, GameData, Id, Mech } from '@sim/types';
 import { FACTION_ACCENT } from './palette';
 import { probeFirstExisting } from './assetProbe';
@@ -48,10 +48,53 @@ function wrapFacing(art: Container, faction: Faction): Container {
   return root;
 }
 
+type Facing = 'left' | 'right' | 'front';
+let facingTable: Promise<Record<string, Facing>> | null = null;
+/** Hand-checked facing of each generated sprite (public/sprites/frames/facing.json). */
+function loadFacingTable(): Promise<Record<string, Facing>> {
+  facingTable ??= (async () => {
+    try {
+      if (typeof fetch !== 'function') return {};
+      const res = await fetch('/sprites/frames/facing.json');
+      if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json')) return {};
+      const json = (await res.json()) as Record<string, unknown>;
+      const out: Record<string, Facing> = {};
+      for (const [k, v] of Object.entries(json)) if (v === 'left' || v === 'right' || v === 'front') out[k] = v;
+      return out;
+    } catch {
+      return {};
+    }
+  })();
+  return facingTable;
+}
+
+/**
+ * Generated art doesn't come out facing a consistent way, so mirror per-frame
+ * to the faction's stage side: relay looks right, compact looks left. Frontal
+ * art is left alone (mirroring it just swaps asymmetric details).
+ */
+async function wrapFacingPng(art: Container, faction: Faction, spriteKey: string): Promise<Container> {
+  const table = await loadFacingTable();
+  const drawn: Facing = table[spriteKey] ?? 'right';
+  const wanted: Facing = faction === 'compact' ? 'left' : 'right';
+  const root = new Container();
+  root.addChild(art);
+  if (drawn !== 'front' && drawn !== wanted) art.scale.x = -1;
+  return root;
+}
+
+/**
+ * Bake a display tree to a texture. Goes through a canvas rather than
+ * generateTexture: a RenderTexture is a GPU resource owned by ONE renderer,
+ * but this cache is shared between the map app and the battle-stage app —
+ * so a texture baked by one and drawn by the other (or after that renderer
+ * was destroyed) renders black. A canvas-backed texture uploads per renderer.
+ */
 function bake(app: Application, root: Container, anchor: { x: number; y: number }): Texture {
-  const tex = app.renderer.generateTexture({ target: root, antialias: true, defaultAnchor: anchor });
+  const canvas = app.renderer.extract.canvas({ target: root, antialias: true, resolution: 1 }) as HTMLCanvasElement;
   root.destroy({ children: true });
-  return tex;
+  const source = Texture.from(canvas).source;
+  return new Texture({ source, defaultAnchor: anchor });
 }
 
 /** Loads a hand-authored PNG/JPG at `baseUrl` (no extension) if either exists — used for portraits, which need no chroma-keying. */
@@ -81,7 +124,7 @@ export async function getFrameTexture(
     if (png) {
       const sprite = new Sprite(png);
       sprite.anchor.set(0.5, 1);
-      const root = wrapFacing(sprite, faction);
+      const root = await wrapFacingPng(sprite, faction, frame.spriteKey);
       return bake(app, root, { x: 0.5, y: 1 });
     }
     const built = buildFrameContainer(frame.silhouette, faction, H, scale === 'battle');
@@ -108,6 +151,8 @@ export async function getMechTexture(
 
     const png = await loadChromaKeyedFrameTexture(frame.spriteKey, scale, H);
     if (png) {
+      // Generated art already includes the mech's own hardware; a procedural
+      // weapon bar drawn over it reads as a glitch, so no overlay here.
       const sprite = new Sprite(png);
       sprite.anchor.set(0.5, 1);
       const bounds = boundsFor(frame.silhouette, H);
@@ -116,10 +161,12 @@ export async function getMechTexture(
       const s = sprite.texture.height > 0 ? targetH / sprite.texture.height : 1;
       sprite.scale.set(s, s);
       art.addChild(sprite);
-    } else {
-      const built = buildFrameContainer(frame.silhouette, faction, H, detailed);
-      art.addChild(built.container);
+      const root = await wrapFacingPng(art, faction, frame.spriteKey);
+      return bake(app, root, { x: 0.5, y: 1 });
     }
+
+    const built = buildFrameContainer(frame.silhouette, faction, H, detailed);
+    art.addChild(built.container);
 
     // Weapon overlays only carry detail at battle scale — map scale stays the
     // simplified "head + torso + accent" silhouette per GDD §3.
