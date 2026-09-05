@@ -252,17 +252,37 @@ export async function getSquadIconTexture(
   return getCachedTexture(key, async () => {
     const frame = data.frames[leaderFrameId];
     if (!frame) throw new Error(`getSquadIconTexture: unknown frame id "${leaderFrameId}"`);
-    const H = 26; // leave room below the ~32px map icon for the size pips
-    const built = buildFrameContainer(frame.silhouette, faction, H, false);
-    const art = new Container();
-    art.addChild(built.container);
-    const root = wrapFacing(art, faction);
+    const H = 46; // the leader's combat-pose sprite, keyed; pips sit under its feet
+
+    // Prefer the same generated combat-pose art the battle stage uses, so a
+    // squad on the map looks like the mech you'll see fighting.
+    const poseKey = `${frame.spriteKey}_attack`;
+    const png =
+      (await loadChromaKeyedTexture(`/sprites/frames/${poseKey}`, H)) ??
+      (await loadChromaKeyedTexture(`/sprites/frames/${frame.spriteKey}_battle`, H));
+    let root: Container;
+    let bottomY: number;
+    if (png) {
+      const sprite = new Sprite(png);
+      sprite.anchor.set(0.5, 1);
+      sprite.y = 0;
+      const art = new Container();
+      art.addChild(sprite);
+      root = await wrapFacingPng(art, faction, poseKey);
+      bottomY = 0;
+    } else {
+      const built = buildFrameContainer(frame.silhouette, faction, 26, false);
+      const art = new Container();
+      art.addChild(built.container);
+      root = wrapFacing(art, faction);
+      bottomY = built.bottomY;
+    }
 
     // Pips row, centered under the icon — one per living squad slot.
     const pipR = 2;
     const gap = pipR * 2.4;
     const totalW = clamped > 0 ? (clamped - 1) * gap : 0;
-    const pipsY = built.bottomY + 6;
+    const pipsY = bottomY + 6;
     for (let i = 0; i < clamped; i++) {
       const dot = new Graphics();
       dot.circle(-totalW / 2 + i * gap, pipsY, pipR).fill(FACTION_ACCENT[faction]);
