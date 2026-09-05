@@ -23,7 +23,14 @@ const DESIGN_H = 720;
 const GROUND_Y = 500;
 const ROW_Y = [GROUND_Y - 130, GROUND_Y, GROUND_Y + 130];
 
-const BODY_FONT = 'Arial, "Segoe UI", sans-serif';
+// Loaded via index.html (Google Fonts). Russo One = the sharp anime-mecha
+// display face; Exo 2 for readable lines. Fallbacks keep it legible offline.
+const BODY_FONT = '"Exo 2", "Segoe UI", Arial, sans-serif';
+const DISPLAY_FONT = '"Russo One", "Exo 2", Impact, sans-serif';
+
+/** Shared across all BattleStage instances — see initApp(). */
+let sharedApp: Application | null = null;
+let sharedInit: Promise<void> | null = null;
 
 const LABEL_STYLE: TextStyleOptions = {
   fontFamily: BODY_FONT,
@@ -158,33 +165,34 @@ export class BattleStage {
   constructor(container: HTMLElement, data: GameData) {
     this.container = container;
     this.data = data;
-    this.app = new Application();
+    this.app = sharedApp ??= new Application();
     this.ready = this.initApp();
   }
 
   private async initApp(): Promise<void> {
-    const w = Math.max(1, this.container.clientWidth || DESIGN_W);
-    const h = Math.max(1, this.container.clientHeight || DESIGN_H);
-    await this.app.init({
-      width: w,
-      height: h,
+    // One WebGL context for the life of the page. Creating/destroying a Pixi
+    // Application per battle leaked contexts and eventually knocked out the
+    // map's renderer (Chrome drops the oldest context) — the "black map".
+    sharedInit ??= this.app.init({
+      width: Math.max(1, this.container.clientWidth || DESIGN_W),
+      height: Math.max(1, this.container.clientHeight || DESIGN_H),
       backgroundColor: 0x05060a,
       antialias: true,
       autoDensity: true,
       resolution: typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio || 1) : 1,
     });
+    await sharedInit;
 
     // destroy() may have run while init was pending (React StrictMode).
-    if (this.destroyed) {
-      this.app.destroy(true, { children: true, texture: false, textureSource: false });
-      return;
-    }
+    if (this.destroyed) return;
     const canvas = this.app.canvas as HTMLCanvasElement;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
     this.container.innerHTML = '';
     this.container.appendChild(canvas);
+    this.app.stage.removeChildren();
+    this.app.ticker.start();
 
     this.root = new Container();
     this.world = new Container();
@@ -289,13 +297,17 @@ export class BattleStage {
     this.resizeObserver = null;
     this.clock?.cancelAll();
     this.mechViews.clear();
-    // If init is still pending, initApp() tears the app down when it resolves.
     if (!this.initDone) return;
-    // Stop rendering before teardown so no frame touches destroyed children.
+    // The Application is shared and lives on; we only tear down this battle's
+    // display tree and park the canvas until the next mount.
     this.app.ticker.stop();
     try {
-      // texture: false — mech/portrait textures are cached and shared by src/render/sprites; only this app's own display tree is torn down.
-      this.app.destroy(true, { children: true, texture: false, textureSource: false });
+      if (this.root) {
+        this.app.stage.removeChild(this.root);
+        this.root.destroy({ children: true });
+      }
+      const canvas = this.app.canvas as HTMLCanvasElement;
+      if (canvas.parentElement === this.container) this.container.removeChild(canvas);
     } catch (e) {
       console.warn('BattleStage teardown', e);
     }
@@ -582,7 +594,7 @@ export class BattleStage {
       portrait.anchor.set(0.5);
       portrait.x = DESIGN_W * 0.3;
       portrait.y = DESIGN_H * 0.5;
-      portrait.scale.set(2.4);
+      portrait.scale.set(tex.height > 0 ? 300 / tex.height : 1); // ~300px tall hero frame
       portrait.alpha = 0;
       overlay.addChild(portrait);
     } catch {
@@ -1113,27 +1125,34 @@ export class BattleStage {
     bg.poly([skew, 0, skew + 5, 0, w - skew + 5, h, w - skew, h]).fill({ color: accent, alpha: 0.9 });
     panel.addChildAt(bg, 0);
 
+    // Portrait fits the panel height regardless of source size (procedural
+    // cards are 96px, generated PNGs are 512px — scaling by a constant made
+    // the PNGs fill the screen with one giant eye).
+    const portraitH = h - 24;
     let portrait: Sprite | null = null;
     try {
       const tex = await getPortraitTexture(this.app, this.data, pilotDefId, opts.expression);
       portrait = new Sprite(tex);
-      portrait.x = 16;
-      portrait.y = h / 2 - (opts.big ? 90 : 55);
-      portrait.scale.set(opts.big ? 1.9 : 1.15);
+      portrait.anchor.set(0, 0);
+      const s = tex.height > 0 ? portraitH / tex.height : 1;
+      portrait.scale.set(s);
+      portrait.x = skew + 8;
+      portrait.y = 12;
       panel.addChild(portrait);
     } catch {
       portrait = null;
     }
+    const textX = (portrait ? portrait.x + portrait.width : skew) + 14;
 
     const nameText = new Text({
       text: (pilotDef?.callsign ?? opts.pilotId).toUpperCase(),
-      style: { ...LABEL_STYLE, fill: accent, fontSize: opts.big ? 20 : 15 },
+      style: { ...LABEL_STYLE, fontFamily: DISPLAY_FONT, fill: accent, fontSize: opts.big ? 24 : 17, letterSpacing: 2 },
     });
-    nameText.x = (portrait ? portrait.x + portrait.width * (opts.big ? 1.9 : 1.15) + 12 : 20) - (opts.big ? 90 : 40);
-    nameText.y = 12;
+    nameText.x = textX;
+    nameText.y = 14;
     const lineText = new Text({
       text: opts.line,
-      style: { ...SPEECH_STYLE, fill: 0xf2efe6, fontSize: opts.big ? 18 : 14, wordWrapWidth: w - 130 },
+      style: { ...SPEECH_STYLE, fill: 0xf2efe6, fontSize: opts.big ? 19 : 15, fontStyle: 'italic', wordWrapWidth: Math.max(80, w - textX - skew - 12) },
     });
     lineText.x = nameText.x;
     lineText.y = nameText.y + nameText.height + 8;

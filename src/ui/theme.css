@@ -16,8 +16,11 @@
   --danger: #e5484d;
   --ok: #5fbf6a;
   --border: rgba(255, 255, 255, 0.08);
-  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  /* SRW-flavoured type: Russo One for titles/callouts, Exo 2 for UI copy,
+     Share Tech Mono for HUD readouts. Loaded from Google Fonts in index.html. */
+  --font-display: 'Russo One', 'Exo 2', Impact, sans-serif;
+  --font-body: 'Exo 2', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Share Tech Mono', 'JetBrains Mono', Consolas, monospace;
 }
 
 * {
@@ -191,3 +194,10 @@ body {
 .cordon-pulse {
   animation: cordon-pulse 1.6s ease-in-out infinite;
 }
+
+/* ---- Type pass: SRW-flavoured display face for anything that shouts ---- */
+h1, h2, h3, .cordon-display, .panel-title, .btn, button {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+}
+.mono, .ticker, .kbd { font-family: var(--font-mono); }
