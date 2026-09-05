@@ -18,7 +18,7 @@ import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.
 import type { Faction, GameData, Id, Mech } from '@sim/types';
 import { FACTION_ACCENT } from './palette';
 import { probeFirstExisting } from './assetProbe';
-import { loadChromaKeyedFrameTexture } from './chromaKey';
+import { loadChromaKeyedFrameTexture, loadChromaKeyedTexture } from './chromaKey';
 import { getCachedTexture, clearSpriteCache as clearCache } from './textureCache';
 import { attachPointsFor, boundsFor, buildFrameContainer } from './drawFrame';
 import { buildWeaponOverlay } from './drawWeapon';
@@ -177,6 +177,48 @@ export async function getMechTexture(
     }
 
     const root = wrapFacing(art, faction);
+    return bake(app, root, { x: 0.5, y: 1 });
+  });
+}
+
+export type MechPose = 'attack';
+
+/**
+ * Combat-pose variant of `getMechTexture` — battle scale only, no weapon
+ * overlay (the pose art already shows the mech aiming/lunging with its
+ * weapon, same as the idle frame art already includes its own hardware).
+ * Falls back to the idle `getMechTexture` battle texture when
+ * `<spriteKey>_<pose>.png` hasn't been published yet (tools/art --only poses
+ * --publish), so BattleStage can call this unconditionally.
+ */
+export async function getMechPoseTexture(
+  app: Application,
+  data: GameData,
+  mech: Mech,
+  faction: Faction,
+  pose: MechPose,
+): Promise<Texture> {
+  const frame = data.frames[mech.frameId];
+  if (!frame) throw new Error(`getMechPoseTexture: unknown frame id "${mech.frameId}" on mech "${mech.id}"`);
+  const key = `mechpose:${mech.frameId}:${faction}:${pose}`;
+  return getCachedTexture(key, async () => {
+    const H = heightFor('battle');
+    const poseKey = `${frame.spriteKey}_${pose}`;
+    const png = await loadChromaKeyedTexture(`/sprites/frames/${poseKey}`, H);
+    if (!png) return getMechTexture(app, data, mech, faction, 'battle');
+
+    const sprite = new Sprite(png);
+    sprite.anchor.set(0.5, 1);
+    const bounds = boundsFor(frame.silhouette, H);
+    sprite.y = bounds.bottomY;
+    const targetH = bounds.bottomY - bounds.topY;
+    const s = sprite.texture.height > 0 ? targetH / sprite.texture.height : 1;
+    sprite.scale.set(s, s);
+    const art = new Container();
+    art.addChild(sprite);
+    // Facing is looked up under the pose's own key (poses are drawn fresh —
+    // aiming/lunging direction doesn't necessarily match the idle frame art).
+    const root = await wrapFacingPng(art, faction, poseKey);
     return bake(app, root, { x: 0.5, y: 1 });
   });
 }

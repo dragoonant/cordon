@@ -48,7 +48,7 @@ const FACTION_PALETTES: Record<Faction, string> = {
   neutral: 'muted grey and rust with salvage-tech violet accents',
 };
 
-export type ImageKind = 'frame' | 'portrait' | 'backdrop';
+export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose';
 
 export interface ImageJob {
   /** Unique per job: frame id, `${pilotId}_${expression}`, or a backdrop key. */
@@ -70,6 +70,46 @@ export function buildFramePrompt(frame: FrameDef): ImageJob {
     `clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, ` +
     `centered, no text`;
   return { key: frame.id, kind: 'frame', prompt, negativePrompt: NEGATIVE_PROMPT_SPRITE, width: 512, height: 512 };
+}
+
+/**
+ * Melee silhouettes lunge with a lance/blade instead of aiming a ranged
+ * weapon — their frame prompts already read as sword/lance-carrying scouts
+ * or aces, so a "firing stance" pose would fight the silhouette description.
+ */
+const MELEE_POSE_SILHOUETTES: ReadonlySet<FrameDef['silhouette']> = new Set(['skirmish', 'compact_ace']);
+
+function poseActionText(silhouette: FrameDef['silhouette']): string {
+  return MELEE_POSE_SILHOUETTES.has(silhouette)
+    ? 'dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body'
+    : 'dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body';
+}
+
+/**
+ * Combat-pose art for one frame, keyed `<spriteKey>_attack` (GDD §3 "every
+ * weapon part carries its own attack animation" — this is the frame body's
+ * half of that: a body clearly aiming/lunging at an off-screen enemy, so the
+ * battle stage doesn't have to fake "fighting" out of a static idle pose).
+ * Same style/palette as buildFramePrompt, swapping the neutral "full body,
+ * facing right" clause for an aiming/lunging action clause.
+ */
+export function buildPosePrompt(frame: FrameDef): ImageJob {
+  const silhouette = SILHOUETTE_DESCRIPTIONS[frame.silhouette];
+  const palette = FACTION_PALETTES[frame.faction];
+  const action = poseActionText(frame.silhouette);
+  const prompt =
+    `SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, ` +
+    `stubby limbs, huge shoulder pauldrons, ${silhouette}, ${palette}, ${action}, ` +
+    `clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, ` +
+    `centered, no text`;
+  return {
+    key: `${frame.spriteKey}_attack`,
+    kind: 'pose',
+    prompt,
+    negativePrompt: NEGATIVE_PROMPT_SPRITE,
+    width: 512,
+    height: 512,
+  };
 }
 
 /** faction 'relay' and archetype not 'captain', plus any pilot with archetype 'rival'. Same rule as tools/voice. */
@@ -105,9 +145,9 @@ export interface ArtData {
 }
 
 export interface ArtPlanOptions {
-  /** Restrict to these categories; default all three. */
-  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops')[];
-  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops order). */
+  /** Restrict to these categories; default frames/portraits/backdrops (poses is opt-in only — see buildArtPlan). */
+  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops' | 'poses')[];
+  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses order). */
   limit?: number;
 }
 
@@ -115,6 +155,7 @@ export interface ArtPlanCounts {
   frames: number;
   portraits: number;
   backdrops: number;
+  poses: number;
   total: number;
 }
 
@@ -127,8 +168,15 @@ const CATEGORY_TO_KIND: Record<string, ImageKind> = {
   frames: 'frame',
   portraits: 'portrait',
   backdrops: 'backdrop',
+  poses: 'pose',
 };
 
+/**
+ * Poses are deliberately excluded from the "no --only given" default: they're
+ * an add-on combat-pose pass over the same frame set, not part of the base
+ * three categories, so a plain `buildArtPlan(data)` stays exactly what it was
+ * before poses existed. Ask for them explicitly with `--only poses`.
+ */
 export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPlan {
   const wantedKinds = new Set<ImageKind>(
     options.only && options.only.length > 0
@@ -155,6 +203,11 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
       jobs.push(buildBackdropPrompt(entry));
     }
   }
+  if (wantedKinds.has('pose')) {
+    for (const frame of Object.values(data.frames)) {
+      jobs.push(buildPosePrompt(frame));
+    }
+  }
 
   const limited = typeof options.limit === 'number' ? jobs.slice(0, Math.max(0, options.limit)) : jobs;
 
@@ -162,6 +215,7 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
     frames: limited.filter((j) => j.kind === 'frame').length,
     portraits: limited.filter((j) => j.kind === 'portrait').length,
     backdrops: limited.filter((j) => j.kind === 'backdrop').length,
+    poses: limited.filter((j) => j.kind === 'pose').length,
     total: limited.length,
   };
 

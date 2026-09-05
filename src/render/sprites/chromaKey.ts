@@ -170,8 +170,19 @@ export async function loadChromaKeyedFrameTexture(
   scale: 'map' | 'battle',
   targetHeight: number
 ): Promise<Texture | null> {
+  return loadChromaKeyedTexture(`/sprites/frames/${spriteKey}_${scale}`, targetHeight);
+}
+
+/**
+ * Same chroma-key/trim/scale pipeline as `loadChromaKeyedFrameTexture`, but
+ * takes the full asset base path directly instead of assembling it from a
+ * spriteKey + scale — used for one-off published assets that don't follow
+ * the `<spriteKey>_<map|battle>` naming convention, e.g. combat-pose art at
+ * `/sprites/frames/<spriteKey>_attack.png` (see getMechPoseTexture).
+ */
+export async function loadChromaKeyedTexture(baseUrl: string, targetHeight: number): Promise<Texture | null> {
   if (typeof document === 'undefined' || typeof Image === 'undefined') return null;
-  const url = await probeFirstExisting(`/sprites/frames/${spriteKey}_${scale}`, FRAME_ART_EXTENSIONS);
+  const url = await probeFirstExisting(baseUrl, FRAME_ART_EXTENSIONS);
   if (!url) return null;
   try {
     const img = await loadImage(url);

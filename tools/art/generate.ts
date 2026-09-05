@@ -9,7 +9,12 @@
  *
  * Usage:
  *   npx tsx tools/art/generate.ts --dry-run
- *   npx tsx tools/art/generate.ts [--force] [--only frames|portraits|backdrops] [--limit N] [--publish] [--model <id>] [--provider fal-ai|hf-inference]
+ *   npx tsx tools/art/generate.ts [--force] [--only frames|portraits|backdrops|poses] [--limit N] [--publish] [--model <id>] [--provider fal-ai|hf-inference]
+ *
+ *   "poses" is an opt-in fourth category (excluded from the plain no-`--only` run): one combat-pose
+ *   image per frame, key "<spriteKey>_attack", published (with --publish) straight to
+ *   public/sprites/frames/<spriteKey>_attack.<png|jpg> — see buildPosePrompt in plan.ts and
+ *   getMechPoseTexture in src/render/sprites/index.ts.
  *
  * PROVIDERS:
  *   fal-ai (default)  POST https://router.huggingface.co/fal-ai/fal-ai/<model> (model defaults to
@@ -82,7 +87,7 @@ const DEFAULT_HF_MODEL = 'black-forest-labs/FLUX.1-schnell';
 // CLI args
 // ---------------------------------------------------------------------------
 
-type Category = 'frames' | 'portraits' | 'backdrops';
+type Category = 'frames' | 'portraits' | 'backdrops' | 'poses';
 type Provider = 'fal-ai' | 'hf-inference';
 
 interface CliArgs {
@@ -96,7 +101,7 @@ interface CliArgs {
   provider: Provider;
 }
 
-const VALID_CATEGORIES: Category[] = ['frames', 'portraits', 'backdrops'];
+const VALID_CATEGORIES: Category[] = ['frames', 'portraits', 'backdrops', 'poses'];
 
 function defaultModelFor(provider: Provider): string {
   return provider === 'fal-ai' ? DEFAULT_FAL_MODEL : DEFAULT_HF_MODEL;
@@ -437,6 +442,25 @@ function publishFrame(job: ImageJob, spriteKey: string): void {
   writeFileAtomic(path.join(FRAMES_DIR, `${spriteKey}_map.${kind}`), raw);
 }
 
+/**
+ * Publishes a pose job's raw image as public/sprites/frames/<spriteKey>_attack.<png|jpg> (job.key is
+ * already "<spriteKey>_attack" — see buildPosePrompt). Single file, unlike publishFrame's _battle/_map
+ * pair: the runtime loader (getMechPoseTexture) probes this exact basename directly. Skips if not real
+ * PNG/JPEG.
+ */
+function publishPose(job: ImageJob): void {
+  const ext = findRawExtension(job.key);
+  if (!ext) return;
+  const raw = readFileSync(path.join(RAW_DIR, `${job.key}.${ext}`));
+  const kind = classifyImage(raw);
+  if (!kind) {
+    warn(TAG, `${job.key}: raw output is not a real PNG or JPEG (ext .${ext}); skipping publish`);
+    return;
+  }
+  ensureDir(FRAMES_DIR);
+  writeFileAtomic(path.join(FRAMES_DIR, `${job.key}.${kind}`), raw);
+}
+
 /** Publishes a portrait job's raw image as public/portraits/<portraitKey>_<expression>.<png|jpg>. Skips if not real PNG/JPEG. */
 function publishPortrait(job: ImageJob, portraitKey: string, expression: string): void {
   const ext = findRawExtension(job.key);
@@ -538,6 +562,8 @@ async function main(): Promise<void> {
           const pilot = data.pilots[pilotId];
           if (pilot) publishPortrait(job, pilot.portraitKey, expression);
         }
+      } else if (job.kind === 'pose') {
+        publishPose(job);
       }
       // Backdrops have no publish-copy convention specified — raw output only.
     }

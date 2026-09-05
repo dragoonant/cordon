@@ -10,6 +10,7 @@ import {
   buildBackdropPrompt,
   buildFramePrompt,
   buildPortraitPrompt,
+  buildPosePrompt,
   eligiblePortraitPilots,
 } from './plan';
 
@@ -192,20 +193,30 @@ describe('eligiblePortraitPilots', () => {
 });
 
 describe('buildArtPlan', () => {
-  it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 6 backdrops = 54 total', () => {
+  it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 6 backdrops = 54 total (poses excluded by default)', () => {
     const plan = buildArtPlan(data);
-    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, total: 54 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, poses: 0, total: 54 });
     expect(plan.jobs).toHaveLength(54);
   });
 
   it('--only frames restricts to just frame jobs', () => {
     const plan = buildArtPlan(data, { only: ['frames'] });
-    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, total: 12 });
   });
 
   it('--only portraits restricts to just portrait jobs', () => {
     const plan = buildArtPlan(data, { only: ['portraits'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, total: 36 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, total: 36 });
+  });
+
+  it('--only poses restricts to just the 12 combat-pose jobs, one per frame', () => {
+    const plan = buildArtPlan(data, { only: ['poses'] });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, total: 12 });
+    expect(plan.jobs.map((j) => j.key).sort()).toEqual(
+      Object.keys(frames)
+        .map((id) => `${frames[id].spriteKey}_attack`)
+        .sort()
+    );
   });
 
   it('--limit caps the total job count', () => {
@@ -220,6 +231,27 @@ describe('buildArtPlan', () => {
     const plan = buildArtPlan(data, { limit: 0 });
     expect(plan.jobs).toHaveLength(0);
     expect(plan.counts.total).toBe(0);
+  });
+});
+
+describe('buildPosePrompt', () => {
+  it('keys the job "<spriteKey>_attack" and describes a ranged aiming pose for non-melee silhouettes', () => {
+    const job = buildPosePrompt(frames.frame_line_a);
+    expect(job.key).toBe('frame_line_a_attack');
+    expect(job.kind).toBe('pose');
+    expect(job.prompt).toContain('aiming its weapon straight to the RIGHT edge of the image');
+    expect(job.prompt).toContain('gunmetal and bone white with amber-orange accents');
+    expect(job.width).toBe(512);
+    expect(job.height).toBe(512);
+  });
+
+  it('describes a melee lunge for skirmish and compact_ace silhouettes', () => {
+    expect(buildPosePrompt(frames.frame_skirmish_a).prompt).toContain('lunging to the right thrusting a lance/blade');
+    expect(buildPosePrompt(frames.frame_compact_ace_a).prompt).toContain('lunging to the right thrusting a lance/blade');
+  });
+
+  it('is a pure function of the frame (calling twice gives identical output)', () => {
+    expect(buildPosePrompt(frames.frame_bastion_a)).toEqual(buildPosePrompt(frames.frame_bastion_a));
   });
 });
 

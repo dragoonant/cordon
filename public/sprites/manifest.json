@@ -2,256 +2,88 @@
   "version": 1,
   "images": [
     {
-      "key": "pilot_veteran_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, veteran pilot, Once wore Compact colors and believed the cordon line was worth holding. She's spent every year since proving that was a lie., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_veteran_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.602Z"
+      "key": "frame_skirmish_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, lightweight scout mech silhouette, slim limbs, angular thruster fins, gunmetal and bone white with amber-orange accents, dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_skirmish_attack.png",
+      "generatedAt": "2026-09-05T14:00:11.994Z"
     },
     {
-      "key": "pilot_veteran_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, veteran pilot, Once wore Compact colors and believed the cordon line was worth holding. She's spent every year since proving that was a lie., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_veteran_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.605Z"
+      "key": "frame_recon_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, agile light mech silhouette, sensor-array head, long whip antenna, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_recon_attack.png",
+      "generatedAt": "2026-09-05T14:00:11.997Z"
     },
     {
-      "key": "pilot_veteran_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, veteran pilot, Once wore Compact colors and believed the cordon line was worth holding. She's spent every year since proving that was a lie., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_veteran_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.606Z"
+      "key": "frame_interceptor_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, lightweight scout mech silhouette, slim limbs, angular thruster fins, gunmetal and bone white with amber-orange accents, dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_interceptor_attack.png",
+      "generatedAt": "2026-09-05T14:00:11.997Z"
     },
     {
-      "key": "pilot_veteran_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, veteran pilot, Once wore Compact colors and believed the cordon line was worth holding. She's spent every year since proving that was a lie., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_veteran_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.607Z"
+      "key": "frame_line_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, balanced medium mech silhouette, standard-issue proportions, twin shoulder vents, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_line_attack.png",
+      "generatedAt": "2026-09-05T14:00:11.998Z"
     },
     {
-      "key": "pilot_hotshot_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, hotshot pilot, Youngest pilot Relay's got, and the first to volunteer for anything with a fuse on it. Everyone's waiting for the day his nerve outruns his skill., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_hotshot_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.607Z"
+      "key": "frame_trooper_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, balanced medium mech silhouette, standard-issue proportions, twin shoulder vents, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_trooper_attack.png",
+      "generatedAt": "2026-09-05T14:00:11.999Z"
     },
     {
-      "key": "pilot_hotshot_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, hotshot pilot, Youngest pilot Relay's got, and the first to volunteer for anything with a fuse on it. Everyone's waiting for the day his nerve outruns his skill., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_hotshot_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.608Z"
+      "key": "frame_aeroline_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, balanced medium mech silhouette, standard-issue proportions, twin shoulder vents, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_aeroline_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.000Z"
     },
     {
-      "key": "pilot_hotshot_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, hotshot pilot, Youngest pilot Relay's got, and the first to volunteer for anything with a fuse on it. Everyone's waiting for the day his nerve outruns his skill., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_hotshot_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.608Z"
+      "key": "frame_bastion_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, heavy defensive mech silhouette, thick armor plating, wide planted stance, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_bastion_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.001Z"
     },
     {
-      "key": "pilot_hotshot_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, hotshot pilot, Youngest pilot Relay's got, and the first to volunteer for anything with a fuse on it. Everyone's waiting for the day his nerve outruns his skill., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_hotshot_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.609Z"
+      "key": "frame_siege_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, heavy siege mech silhouette, oversized shoulder cannon, reinforced stance, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_siege_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.001Z"
     },
     {
-      "key": "pilot_marksman_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, marksman pilot, Doesn't waste words or shots. She clocked the rival's targeting pattern after one engagement and hasn't missed a read since., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_marksman_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.610Z"
+      "key": "frame_assault_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, heavy defensive mech silhouette, thick armor plating, wide planted stance, gunmetal and bone white with amber-orange accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_assault_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.002Z"
     },
     {
-      "key": "pilot_marksman_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, marksman pilot, Doesn't waste words or shots. She clocked the rival's targeting pattern after one engagement and hasn't missed a read since., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_marksman_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.611Z"
+      "key": "frame_compact_line_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, enemy line mech silhouette, blocky uniform plating, angular joints, steel grey and white with steel-blue accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_compact_line_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.003Z"
     },
     {
-      "key": "pilot_marksman_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, marksman pilot, Doesn't waste words or shots. She clocked the rival's targeting pattern after one engagement and hasn't missed a read since., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_marksman_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.611Z"
+      "key": "frame_compact_ace_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, sleek enemy ace mech silhouette, sharp angular armor, distinctive head horn, steel grey and white with steel-blue accents, dynamic combat pose, lunging to the right thrusting a lance/blade, arm fully extended to the right, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_compact_ace_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.003Z"
     },
     {
-      "key": "pilot_marksman_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, marksman pilot, Doesn't waste words or shots. She clocked the rival's targeting pattern after one engagement and hasn't missed a read since., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_marksman_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.612Z"
-    },
-    {
-      "key": "pilot_rookie_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rookie pilot, Six weeks out of the training loop and already flying combat. The whole squad has quietly agreed to keep him alive whether he likes it or not., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rookie_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.613Z"
-    },
-    {
-      "key": "pilot_rookie_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rookie pilot, Six weeks out of the training loop and already flying combat. The whole squad has quietly agreed to keep him alive whether he likes it or not., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rookie_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.614Z"
-    },
-    {
-      "key": "pilot_rookie_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rookie pilot, Six weeks out of the training loop and already flying combat. The whole squad has quietly agreed to keep him alive whether he likes it or not., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rookie_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.615Z"
-    },
-    {
-      "key": "pilot_rookie_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rookie pilot, Six weeks out of the training loop and already flying combat. The whole squad has quietly agreed to keep him alive whether he likes it or not., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rookie_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.615Z"
-    },
-    {
-      "key": "pilot_engineer_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, engineer pilot, Talks to the frames more than the pilots most days, and swears half of them talk back. If your mech's still moving after a bad hit, thank her., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_engineer_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.616Z"
-    },
-    {
-      "key": "pilot_engineer_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, engineer pilot, Talks to the frames more than the pilots most days, and swears half of them talk back. If your mech's still moving after a bad hit, thank her., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_engineer_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.617Z"
-    },
-    {
-      "key": "pilot_engineer_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, engineer pilot, Talks to the frames more than the pilots most days, and swears half of them talk back. If your mech's still moving after a bad hit, thank her., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_engineer_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.617Z"
-    },
-    {
-      "key": "pilot_engineer_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, engineer pilot, Talks to the frames more than the pilots most days, and swears half of them talk back. If your mech's still moving after a bad hit, thank her., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_engineer_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.618Z"
-    },
-    {
-      "key": "pilot_scout_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, scout pilot, Flew recon before Relay existed and knows every debris lane and dead zone in the Cordon by feel. She sees the fight three minutes before it starts., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_scout_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.619Z"
-    },
-    {
-      "key": "pilot_scout_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, scout pilot, Flew recon before Relay existed and knows every debris lane and dead zone in the Cordon by feel. She sees the fight three minutes before it starts., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_scout_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.619Z"
-    },
-    {
-      "key": "pilot_scout_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, scout pilot, Flew recon before Relay existed and knows every debris lane and dead zone in the Cordon by feel. She sees the fight three minutes before it starts., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_scout_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.620Z"
-    },
-    {
-      "key": "pilot_scout_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, scout pilot, Flew recon before Relay existed and knows every debris lane and dead zone in the Cordon by feel. She sees the fight three minutes before it starts., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_scout_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.620Z"
-    },
-    {
-      "key": "pilot_salvager_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, salvager pilot, Was a mining-colony tech before the Compact cordon took his home off the map. He flies whatever Relay can spare and fixes what nobody else wants., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_salvager_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.621Z"
-    },
-    {
-      "key": "pilot_salvager_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, salvager pilot, Was a mining-colony tech before the Compact cordon took his home off the map. He flies whatever Relay can spare and fixes what nobody else wants., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_salvager_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.622Z"
-    },
-    {
-      "key": "pilot_salvager_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, salvager pilot, Was a mining-colony tech before the Compact cordon took his home off the map. He flies whatever Relay can spare and fixes what nobody else wants., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_salvager_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.623Z"
-    },
-    {
-      "key": "pilot_salvager_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, salvager pilot, Was a mining-colony tech before the Compact cordon took his home off the map. He flies whatever Relay can spare and fixes what nobody else wants., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_salvager_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.623Z"
-    },
-    {
-      "key": "pilot_wildcard_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, wildcard pilot, Shows up in Relay's records only after the rival's first appearance, and won't say why. Flies like someone who has already died once., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_wildcard_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.624Z"
-    },
-    {
-      "key": "pilot_wildcard_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, wildcard pilot, Shows up in Relay's records only after the rival's first appearance, and won't say why. Flies like someone who has already died once., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_wildcard_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.624Z"
-    },
-    {
-      "key": "pilot_wildcard_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, wildcard pilot, Shows up in Relay's records only after the rival's first appearance, and won't say why. Flies like someone who has already died once., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_wildcard_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.625Z"
-    },
-    {
-      "key": "pilot_wildcard_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, wildcard pilot, Shows up in Relay's records only after the rival's first appearance, and won't say why. Flies like someone who has already died once., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_wildcard_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.626Z"
-    },
-    {
-      "key": "pilot_rival_neutral",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rival pilot, The Compact's finest ace, flying a frame built from three salvage yards and pure spite. He intercepts every Relay run personally — it's become a point of pride., expression: neutral, calm, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rival_neutral.png",
-      "generatedAt": "2026-09-05T10:41:07.627Z"
-    },
-    {
-      "key": "pilot_rival_shout",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rival pilot, The Compact's finest ace, flying a frame built from three salvage yards and pure spite. He intercepts every Relay run personally — it's become a point of pride., expression: shouting, mouth open, brows down, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rival_shout.png",
-      "generatedAt": "2026-09-05T10:41:07.629Z"
-    },
-    {
-      "key": "pilot_rival_strained",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rival pilot, The Compact's finest ace, flying a frame built from three salvage yards and pure spite. He intercepts every Relay run personally — it's become a point of pride., expression: strained, gritted teeth, sweat, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rival_strained.png",
-      "generatedAt": "2026-09-05T10:41:07.630Z"
-    },
-    {
-      "key": "pilot_rival_grin",
-      "kind": "portrait",
-      "prompt": "anime portrait, chibi style, mecha pilot in flight suit, rival pilot, The Compact's finest ace, flying a frame built from three salvage yards and pure spite. He intercepts every Relay run personally — it's become a point of pride., expression: grinning, confident, bust shot, facing slightly left, cel shaded, flat colors, dark gunmetal gradient background, subtle amber rim light",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/pilot_rival_grin.png",
-      "generatedAt": "2026-09-05T10:41:07.631Z"
+      "key": "frame_compact_skirmisher_attack",
+      "kind": "pose",
+      "prompt": "SD chibi mecha, super-deformed proportions, 2.5 heads tall, oversized head and torso, stubby limbs, huge shoulder pauldrons, enemy line mech silhouette, blocky uniform plating, angular joints, steel grey and white with steel-blue accents, dynamic combat pose, aiming its weapon straight to the RIGHT edge of the image, arm fully extended to the right, firing stance, leaning forward, side view facing right, full body, clean cel-shaded anime style, flat colors, thick outlines, plain solid #00ff00 green background, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/frame_compact_skirmisher_attack.png",
+      "generatedAt": "2026-09-05T14:00:12.004Z"
     }
   ]
 }

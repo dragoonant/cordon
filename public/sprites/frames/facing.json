@@ -11,5 +11,17 @@
   "frame_assault": "front",
   "frame_compact_line": "right",
   "frame_compact_skirmisher": "right",
-  "frame_compact_ace": "front"
+  "frame_compact_ace": "front",
+  "frame_skirmish_attack": "right",
+  "frame_recon_attack": "right",
+  "frame_interceptor_attack": "right",
+  "frame_line_attack": "right",
+  "frame_trooper_attack": "right",
+  "frame_aeroline_attack": "right",
+  "frame_bastion_attack": "right",
+  "frame_siege_attack": "right",
+  "frame_assault_attack": "right",
+  "frame_compact_line_attack": "right",
+  "frame_compact_ace_attack": "left",
+  "frame_compact_skirmisher_attack": "right"
 }

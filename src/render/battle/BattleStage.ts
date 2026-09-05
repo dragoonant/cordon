@@ -10,10 +10,10 @@
  * created inside the constructor/methods, so importing this module is safe
  * even outside a browser (e.g. from a test runner).
  */
-import { Application, ColorMatrixFilter, Container, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
+import { Application, ColorMatrixFilter, Container, Graphics, Sprite, Text, Texture, type TextStyleOptions } from 'pixi.js';
 import type { BattleEvent, BattleResult, BattleSide, Faction, GameData, Id, MapKind, SlotIndex, Terrain } from '@sim/types';
 import { rowOf } from '@sim/types';
-import { getMechTexture, getPortraitTexture, FACTION_ACCENT } from '../sprites';
+import { getMechTexture, getMechPoseTexture, getPortraitTexture, FACTION_ACCENT } from '../sprites';
 import type { Expression } from '../sprites';
 import { buildBackdrop } from './backdrop';
 import { Clock, easeInOutQuad, easeOutBack, easeOutCubic } from './clock';
@@ -125,6 +125,14 @@ interface MechView {
   homeY: number;
   container: Container;
   sprite: Sprite;
+  /** Idle/battle texture — restored after every attack (see setPose()). */
+  idleTexture: Texture;
+  /** Combat-pose texture (weapon aimed/lunging at the enemy); falls back to idleTexture when unpublished. */
+  attackTexture: Texture;
+  /** Phase accumulator (ms) for the continuous idle bob — randomized per mech so squads don't bob in lockstep. */
+  stanceT: number;
+  /** Non-null while mid-attack: overrides the idle lean angle (deg) the stance loop eases toward. */
+  attackLeanDeg: number | null;
   hpBg: Graphics;
   hpFill: Graphics;
   label: Text;
@@ -161,6 +169,8 @@ export class BattleStage {
   private opts: BattleStagePlayOpts | null = null;
   private skipping = false;
   private completed = true; // no battle in flight until play() runs
+  /** Ticker callback driving the between-attacks combat stance (bob + lean); see startStanceLoop(). */
+  private stanceTickerFn: (() => void) | null = null;
 
   constructor(container: HTMLElement, data: GameData) {
     this.container = container;
@@ -252,6 +262,7 @@ export class BattleStage {
 
     await Promise.all([this.buildSquad('A', sides.sideA), this.buildSquad('B', sides.sideB)]);
     if (this.destroyed) return; // unmounted while textures were loading
+    this.startStanceLoop();
 
     if (opts.speed === 'results_only') {
       await this.clock.wait(300);
@@ -296,6 +307,7 @@ export class BattleStage {
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.clock?.cancelAll();
+    this.stopStanceLoop();
     this.mechViews.clear();
     if (!this.initDone) return;
     // The Application is shared and lives on; we only tear down this battle's
@@ -318,6 +330,7 @@ export class BattleStage {
   // -------------------------------------------------------------------
 
   private clearScene(): void {
+    this.stopStanceLoop();
     this.layers.backdrop.removeChildren();
     this.layers.mech.removeChildren();
     this.layers.effects.removeChildren();
@@ -345,7 +358,10 @@ export class BattleStage {
       const frame = this.data.frames[mech.frameId];
       if (!frame) continue;
 
-      const tex = await getMechTexture(this.app, this.data, mech, faction, 'battle');
+      const [tex, attackTex] = await Promise.all([
+        getMechTexture(this.app, this.data, mech, faction, 'battle'),
+        getMechPoseTexture(this.app, this.data, mech, faction, 'attack'),
+      ]);
       const sprite = new Sprite(tex); // inherits the texture's baked bottom-center defaultAnchor
 
       const row = rowOf(slot as SlotIndex);
@@ -380,6 +396,10 @@ export class BattleStage {
         homeY: y,
         container,
         sprite,
+        idleTexture: tex,
+        attackTexture: attackTex,
+        stanceT: Math.random() * 1000,
+        attackLeanDeg: null,
         hpBg,
         hpFill,
         label,
@@ -409,8 +429,35 @@ export class BattleStage {
   private finish(): void {
     if (this.completed) return;
     this.completed = true;
+    this.stopStanceLoop();
     this.snapFinalState();
     this.opts?.onComplete();
+  }
+
+  /** Between-attacks combat stance: continuous slight bob + a lean toward the enemy side, per GDD §8. */
+  private startStanceLoop(): void {
+    this.stopStanceLoop();
+    const fn = (): void => {
+      const dt = this.app.ticker.deltaMS;
+      for (const v of this.mechViews.values()) {
+        if (!v.alive) continue;
+        v.stanceT += dt;
+        v.sprite.y = Math.sin(v.stanceT / 260) * 2.2;
+        const idleLeanDeg = v.side === 'A' ? 4 : -4;
+        const targetDeg = v.attackLeanDeg ?? idleLeanDeg;
+        const targetRad = (targetDeg * Math.PI) / 180;
+        v.sprite.rotation += (targetRad - v.sprite.rotation) * Math.min(1, dt / 140);
+      }
+    };
+    this.app.ticker.add(fn);
+    this.stanceTickerFn = fn;
+  }
+
+  private stopStanceLoop(): void {
+    if (this.stanceTickerFn) {
+      this.app.ticker.remove(this.stanceTickerFn);
+      this.stanceTickerFn = null;
+    }
   }
 
   private snapFinalState(): void {
@@ -831,34 +878,57 @@ export class BattleStage {
     const defender = this.mechViews.get(e.defenderMechId);
     const weapon = this.data.weapons[e.weaponId];
     const family = animFamilyFor(weapon?.animKey ?? '');
+    const isMelee = family === 'lunge' || family === 'slash' || family === 'maul';
+
+    // Windup: weapon comes out and the attacker leans into the enemy — the
+    // user-facing fix for "mechs look like they're just standing there".
+    if (attacker) {
+      this.setPose(attacker, true);
+      attacker.attackLeanDeg = (attacker.side === 'A' ? 1 : -1) * 10; // 8-12deg toward the enemy
+    }
 
     await this.clock.tween(350, (t) => {
       if (attacker) attacker.sprite.scale.y = 1 - 0.05 * Math.sin(t * Math.PI);
     });
 
-    const isDash = family === 'lunge' || family === 'slash' || family === 'maul';
-    if (attacker && defender && isDash) {
-      await this.dash(attacker, defender, family === 'maul' ? 0.5 : 0.68, family === 'maul' ? 240 : 150);
+    if (attacker && defender) {
+      if (isMelee) {
+        await this.dashToGap(attacker, defender, 40, family === 'maul' ? 240 : 150);
+      } else {
+        await this.stepToward(attacker, defender, 25, 150);
+      }
     }
 
     for (let hi = 0; hi < e.hits.length; hi++) {
       const hit = e.hits[hi];
-      if (attacker && defender) this.fireWeaponEffect(attacker, defender, family);
+      if (attacker && defender) {
+        this.fireWeaponEffect(attacker, defender, family);
+        if (!isMelee) this.muzzleFlash(attacker, defender);
+        if (!isMelee) void this.recoilKick(attacker, defender);
+      }
       if (defender) void this.cameraPunch(defender);
       if (hit.hit && defender) {
         this.flashWhite(defender);
+        void this.knockback(defender, attacker);
         this.popFloatingText(defender, `${hit.damage}`, hit.crit ? 0xffc23c : 0xf2efe6, hit.crit);
         const isLastHit = hi === e.hits.length - 1;
         defender.hp = Math.max(0, isLastHit ? e.defenderHpAfter : defender.hp - hit.damage);
         this.redrawHpBar(defender);
       } else if (defender) {
+        void this.dodgeStep(defender);
         this.popFloatingText(defender, 'MISS', 0x9a9a9a, false);
       }
       await this.clock.wait(180);
     }
 
-    if (isDash && attacker) {
-      await this.dashBack(attacker, family === 'maul' ? 240 : 150);
+    // Weapon away, lean eases back to the idle combat stance (see startStanceLoop).
+    if (attacker) {
+      this.setPose(attacker, false);
+      attacker.attackLeanDeg = null;
+    }
+
+    if (attacker && defender) {
+      await this.dashBack(attacker, isMelee && family === 'maul' ? 240 : 150);
     }
     if (family === 'maul') void this.screenShake(280, 11);
 
@@ -868,15 +938,91 @@ export class BattleStage {
     if (e.line && attacker) void this.showSpeechBubble(attacker, e.line, 900);
   }
 
-  private async dash(attacker: MechView, defender: MechView, frac: number, ms: number): Promise<void> {
+  /** Swaps the attacker's sprite between its idle and weapon-drawn combat-pose texture. */
+  private setPose(view: MechView, attacking: boolean): void {
+    const tex = attacking ? view.attackTexture : view.idleTexture;
+    if (view.sprite.texture !== tex) view.sprite.texture = tex;
+  }
+
+  /** Melee closing move: dash until only `gapPx` separates attacker and defender, then hold. */
+  private async dashToGap(attacker: MechView, defender: MechView, gapPx: number, ms: number): Promise<void> {
     const startX = attacker.container.x;
     const startY = attacker.container.y;
-    const tx = lerp(attacker.homeX, defender.homeX, frac);
-    const ty = lerp(attacker.homeY, defender.homeY, frac * 0.3);
+    const towardSign = defender.homeX >= attacker.homeX ? 1 : -1;
+    const tx = defender.homeX - towardSign * gapPx;
+    const ty = lerp(attacker.homeY, defender.homeY, 0.3);
     await this.clock.tween(ms, (t) => {
       const k = easeOutCubic(t);
       attacker.container.x = lerp(startX, tx, k);
       attacker.container.y = lerp(startY, ty, k);
+    });
+  }
+
+  /** Ranged windup: a short step toward the target before the shots go out. */
+  private async stepToward(attacker: MechView, defender: MechView, distPx: number, ms: number): Promise<void> {
+    const startX = attacker.container.x;
+    const towardSign = defender.homeX >= attacker.homeX ? 1 : -1;
+    const tx = startX + towardSign * distPx;
+    await this.clock.tween(ms, (t) => {
+      attacker.container.x = lerp(startX, tx, easeOutCubic(t));
+    });
+  }
+
+  /** Quick backward jolt on the attacker per ranged shot fired. */
+  private async recoilKick(attacker: MechView, defender: MechView): Promise<void> {
+    const towardSign = defender.homeX >= attacker.homeX ? 1 : -1;
+    const baseX = attacker.container.x;
+    await this.clock.tween(130, (t) => {
+      const k = Math.sin(clamp01(t) * Math.PI);
+      attacker.container.x = baseX - towardSign * 7 * k;
+    });
+    attacker.container.x = baseX;
+  }
+
+  /** Small punch of displacement away from the attacker, on a landed hit. */
+  private async knockback(defender: MechView, attacker: MechView | undefined): Promise<void> {
+    const attackerX = attacker ? attacker.container.x : defender.side === 'A' ? defender.homeX - 100 : defender.homeX + 100;
+    const awaySign = defender.container.x >= attackerX ? 1 : -1;
+    const baseX = defender.container.x;
+    await this.clock.tween(180, (t) => {
+      const k = Math.sin(clamp01(t) * Math.PI);
+      defender.container.x = baseX + awaySign * 8 * k;
+    });
+    defender.container.x = baseX;
+  }
+
+  /** Evasive side-step + hop played instead of a knockback when an attack misses. */
+  private async dodgeStep(defender: MechView): Promise<void> {
+    const baseX = defender.container.x;
+    const baseY = defender.container.y;
+    const dir = defender.side === 'A' ? 1 : -1;
+    await this.clock.tween(200, (t) => {
+      const k = Math.sin(clamp01(t) * Math.PI);
+      defender.container.x = baseX + dir * 14 * k;
+      defender.container.y = baseY - 10 * k;
+    });
+    defender.container.x = baseX;
+    defender.container.y = baseY;
+  }
+
+  /** Bright flash at the attacker's weapon side, played per shot for ranged weapon families. */
+  private muzzleFlash(attacker: MechView, defender: MechView): void {
+    const towardSign = defender.homeX >= attacker.homeX ? 1 : -1;
+    const x = attacker.container.x + towardSign * 42;
+    const y = attacker.container.y - 55;
+    const fx = new Graphics();
+    fx.circle(x, y, 10).fill({ color: 0xfff6d8, alpha: 0.95 });
+    fx.circle(x, y, 5).fill({ color: 0xffffff, alpha: 1 });
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      fx.moveTo(x, y)
+        .lineTo(x + Math.cos(a) * 15, y + Math.sin(a) * 15)
+        .stroke({ width: 2, color: 0xffe9b0, alpha: 0.75 });
+    }
+    this.layers.effects.addChild(fx);
+    void this.clock.wait(90).then(() => {
+      this.layers.effects.removeChild(fx);
+      fx.destroy();
     });
   }
 
