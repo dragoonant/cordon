@@ -7,7 +7,7 @@
  * plan.test.ts). generate.ts is the I/O shell: it loads JSON, calls these
  * functions, then does the actual HTTP calls and file writes.
  */
-import type { Faction, FrameDef, Id, PilotDef } from '../../src/sim/types';
+import type { Faction, FrameDef, Id, PilotDef, Terrain } from '../../src/sim/types';
 
 export const NEGATIVE_PROMPT_SPRITE = 'realistic, photo, blurry, text, watermark, multiple robots, cropped';
 
@@ -48,7 +48,7 @@ const FACTION_PALETTES: Record<Faction, string> = {
   neutral: 'muted grey and rust with salvage-tech violet accents',
 };
 
-export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose';
+export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'object';
 
 export interface ImageJob {
   /** Unique per job: frame id, `${pilotId}_${expression}`, or a backdrop key. */
@@ -139,15 +139,142 @@ export function buildBackdropPrompt(entry: { key: string; scene: string }): Imag
   return { key: entry.key, kind: 'backdrop', prompt, width: 1024, height: 576 };
 }
 
+// ---------------------------------------------------------------------------
+// Overworld map art — terrain textures and objective/map objects.
+//
+// These publish straight to public/sprites/map/ (not public/sprites/frames/
+// or public/portraits/), a directory owned solely by this pipeline and
+// consumed by the (separately owned) isometric map renderer — see
+// generate.ts publishTerrain/publishObject. Both categories are opt-in only
+// (excluded from the plain no-`--only` run), same as `poses`.
+// ---------------------------------------------------------------------------
+
+/** No frame/haze mention — these are single flat textures/objects, not chibi mecha. */
+const NEGATIVE_PROMPT_MAP_ART =
+  'text, lettering, writing, signage, nameplate, gibberish text, watermark, blurry, photo, realistic, characters, people, logo';
+
+/**
+ * The 11 map terrain kinds, in the same order as the `Terrain` union in
+ * src/sim/types.ts (5 surface + 5 space + shared `blocked`). Textures are
+ * seamless-tileable, top-down, 512x512, opaque (no green key) — the map
+ * renderer blends tile edges itself, so FLUX not being perfectly seamless is
+ * fine (see generate.ts header).
+ */
+export const TERRAIN_KINDS: Terrain[] = [
+  'open',
+  'forest',
+  'urban',
+  'mountain',
+  'water',
+  'void',
+  'debris',
+  'radiation',
+  'gravity',
+  'structure',
+  'blocked',
+];
+
+const TERRAIN_DESCRIPTIONS: Record<Terrain, string> = {
+  open: 'dusty plains and grassland, scattered dry scrub, worn dirt trails',
+  forest: 'dense treetops seen from directly above, a tight tangle of canopy',
+  urban: 'rooftops and streets seen from directly above, blocky building tops, narrow alleys',
+  mountain: 'rocky grey ridges and jagged stone outcrops, sparse snow patches',
+  water: 'dark open sea, gentle wave ripples, deep blue-black water',
+  void: 'deep space, near-black background with faint distant stars',
+  debris: 'flat lay overhead photograph of dozens of small angular scrap metal panel fragments and bolts scattered evenly on a plain black background, tiny loose junk pieces only',
+  radiation: 'deep space with a faint red-violet radioactive haze drifting through it',
+  gravity: 'deep space with faint concentric distortion rings warping the starfield',
+  structure: 'steel space station hull plating, riveted panels and exposed girders',
+  blocked: 'near-black impassable rock and void, almost no light',
+};
+
+/** Only `debris` risks the model drawing one hero spaceship instead of a scattered-fragment texture. */
+const TERRAIN_NEGATIVE_EXTRA: Partial<Record<Terrain, string>> = {
+  debris: 'spaceship, rocket, spacecraft, starship, single large vehicle, hero object, side view, 3/4 view',
+};
+
+/** One seamless top-down terrain texture for one Terrain kind. Key doubles as the publish basename. */
+export function buildTerrainPrompt(kind: Terrain): ImageJob {
+  const prompt =
+    `seamless tileable texture, top-down, ${TERRAIN_DESCRIPTIONS[kind]}, ` +
+    `painted anime cel-shaded style, muted desaturated industrial palette, flat colors, ` +
+    `no text, no characters, no logo`;
+  const extra = TERRAIN_NEGATIVE_EXTRA[kind];
+  return {
+    key: `terrain_${kind}`,
+    kind: 'terrain',
+    prompt,
+    negativePrompt: extra ? `${NEGATIVE_PROMPT_MAP_ART}, ${extra}` : NEGATIVE_PROMPT_MAP_ART,
+    width: 512,
+    height: 512,
+  };
+}
+
+/**
+ * The 8 map object keys — objective markers and set-piece props rendered on
+ * the (future) isometric map, per GDD §5 rescue targets plus the carrier and
+ * its landing zone. Isometric-3/4 view, single object, plain solid #00ff00
+ * green background (keyed at runtime by loadChromaKeyedTexture), same
+ * cel-shaded SD style as mech frames.
+ */
+export const OBJECT_KEYS = [
+  'station',
+  'colony',
+  'convoy',
+  'derelict',
+  'relay',
+  'exit',
+  'carrier',
+  'landing_zone',
+] as const;
+export type ObjectKey = (typeof OBJECT_KEYS)[number];
+
+const OBJECT_DESCRIPTIONS: Record<ObjectKey, string> = {
+  station: 'a small hexagonal orbital relief station module, docking struts, amber warning lights',
+  colony: "an O'Neill cylinder colony habitat, domed cap, rotating ring hull, viewports glowing pale amber",
+  convoy: 'a chunky armored refugee transport truck/hauler, boxy cargo container, thick tires, amber running lights',
+  derelict:
+    'a broken derelict spacecraft hull wreck missing a chunk of its hull, a jagged torn-open gash exposing broken skeletal girders inside, dark scorch burn marks and rust streaks all over the plating, one antenna snapped and dangling, listing at a broken angle, powered down, no crew',
+  relay: 'a comm relay mast: a tall antenna on a squat equipment base, dish and a single blinking amber light',
+  exit: 'a jump-gate beacon: a tall arch of glowing amber energy conduits framing an open gate',
+  carrier: 'a long gunmetal rescue carrier spaceship with amber running lights, docking bays, and sensor masts, 3/4 elevated view',
+  landing_zone: 'a landing pad platform marked with amber directional lighting stripes and a central beacon',
+};
+
+/** Only `derelict` needs pushing away from FLUX's default "clean, new" look. */
+const OBJECT_NEGATIVE_EXTRA: Partial<Record<ObjectKey, string>> = {
+  derelict: 'clean, pristine, intact, undamaged, new, shiny',
+};
+
+/** One isometric-3/4 object sprite on a #00ff00 key background. Key doubles as the publish basename. */
+export function buildObjectPrompt(key: ObjectKey): ImageJob {
+  const prompt =
+    `SD anime isometric 3/4 view illustration of ${OBJECT_DESCRIPTIONS[key]}, single object, ` +
+    `clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, ` +
+    `plain solid #00ff00 green background, centered, no text`;
+  const extra = OBJECT_NEGATIVE_EXTRA[key];
+  const negativePrompt = extra
+    ? `${NEGATIVE_PROMPT_MAP_ART}, multiple objects, cropped, ${extra}`
+    : `${NEGATIVE_PROMPT_MAP_ART}, multiple objects, cropped`;
+  return {
+    key: `obj_${key}`,
+    kind: 'object',
+    prompt,
+    negativePrompt,
+    width: 512,
+    height: 512,
+  };
+}
+
 export interface ArtData {
   frames: Record<Id, FrameDef>;
   pilots: Record<Id, PilotDef>;
 }
 
 export interface ArtPlanOptions {
-  /** Restrict to these categories; default frames/portraits/backdrops (poses is opt-in only — see buildArtPlan). */
-  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops' | 'poses')[];
-  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses order). */
+  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/objects are opt-in only — see buildArtPlan). */
+  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects')[];
+  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> objects order). */
   limit?: number;
 }
 
@@ -156,6 +283,8 @@ export interface ArtPlanCounts {
   portraits: number;
   backdrops: number;
   poses: number;
+  terrain: number;
+  objects: number;
   total: number;
 }
 
@@ -169,13 +298,17 @@ const CATEGORY_TO_KIND: Record<string, ImageKind> = {
   portraits: 'portrait',
   backdrops: 'backdrop',
   poses: 'pose',
+  terrain: 'terrain',
+  objects: 'object',
 };
 
 /**
- * Poses are deliberately excluded from the "no --only given" default: they're
- * an add-on combat-pose pass over the same frame set, not part of the base
- * three categories, so a plain `buildArtPlan(data)` stays exactly what it was
- * before poses existed. Ask for them explicitly with `--only poses`.
+ * Poses, terrain, and objects are deliberately excluded from the "no --only
+ * given" default: each is an add-on pass unrelated to the base
+ * frames/portraits/backdrops set (terrain and objects don't even key off
+ * frames.json/pilots.json), so a plain `buildArtPlan(data)` stays exactly
+ * what it was before they existed. Ask for them explicitly with
+ * `--only poses` / `--only terrain` / `--only objects`.
  */
 export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPlan {
   const wantedKinds = new Set<ImageKind>(
@@ -208,6 +341,16 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
       jobs.push(buildPosePrompt(frame));
     }
   }
+  if (wantedKinds.has('terrain')) {
+    for (const kind of TERRAIN_KINDS) {
+      jobs.push(buildTerrainPrompt(kind));
+    }
+  }
+  if (wantedKinds.has('object')) {
+    for (const key of OBJECT_KEYS) {
+      jobs.push(buildObjectPrompt(key));
+    }
+  }
 
   const limited = typeof options.limit === 'number' ? jobs.slice(0, Math.max(0, options.limit)) : jobs;
 
@@ -216,6 +359,8 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
     portraits: limited.filter((j) => j.kind === 'portrait').length,
     backdrops: limited.filter((j) => j.kind === 'backdrop').length,
     poses: limited.filter((j) => j.kind === 'pose').length,
+    terrain: limited.filter((j) => j.kind === 'terrain').length,
+    objects: limited.filter((j) => j.kind === 'object').length,
     total: limited.length,
   };
 

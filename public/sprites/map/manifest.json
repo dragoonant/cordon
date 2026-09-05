@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "key": "obj_carrier",
+      "kind": "object",
+      "path": "sprites/map/obj_carrier.png"
+    },
+    {
+      "key": "obj_colony",
+      "kind": "object",
+      "path": "sprites/map/obj_colony.png"
+    },
+    {
+      "key": "obj_convoy",
+      "kind": "object",
+      "path": "sprites/map/obj_convoy.png"
+    },
+    {
+      "key": "obj_derelict",
+      "kind": "object",
+      "path": "sprites/map/obj_derelict.png"
+    },
+    {
+      "key": "obj_exit",
+      "kind": "object",
+      "path": "sprites/map/obj_exit.png"
+    },
+    {
+      "key": "obj_landing_zone",
+      "kind": "object",
+      "path": "sprites/map/obj_landing_zone.png"
+    },
+    {
+      "key": "obj_relay",
+      "kind": "object",
+      "path": "sprites/map/obj_relay.png"
+    },
+    {
+      "key": "obj_station",
+      "kind": "object",
+      "path": "sprites/map/obj_station.png"
+    },
+    {
+      "key": "terrain_blocked",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_blocked.png"
+    },
+    {
+      "key": "terrain_debris",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_debris.png"
+    },
+    {
+      "key": "terrain_forest",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_forest.png"
+    },
+    {
+      "key": "terrain_gravity",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_gravity.png"
+    },
+    {
+      "key": "terrain_mountain",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_mountain.png"
+    },
+    {
+      "key": "terrain_open",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_open.png"
+    },
+    {
+      "key": "terrain_radiation",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_radiation.png"
+    },
+    {
+      "key": "terrain_structure",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_structure.png"
+    },
+    {
+      "key": "terrain_urban",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_urban.png"
+    },
+    {
+      "key": "terrain_void",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_void.png"
+    },
+    {
+      "key": "terrain_water",
+      "kind": "terrain",
+      "path": "sprites/map/terrain_water.png"
+    }
+  ]
+}
