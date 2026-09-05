@@ -54,6 +54,7 @@
 import {
   Assets,
   BlurFilter,
+  ColorMatrixFilter,
   Container,
   Graphics,
   Rectangle,
@@ -234,9 +235,35 @@ function loadTerrainTextureSet(terrain: Terrain): Promise<Texture[]> {
 /** Every terrain texture (base + variants) is published at this size (tools/art/plan.ts's `buildTerrainPrompt`/`buildTerrainVariantPrompt` both request 512x512) — used as the atlas cell size and as the `TilingSprite` scale calibration, not measured off any individual texture, so the math below stays correct regardless of how many cells an atlas has. */
 const ATLAS_CELL_PX = 512;
 /** Each atlas cell's source image is drawn this many px oversized on every edge (bleeding into the next cell) so a soft mask (below) can blend the two textures at their shared boundary instead of a hard cut. */
-const ATLAS_CELL_FEATHER_PX = 8;
+const ATLAS_CELL_FEATHER_PX = 48; // wide cross-fade so cells melt into each other
 /** Blur strength for a cell's mask — small enough that the fade lands within the ~8px oversize band instead of eating into the cell's own interior. */
-const ATLAS_CELL_MASK_BLUR_PX = 4;
+const ATLAS_CELL_MASK_BLUR_PX = 24;
+
+/**
+ * Mean luminance (0..255) of a texture's source image, sampled at 16x16.
+ * Variants of one terrain can differ a lot in brightness (salt crust vs.
+ * cracked earth); matching each cell to the base texture keeps the atlas
+ * reading as one ground instead of a light/dark patchwork.
+ */
+function meanLuminance(tex: Texture): number | null {
+  try {
+    if (typeof document === 'undefined') return null;
+    const res = (tex.source as unknown as { resource?: CanvasImageSource }).resource;
+    if (!res) return null;
+    const c = document.createElement('canvas');
+    c.width = 16;
+    c.height = 16;
+    const ctx = c.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(res, 0, 0, 16, 16);
+    const d = ctx.getImageData(0, 0, 16, 16).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    return sum / (d.length / 4);
+  } catch {
+    return null;
+  }
+}
 
 /** `<=3` textures atlas as 2x2 (repeating one), more than that as 3x3 (repeating none up to 9). */
 function atlasGridSize(textureCount: number): number {
@@ -378,6 +405,7 @@ function buildTerrainAtlas(app: Application, mapId: string, kind: Terrain, textu
     const maskTexturesToFree: Texture[] = [];
     const frame = new Rectangle(0, 0, atlasPx, atlasPx);
 
+    const baseLum = meanLuminance(textures[0]);
     for (let cell = 0; cell < cellCount; cell++) {
       const row = Math.floor(cell / gridSize);
       const col = cell % gridSize;
@@ -395,6 +423,16 @@ function buildTerrainAtlas(app: Application, mapId: string, kind: Terrain, textu
       if (flipY) img.scale.y *= -1;
       img.x = cellX + ATLAS_CELL_PX / 2;
       img.y = cellY + ATLAS_CELL_PX / 2;
+      // Brightness-match this variant to the base texture (see meanLuminance).
+      const lum = baseLum !== null ? meanLuminance(tex) : null;
+      if (baseLum !== null && lum !== null && lum > 1) {
+        const factor = Math.max(0.55, Math.min(1.8, baseLum / lum));
+        if (Math.abs(factor - 1) > 0.05) {
+          const cm = new ColorMatrixFilter();
+          cm.brightness(factor, false);
+          img.filters = [cm];
+        }
+      }
 
       const maskGfx = new Graphics();
       maskGfx.rect(cellX, cellY, ATLAS_CELL_PX, ATLAS_CELL_PX).fill({ color: 0xffffff });
