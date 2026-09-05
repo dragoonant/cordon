@@ -8,11 +8,13 @@ import {
   buildArtManifest,
   buildArtPlan,
   buildBackdropPrompt,
+  buildDecorPrompt,
   buildFramePrompt,
   buildObjectPrompt,
   buildPortraitPrompt,
   buildPosePrompt,
   buildTerrainPrompt,
+  DECOR_KEYS,
   eligiblePortraitPilots,
   OBJECT_KEYS,
   TERRAIN_KINDS,
@@ -197,25 +199,25 @@ describe('eligiblePortraitPilots', () => {
 });
 
 describe('buildArtPlan', () => {
-  it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 6 backdrops = 54 total (poses/terrain/objects excluded by default)', () => {
+  it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 6 backdrops = 54 total (poses/terrain/objects/decor excluded by default)', () => {
     const plan = buildArtPlan(data);
-    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, poses: 0, terrain: 0, objects: 0, total: 54 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, poses: 0, terrain: 0, objects: 0, decor: 0, total: 54 });
     expect(plan.jobs).toHaveLength(54);
   });
 
   it('--only frames restricts to just frame jobs', () => {
     const plan = buildArtPlan(data, { only: ['frames'] });
-    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 0, decor: 0, total: 12 });
   });
 
   it('--only portraits restricts to just portrait jobs', () => {
     const plan = buildArtPlan(data, { only: ['portraits'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, terrain: 0, objects: 0, total: 36 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, terrain: 0, objects: 0, decor: 0, total: 36 });
   });
 
   it('--only poses restricts to just the 12 combat-pose jobs, one per frame', () => {
     const plan = buildArtPlan(data, { only: ['poses'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, terrain: 0, objects: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, terrain: 0, objects: 0, decor: 0, total: 12 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(
       Object.keys(frames)
         .map((id) => `${frames[id].spriteKey}_attack`)
@@ -225,14 +227,20 @@ describe('buildArtPlan', () => {
 
   it('--only terrain restricts to just the 11 terrain jobs, one per Terrain kind', () => {
     const plan = buildArtPlan(data, { only: ['terrain'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 11, objects: 0, total: 11 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 11, objects: 0, decor: 0, total: 11 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(TERRAIN_KINDS.map((k) => `terrain_${k}`).sort());
   });
 
   it('--only objects restricts to just the 8 map object jobs', () => {
     const plan = buildArtPlan(data, { only: ['objects'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 8, total: 8 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 8, decor: 0, total: 8 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(OBJECT_KEYS.map((k) => `obj_${k}`).sort());
+  });
+
+  it('--only decor restricts to just the 10 decoration/scenery jobs', () => {
+    const plan = buildArtPlan(data, { only: ['decor'] });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, objects: 0, decor: 10, total: 10 });
+    expect(plan.jobs.map((j) => j.key).sort()).toEqual(DECOR_KEYS.map((k) => `deco_${k}`).sort());
   });
 
   it('--limit caps the total job count', () => {
@@ -310,6 +318,38 @@ describe('buildObjectPrompt', () => {
 
   it('is a pure function of the key (calling twice gives identical output)', () => {
     expect(buildObjectPrompt('station')).toEqual(buildObjectPrompt('station'));
+  });
+});
+
+describe('buildDecorPrompt', () => {
+  it('has exactly the 10 documented decor/scenery keys', () => {
+    expect(DECOR_KEYS).toEqual([
+      'rock_a',
+      'rock_b',
+      'tree_clump',
+      'crater',
+      'ruin_wall',
+      'wreck_small',
+      'asteroid_a',
+      'asteroid_b',
+      'crystal_shard',
+      'antenna_small',
+    ]);
+  });
+
+  it('keys the job "deco_<key>", uses an isometric 3/4 view on a green-key background', () => {
+    const job = buildDecorPrompt('crystal_shard');
+    expect(job.key).toBe('deco_crystal_shard');
+    expect(job.kind).toBe('decor');
+    expect(job.prompt).toContain('isometric 3/4 view');
+    expect(job.prompt).toContain('glowing violet crystal shards');
+    expect(job.prompt).toContain('#00ff00 chroma-key green screen background');
+    expect(job.width).toBe(512);
+    expect(job.height).toBe(512);
+  });
+
+  it('is a pure function of the key (calling twice gives identical output)', () => {
+    expect(buildDecorPrompt('rock_a')).toEqual(buildDecorPrompt('rock_a'));
   });
 });
 

@@ -9,27 +9,32 @@
  *
  * Usage:
  *   npx tsx tools/art/generate.ts --dry-run
- *   npx tsx tools/art/generate.ts [--force] [--only frames|portraits|backdrops|poses|terrain|objects] [--limit N] [--publish] [--model <id>] [--provider fal-ai|hf-inference]
+ *   npx tsx tools/art/generate.ts [--force] [--only frames|portraits|backdrops|poses|terrain|objects|decor] [--limit N] [--publish] [--model <id>] [--provider fal-ai|hf-inference]
  *
  *   "poses" is an opt-in fourth category (excluded from the plain no-`--only` run): one combat-pose
  *   image per frame, key "<spriteKey>_attack", published (with --publish) straight to
  *   public/sprites/frames/<spriteKey>_attack.<png|jpg> — see buildPosePrompt in plan.ts and
  *   getMechPoseTexture in src/render/sprites/index.ts.
  *
- *   "terrain" and "objects" are two more opt-in categories, for the overworld map (owned by this
- *   pipeline: tools/art/** and public/sprites/map/**, consumed by the isometric map renderer). Neither
- *   keys off frames.json/pilots.json:
+ *   "terrain", "objects", and "decor" are three more opt-in categories, for the overworld map (owned
+ *   by this pipeline: tools/art/** and public/sprites/map/**, consumed by the isometric map
+ *   renderer). None keys off frames.json/pilots.json:
  *     terrain  11 seamless top-down 512x512 textures, one per Terrain kind (src/sim/types.ts), NO green
  *              key (opaque) — published (with --publish) straight to public/sprites/map/terrain_<kind>.png.
  *     objects  8 isometric-3/4 512x512 sprites on a #00ff00 key background (same convention as frames) —
  *              published straight to public/sprites/map/obj_<key>.png. Loaded at runtime via
  *              loadChromaKeyedTexture('/sprites/map/obj_<key>', targetHeight) — src/render/sprites/chromaKey.ts.
- *   Both publish paths are fixed at .png (no .jpg fallback): a raw response that isn't a real PNG by
- *   magic bytes is skipped with a warning rather than published under a wrong extension. See
- *   buildTerrainPrompt / buildObjectPrompt in plan.ts. Running either category with --publish also
- *   (re)writes public/sprites/map/manifest.json, rebuilt from whatever public/sprites/map/terrain_*.png
- *   and obj_*.png files actually exist on disk (not just this run's jobs), so running the two
- *   categories in separate invocations doesn't clobber each other's manifest entries.
+ *     decor    10 small isometric-3/4 512x512 scenery/decoration sprites (rocks, tree clumps, wrecks,
+ *              asteroids, ...), same green-key convention as objects — published to
+ *              public/sprites/map/deco_<key>.png. Scattered across the map at runtime by
+ *              src/render/map/decor.ts. See buildDecorPrompt / DECOR_KEYS in plan.ts.
+ *   All three publish paths are fixed at .png (no .jpg fallback): a raw response that isn't a real PNG
+ *   by magic bytes is skipped with a warning rather than published under a wrong extension. See
+ *   buildTerrainPrompt / buildObjectPrompt / buildDecorPrompt in plan.ts. Running any of the three with
+ *   --publish also (re)writes public/sprites/map/manifest.json, rebuilt from whatever
+ *   public/sprites/map/terrain_*.png, obj_*.png, and deco_*.png files actually exist on disk (not just
+ *   this run's jobs), so running them in separate invocations doesn't clobber each other's manifest
+ *   entries.
  *
  * PROVIDERS:
  *   fal-ai (default)  POST https://router.huggingface.co/fal-ai/fal-ai/<model> (model defaults to
@@ -104,7 +109,7 @@ const DEFAULT_HF_MODEL = 'black-forest-labs/FLUX.1-schnell';
 // CLI args
 // ---------------------------------------------------------------------------
 
-type Category = 'frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects';
+type Category = 'frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects' | 'decor';
 type Provider = 'fal-ai' | 'hf-inference';
 
 interface CliArgs {
@@ -118,7 +123,7 @@ interface CliArgs {
   provider: Provider;
 }
 
-const VALID_CATEGORIES: Category[] = ['frames', 'portraits', 'backdrops', 'poses', 'terrain', 'objects'];
+const VALID_CATEGORIES: Category[] = ['frames', 'portraits', 'backdrops', 'poses', 'terrain', 'objects', 'decor'];
 
 function defaultModelFor(provider: Provider): string {
   return provider === 'fal-ai' ? DEFAULT_FAL_MODEL : DEFAULT_HF_MODEL;
@@ -518,20 +523,40 @@ function publishObject(job: ImageJob): void {
 }
 
 /**
- * Rebuilds public/sprites/map/manifest.json from whatever terrain_*.png / obj_*.png files actually
- * exist in public/sprites/map — not from this run's plan.jobs — so that generating "terrain" and
- * "objects" in two separate invocations (as the budget-constrained workflow does) never clobbers the
- * other category's manifest entries.
+ * Publishes a decor job's raw image as public/sprites/map/<key>.png (job.key is already
+ * "deco_<key>" — see buildDecorPrompt). Same green-key convention and fixed-.png publish path as
+ * publishObject/publishTerrain — see publishTerrain for why.
  */
-function buildMapManifestFromDisk(): { version: 1; images: { key: string; kind: 'terrain' | 'object'; path: string }[] } {
+function publishDecor(job: ImageJob): void {
+  const ext = findRawExtension(job.key);
+  if (!ext) return;
+  const raw = readFileSync(path.join(RAW_DIR, `${job.key}.${ext}`));
+  const kind = classifyImage(raw);
+  if (kind !== 'png') {
+    warn(TAG, `${job.key}: raw output is not a real PNG (ext .${ext}); decor publish path is fixed at .png, skipping publish`);
+    return;
+  }
+  ensureDir(MAP_DIR);
+  writeFileAtomic(path.join(MAP_DIR, `${job.key}.png`), raw);
+}
+
+/**
+ * Rebuilds public/sprites/map/manifest.json from whatever terrain_*.png / obj_*.png / deco_*.png
+ * files actually exist in public/sprites/map — not from this run's plan.jobs — so that generating
+ * "terrain", "objects", and "decor" in separate invocations (as the budget-constrained workflow
+ * does) never clobbers another category's manifest entries.
+ */
+function buildMapManifestFromDisk(): { version: 1; images: { key: string; kind: 'terrain' | 'object' | 'decor'; path: string }[] } {
   if (!existsSync(MAP_DIR)) return { version: 1, images: [] };
-  const files = readdirSync(MAP_DIR).filter((f) => f.endsWith('.png') && (f.startsWith('terrain_') || f.startsWith('obj_')));
+  const files = readdirSync(MAP_DIR).filter(
+    (f) => f.endsWith('.png') && (f.startsWith('terrain_') || f.startsWith('obj_') || f.startsWith('deco_'))
+  );
   const images = files
     .slice()
     .sort()
     .map((f) => {
       const key = f.slice(0, -'.png'.length);
-      const kind: 'terrain' | 'object' = f.startsWith('terrain_') ? 'terrain' : 'object';
+      const kind: 'terrain' | 'object' | 'decor' = f.startsWith('terrain_') ? 'terrain' : f.startsWith('obj_') ? 'object' : 'decor';
       return { key, kind, path: `sprites/map/${f}` };
     });
   return { version: 1, images };
@@ -644,6 +669,8 @@ async function main(): Promise<void> {
         publishTerrain(job);
       } else if (job.kind === 'object') {
         publishObject(job);
+      } else if (job.kind === 'decor') {
+        publishDecor(job);
       }
       // Backdrops have no publish-copy convention specified — raw output only.
     }
@@ -652,7 +679,7 @@ async function main(): Promise<void> {
   const manifest = buildArtManifest(plan, { rawDir: RAW_DIR, fileExtension: (job) => findRawExtension(job.key) });
   writeFileAtomic(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
 
-  if (args.publish && plan.jobs.some((j) => j.kind === 'terrain' || j.kind === 'object')) {
+  if (args.publish && plan.jobs.some((j) => j.kind === 'terrain' || j.kind === 'object' || j.kind === 'decor')) {
     const mapManifest = buildMapManifestFromDisk();
     writeFileAtomic(MAP_MANIFEST_PATH, JSON.stringify(mapManifest, null, 2));
     info(TAG, `map manifest written to ${MAP_MANIFEST_PATH} (${mapManifest.images.length} file(s))`);

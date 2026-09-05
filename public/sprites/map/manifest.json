@@ -2,6 +2,56 @@
   "version": 1,
   "images": [
     {
+      "key": "deco_antenna_small",
+      "kind": "decor",
+      "path": "sprites/map/deco_antenna_small.png"
+    },
+    {
+      "key": "deco_asteroid_a",
+      "kind": "decor",
+      "path": "sprites/map/deco_asteroid_a.png"
+    },
+    {
+      "key": "deco_asteroid_b",
+      "kind": "decor",
+      "path": "sprites/map/deco_asteroid_b.png"
+    },
+    {
+      "key": "deco_crater",
+      "kind": "decor",
+      "path": "sprites/map/deco_crater.png"
+    },
+    {
+      "key": "deco_crystal_shard",
+      "kind": "decor",
+      "path": "sprites/map/deco_crystal_shard.png"
+    },
+    {
+      "key": "deco_rock_a",
+      "kind": "decor",
+      "path": "sprites/map/deco_rock_a.png"
+    },
+    {
+      "key": "deco_rock_b",
+      "kind": "decor",
+      "path": "sprites/map/deco_rock_b.png"
+    },
+    {
+      "key": "deco_ruin_wall",
+      "kind": "decor",
+      "path": "sprites/map/deco_ruin_wall.png"
+    },
+    {
+      "key": "deco_tree_clump",
+      "kind": "decor",
+      "path": "sprites/map/deco_tree_clump.png"
+    },
+    {
+      "key": "deco_wreck_small",
+      "kind": "decor",
+      "path": "sprites/map/deco_wreck_small.png"
+    },
+    {
       "key": "obj_carrier",
       "kind": "object",
       "path": "sprites/map/obj_carrier.png"

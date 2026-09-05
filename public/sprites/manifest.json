@@ -2,60 +2,74 @@
   "version": 1,
   "images": [
     {
-      "key": "obj_station",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a small hexagonal orbital relief station module, docking struts, amber warning lights, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_station.png",
-      "generatedAt": "2026-09-05T19:37:48.095Z"
+      "key": "deco_rock_a",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a single weathered grey boulder, jagged rock formation, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_rock_a.png",
+      "generatedAt": "2026-09-05T20:59:15.476Z"
     },
     {
-      "key": "obj_colony",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of an O'Neill cylinder colony habitat, domed cap, rotating ring hull, viewports glowing pale amber, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_colony.png",
-      "generatedAt": "2026-09-05T19:37:48.099Z"
+      "key": "deco_rock_b",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a small cluster of two to three jagged grey rocks, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_rock_b.png",
+      "generatedAt": "2026-09-05T20:59:15.480Z"
     },
     {
-      "key": "obj_convoy",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a chunky armored refugee transport truck/hauler, boxy cargo container, thick tires, amber running lights, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_convoy.png",
-      "generatedAt": "2026-09-05T19:37:48.100Z"
+      "key": "deco_tree_clump",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a dense clump of dark green alien scrub trees, tight tangled canopy, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_tree_clump.png",
+      "generatedAt": "2026-09-05T20:59:15.480Z"
     },
     {
-      "key": "obj_derelict",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a broken derelict spacecraft hull wreck missing a chunk of its hull, a jagged torn-open gash exposing broken skeletal girders inside, dark scorch burn marks and rust streaks all over the plating, one antenna snapped and dangling, listing at a broken angle, powered down, no crew, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_derelict.png",
-      "generatedAt": "2026-09-05T19:37:48.100Z"
+      "key": "deco_crater",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a shallow round impact crater, scorched blackened rim, cracked bare ground inside, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_crater.png",
+      "generatedAt": "2026-09-05T20:59:15.481Z"
     },
     {
-      "key": "obj_relay",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a comm relay mast: a tall antenna on a squat equipment base, dish and a single blinking amber light, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_relay.png",
-      "generatedAt": "2026-09-05T19:37:48.101Z"
+      "key": "deco_ruin_wall",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a broken chunk of a collapsed concrete building wall, exposed rebar, rubble at its base, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_ruin_wall.png",
+      "generatedAt": "2026-09-05T20:59:15.481Z"
     },
     {
-      "key": "obj_exit",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a jump-gate beacon: a tall arch of glowing amber energy conduits framing an open gate, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_exit.png",
-      "generatedAt": "2026-09-05T19:37:48.102Z"
+      "key": "deco_wreck_small",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a small burnt-out wrecked vehicle husk, twisted scorched metal, no wheels, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_wreck_small.png",
+      "generatedAt": "2026-09-05T20:59:15.482Z"
     },
     {
-      "key": "obj_carrier",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a long gunmetal rescue carrier spaceship with amber running lights, docking bays, and sensor masts, 3/4 elevated view, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_carrier.png",
-      "generatedAt": "2026-09-05T19:37:48.102Z"
+      "key": "deco_asteroid_a",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a single small jagged grey asteroid chunk, cratered pitted surface, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_asteroid_a.png",
+      "generatedAt": "2026-09-05T20:59:15.483Z"
     },
     {
-      "key": "obj_landing_zone",
-      "kind": "object",
-      "prompt": "SD anime isometric 3/4 view illustration of a landing pad platform marked with amber directional lighting stripes and a central beacon, single object, clean cel-shaded anime style, flat colors, thick outlines, gunmetal and bone white with amber-orange accents, plain solid #00ff00 green background, centered, no text",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/obj_landing_zone.png",
-      "generatedAt": "2026-09-05T19:37:48.103Z"
+      "key": "deco_asteroid_b",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a small cluster of two jagged grey asteroid fragments, cratered pitted surfaces, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_asteroid_b.png",
+      "generatedAt": "2026-09-05T20:59:15.484Z"
+    },
+    {
+      "key": "deco_crystal_shard",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a jagged cluster of glowing violet crystal shards jutting from the ground, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_crystal_shard.png",
+      "generatedAt": "2026-09-05T20:59:15.484Z"
+    },
+    {
+      "key": "deco_antenna_small",
+      "kind": "decor",
+      "prompt": "SD anime isometric 3/4 view illustration of a small standalone comm antenna mast on a narrow tripod base, one blinking amber light, small environment prop, single object, clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/deco_antenna_small.png",
+      "generatedAt": "2026-09-05T20:59:15.485Z"
     }
   ]
 }

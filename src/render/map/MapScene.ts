@@ -19,12 +19,14 @@ import { Application, Container, Graphics, Rectangle, Sprite, Texture, type Fede
 import type { GameData, Id, MapDef, ObjectiveDef, Squad, Vec2, WorldState } from '@sim/types';
 import { Camera } from './camera';
 import { bakeTiles } from './tiles';
+import { buildDecorLayer } from './decor';
 import { DeployZoneView } from './deployZone';
 import { fromIso, mapIsoBounds, toIso } from './iso';
 import { ObjectiveView } from './objectiveView';
 import { PendingBattleView } from './pendingBattleView';
 import { SquadView } from './squadView';
 import { factionAccent, getSquadIconTexture } from './spriteSource';
+import { WeatherLayer } from './weather';
 
 export type MapIntent =
   | { t: 'select'; squadId: Id | null }
@@ -60,8 +62,14 @@ export class MapScene {
   /** Squads, objectives, the deploy zone, and the pending-battle marker all live here so they can be depth-sorted together by projected y. */
   private readonly entitiesLayer = new Container();
   private readonly dimOverlay = new Graphics();
+  /** Permanent stage-level slots WeatherLayer populates per map — backdrop sits behind worldLayer (space starfield/nebula), overlay sits above it but below dimOverlay (tint/vignette/particles). See weather.ts's header. */
+  private readonly weatherBackdropLayer = new Container();
+  private readonly weatherOverlayLayer = new Container();
 
   private tileSprite: Sprite | null = null;
+  private decorSprites: Sprite[] = [];
+  private decorBaked: Sprite | null = null;
+  private weather: WeatherLayer | null = null;
   private deployZoneView: DeployZoneView | null = null;
   private readonly objectiveViews = new Map<Id, ObjectiveView>();
   private readonly squadViews = new Map<Id, SquadView>();
@@ -156,7 +164,7 @@ export class MapScene {
       this.entitiesLayer.sortableChildren = true;
       this.worldLayer.addChild(this.tilesLayer, this.entitiesLayer);
       this.entitiesLayer.addChild(this.pendingBattleView.container);
-      this.app.stage.addChild(this.worldLayer, this.dimOverlay);
+      this.app.stage.addChild(this.weatherBackdropLayer, this.worldLayer, this.weatherOverlayLayer, this.dimOverlay);
       this.dimOverlay.eventMode = 'none';
 
       this.setupInput();
@@ -174,6 +182,8 @@ export class MapScene {
     this.objectiveDefs = new Map(map.objectives.map((d) => [d.id, d]));
 
     this.disposeTileSprite();
+    this.disposeDecor();
+    this.disposeWeather();
     this.deployZoneView?.destroy();
     for (const v of this.objectiveViews.values()) v.destroy();
     this.objectiveViews.clear();
@@ -182,6 +192,9 @@ export class MapScene {
     this.squadTextureKeys.clear();
     this.selectedSquadId = null;
     this.latestWorld = null;
+
+    this.weather = new WeatherLayer(map, this.weatherBackdropLayer, this.weatherOverlayLayer);
+    this.weather.resize(this.app.renderer.width, this.app.renderer.height);
 
     this.deployZoneView = new DeployZoneView(map);
     this.entitiesLayer.addChild(this.deployZoneView.container);
@@ -194,23 +207,70 @@ export class MapScene {
     this.camera.fit();
     this.applyCameraTransform();
 
-    const tileSprite = await bakeTiles(this.app, map);
+    const [tileSprite, decorResult] = await Promise.all([bakeTiles(this.app, map), buildDecorLayer(this.app, map)]);
     // A newer load() may have started (and possibly already been destroyed)
     // while the bake was in flight — don't resurrect a stale tile layer.
     if (this.destroyed || this.map !== map) {
       tileSprite.destroy({ children: true, texture: true, textureSource: true });
+      decorResult.baked?.destroy({ children: true, texture: true, textureSource: true });
+      for (const s of decorResult.sprites) s.destroy({ children: true, texture: false });
       return;
     }
     this.tileSprite = tileSprite;
     this.tilesLayer.addChild(tileSprite);
+
+    if (decorResult.baked) {
+      this.decorBaked = decorResult.baked;
+      this.tilesLayer.addChild(decorResult.baked);
+    } else if (decorResult.sprites.length > 0) {
+      this.decorSprites = decorResult.sprites;
+      this.entitiesLayer.addChild(...decorResult.sprites);
+    }
+  }
+
+  /**
+   * Destroying a RenderTexture that was actively on-screen in the last
+   * rendered frame races the renderer's internal bind-group bookkeeping,
+   * which isn't cleared until the renderer renders another frame — hence
+   * the noisy-but-harmless PixiJS console warning ("'textureSource'/
+   * 'textureSampler' was destroyed while still bound to a shader") if you
+   * destroy it synchronously. `app.ticker.addOnce` runs during that next
+   * real render tick instead, which is late enough. See tiles.ts's
+   * `freeMaskTextures` for the same fix applied to its own intermediate
+   * mask RenderTextures.
+   */
+  private deferredDestroyTexture(texture: Texture): void {
+    this.app.ticker.addOnce(() => texture.destroy(true));
   }
 
   private disposeTileSprite(): void {
     if (this.tileSprite) {
-      this.tileSprite.destroy({ children: true, texture: true, textureSource: true });
+      const texture = this.tileSprite.texture;
+      this.tileSprite.destroy({ children: true, texture: false });
       this.tileSprite = null;
+      this.deferredDestroyTexture(texture);
     }
     this.tilesLayer.removeChildren();
+  }
+
+  private disposeDecor(): void {
+    for (const s of this.decorSprites) {
+      this.entitiesLayer.removeChild(s);
+      s.destroy({ children: true, texture: false }); // decor art is a shared/cached texture, not ours to destroy
+    }
+    this.decorSprites = [];
+    if (this.decorBaked) {
+      const texture = this.decorBaked.texture;
+      this.tilesLayer.removeChild(this.decorBaked);
+      this.decorBaked.destroy({ children: true, texture: false });
+      this.decorBaked = null;
+      this.deferredDestroyTexture(texture);
+    }
+  }
+
+  private disposeWeather(): void {
+    this.weather?.destroy();
+    this.weather = null;
   }
 
   setState(world: WorldState): void {
@@ -274,6 +334,7 @@ export class MapScene {
     this.app.stage.hitArea = new Rectangle(0, 0, w, h);
     this.camera.setViewport(w, h);
     this.dimOverlay.clear().rect(0, 0, w, h).fill({ color: 0x000000, alpha: 0.4 });
+    this.weather?.resize(w, h);
     this.applyCameraTransform();
   }
 
@@ -314,6 +375,8 @@ export class MapScene {
     // so it needs an explicit destroy — app.destroy(texture:false) below
     // deliberately skips it to protect that shared cache.
     this.disposeTileSprite();
+    this.disposeDecor();
+    this.disposeWeather();
     this.objectiveViews.clear();
     this.squadViews.clear();
     this.deployZoneView = null;
@@ -331,6 +394,8 @@ export class MapScene {
   // -------------------------------------------------------------------
 
   private tick(dt: number): void {
+    this.weather?.update(dt);
+
     const world = this.latestWorld;
     if (!world) return;
 

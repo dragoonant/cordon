@@ -48,7 +48,7 @@ const FACTION_PALETTES: Record<Faction, string> = {
   neutral: 'muted grey and rust with salvage-tech violet accents',
 };
 
-export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'object';
+export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'object' | 'decor';
 
 export interface ImageJob {
   /** Unique per job: frame id, `${pilotId}_${expression}`, or a backdrop key. */
@@ -266,15 +266,73 @@ export function buildObjectPrompt(key: ObjectKey): ImageJob {
   };
 }
 
+/**
+ * The 10 small overworld decoration/scenery keys — scattered by
+ * `src/render/map/decor.ts` across eligible terrain tiles for visual
+ * variety, distinct from the 8 objective/set-piece `OBJECT_KEYS` above.
+ * Same isometric-3/4, green-keyed convention, published to
+ * `public/sprites/map/deco_<key>.png` (loaded at runtime via
+ * `loadChromaKeyedTexture('/sprites/map/deco_<key>', targetHeight)`).
+ */
+export const DECOR_KEYS = [
+  'rock_a',
+  'rock_b',
+  'tree_clump',
+  'crater',
+  'ruin_wall',
+  'wreck_small',
+  'asteroid_a',
+  'asteroid_b',
+  'crystal_shard',
+  'antenna_small',
+] as const;
+export type DecorKey = (typeof DECOR_KEYS)[number];
+
+const DECOR_DESCRIPTIONS: Record<DecorKey, string> = {
+  rock_a: 'a single weathered grey boulder, jagged rock formation',
+  rock_b: 'a small cluster of two to three jagged grey rocks',
+  tree_clump: 'a dense clump of dark green alien scrub trees, tight tangled canopy',
+  crater: 'a shallow round impact crater, scorched blackened rim, cracked bare ground inside',
+  ruin_wall: 'a broken chunk of a collapsed concrete building wall, exposed rebar, rubble at its base',
+  wreck_small: 'a small burnt-out wrecked vehicle husk, twisted scorched metal, no wheels',
+  asteroid_a: 'a single small jagged grey asteroid chunk, cratered pitted surface',
+  asteroid_b: 'a small cluster of two jagged grey asteroid fragments, cratered pitted surfaces',
+  crystal_shard: 'a jagged cluster of glowing violet crystal shards jutting from the ground',
+  antenna_small: 'a small standalone comm antenna mast on a narrow tripod base, one blinking amber light',
+};
+
+/**
+ * One small isometric-3/4 decoration/scenery sprite on a #00ff00 key background. Key doubles as the
+ * publish basename. The green-key clause is phrased more insistently than `buildObjectPrompt`'s
+ * ("vivid, no olive or yellow tint") because at least one decor render (rock_a) came back with a
+ * warm/olive-leaning green that measured too close to the runtime chroma-keyer's ratio threshold
+ * (see src/render/sprites/chromaKey.ts) to key out cleanly — this wording change is what a
+ * `--force`-free regenerate of that one job relies on to reroll a cleaner background.
+ */
+export function buildDecorPrompt(key: DecorKey): ImageJob {
+  const prompt =
+    `SD anime isometric 3/4 view illustration of ${DECOR_DESCRIPTIONS[key]}, small environment prop, single object, ` +
+    `clean cel-shaded anime style, flat colors, thick outlines, muted desaturated industrial palette, ` +
+    `plain solid pure saturated #00ff00 chroma-key green screen background, vivid green, no olive or yellow tint, centered, no text`;
+  return {
+    key: `deco_${key}`,
+    kind: 'decor',
+    prompt,
+    negativePrompt: `${NEGATIVE_PROMPT_MAP_ART}, multiple objects, cropped, characters, mecha, robot`,
+    width: 512,
+    height: 512,
+  };
+}
+
 export interface ArtData {
   frames: Record<Id, FrameDef>;
   pilots: Record<Id, PilotDef>;
 }
 
 export interface ArtPlanOptions {
-  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/objects are opt-in only — see buildArtPlan). */
-  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects')[];
-  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> objects order). */
+  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/objects/decor are opt-in only — see buildArtPlan). */
+  only?: ImageKind[] | ('frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'objects' | 'decor')[];
+  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> objects -> decor order). */
   limit?: number;
 }
 
@@ -285,6 +343,7 @@ export interface ArtPlanCounts {
   poses: number;
   terrain: number;
   objects: number;
+  decor: number;
   total: number;
 }
 
@@ -300,15 +359,16 @@ const CATEGORY_TO_KIND: Record<string, ImageKind> = {
   poses: 'pose',
   terrain: 'terrain',
   objects: 'object',
+  decor: 'decor',
 };
 
 /**
- * Poses, terrain, and objects are deliberately excluded from the "no --only
- * given" default: each is an add-on pass unrelated to the base
- * frames/portraits/backdrops set (terrain and objects don't even key off
- * frames.json/pilots.json), so a plain `buildArtPlan(data)` stays exactly
+ * Poses, terrain, objects, and decor are deliberately excluded from the "no
+ * --only given" default: each is an add-on pass unrelated to the base
+ * frames/portraits/backdrops set (terrain, objects, and decor don't even key
+ * off frames.json/pilots.json), so a plain `buildArtPlan(data)` stays exactly
  * what it was before they existed. Ask for them explicitly with
- * `--only poses` / `--only terrain` / `--only objects`.
+ * `--only poses` / `--only terrain` / `--only objects` / `--only decor`.
  */
 export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPlan {
   const wantedKinds = new Set<ImageKind>(
@@ -351,6 +411,11 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
       jobs.push(buildObjectPrompt(key));
     }
   }
+  if (wantedKinds.has('decor')) {
+    for (const key of DECOR_KEYS) {
+      jobs.push(buildDecorPrompt(key));
+    }
+  }
 
   const limited = typeof options.limit === 'number' ? jobs.slice(0, Math.max(0, options.limit)) : jobs;
 
@@ -361,6 +426,7 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
     poses: limited.filter((j) => j.kind === 'pose').length,
     terrain: limited.filter((j) => j.kind === 'terrain').length,
     objects: limited.filter((j) => j.kind === 'object').length,
+    decor: limited.filter((j) => j.kind === 'decor').length,
     total: limited.length,
   };
 
