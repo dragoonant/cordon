@@ -210,6 +210,7 @@ export class BattleStage {
   }
 
   private handleResize(): void {
+    if (this.destroyed || !this.root) return; // observer can fire after teardown
     const cw = Math.max(1, this.container.clientWidth || DESIGN_W);
     const ch = Math.max(1, this.container.clientHeight || DESIGN_H);
     this.app.renderer.resize(cw, ch);
@@ -242,21 +243,29 @@ export class BattleStage {
     this.layers.backdrop.addChild(buildBackdrop(mapKind, terrain, DESIGN_W, DESIGN_H));
 
     await Promise.all([this.buildSquad('A', sides.sideA), this.buildSquad('B', sides.sideB)]);
+    if (this.destroyed) return; // unmounted while textures were loading
 
     if (opts.speed === 'results_only') {
       await this.clock.wait(300);
-      this.finish();
+      if (!this.destroyed) this.finish();
       return;
     }
 
     for (let i = 0; i < result.events.length; i++) {
-      if (this.skipping) break;
+      // destroy() cancels the clock, so every wait resolves instantly from
+      // here on — bail rather than racing through events on a dead stage.
+      if (this.skipping || this.destroyed) break;
       const e = result.events[i];
       opts.onEvent?.(e, i);
-      await this.playEvent(e);
+      try {
+        await this.playEvent(e);
+      } catch (err) {
+        if (!this.destroyed) throw err;
+        break;
+      }
     }
 
-    if (!this.skipping) this.finish();
+    if (!this.skipping && !this.destroyed) this.finish();
   }
 
   skip(): void {

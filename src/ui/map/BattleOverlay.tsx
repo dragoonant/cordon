@@ -29,12 +29,14 @@ export function BattleOverlay() {
     stage.play(battle.result, battle.sides, {
       speed: initialSpeed,
       onEvent: (e: BattleEvent) => {
-        if (e.t === 'last_transmission') {
-          try {
-            void playVoice(e.pilotId.split('#')[0], 'last');
-          } catch {
-            // best-effort — a missing voice clip should never break playback
-          }
+        // Voice lines fire when the stage reaches the event, so they line up
+        // with the cut-in rather than playing at commit time.
+        try {
+          if (e.t === 'last_transmission') void playVoice(e.pilotId.split('#')[0], 'last');
+          else if (e.t === 'callout') void playVoice(e.pilotId.split('#')[0], e.calloutId);
+          else if (e.t === 'finisher') void playVoice(e.pilotId.split('#')[0], 'finisher');
+        } catch {
+          // best-effort — a missing voice clip should never break playback
         }
         const text = battleEventText(e, data);
         if (text) setLog((prev) => [...prev, text].slice(-3));

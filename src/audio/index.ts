@@ -16,6 +16,7 @@
  * know which. isProceduralMusicActive() reports which one is live, mostly
  * for debugging/telemetry.
  */
+import { Howl } from 'howler';
 
 import { createProceduralMusic, type MusicTrack } from './procMusic';
 
@@ -155,7 +156,6 @@ export async function playVoice(pilotDefId: string, lineKey: string): Promise<bo
 
   return new Promise((resolve) => {
     try {
-      const Howl = (window as any).Howl;
       currentVoiceHowl = new Howl({
         src: [voiceUrl],
         html5: true,
@@ -302,8 +302,7 @@ export function playMusic(track: 'title' | 'map_space' | 'map_surface' | 'battle
 
     // Preferred path: the real mp3, via Howler.
     if (exists) {
-      const Howl = (window as any).Howl;
-      if (Howl) {
+      {
         try {
           newPlayer = new Howl({
             src: [`/audio/music/${track}.mp3`],

@@ -402,7 +402,7 @@ export const useStore = create<Store>((set, get) => ({
     if (result.winner === 'A') recordBattle(run, result, data);
     set({ battle: { result, sides: { sideA: sides.sideA, sideB: sides.sideB }, ctx }, forecast: null });
     playMusic('battle');
-    for (const c of pendingCallouts) void playVoiceFor(c.pilotId, c.calloutId);
+    // Callout voice lines play from the battle stage as their cut-ins land.
   },
 
   battleFinished() {
