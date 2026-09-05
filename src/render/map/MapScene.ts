@@ -123,14 +123,25 @@ export class MapScene {
     this.data = data;
   }
 
+  /** Set by destroy(); React StrictMode can unmount while init() is still pending. */
+  private destroyed = false;
+  private initPromise: Promise<void> | null = null;
+
   async load(map: MapDef): Promise<void> {
+    if (this.destroyed) return;
     if (!this.ready) {
-      await this.app.init({
+      this.initPromise ??= this.app.init({
         background: 0x08090c,
         antialias: true,
         width: Math.max(1, this.hostEl.clientWidth),
         height: Math.max(1, this.hostEl.clientHeight),
       });
+      await this.initPromise;
+      if (this.destroyed) {
+        // destroy() ran mid-init; finish the teardown it deferred.
+        this.app.destroy(true, { children: true, texture: false });
+        return;
+      }
       this.hostEl.appendChild(this.app.canvas);
       this.app.canvas.style.width = '100%';
       this.app.canvas.style.height = '100%';
@@ -255,8 +266,12 @@ export class MapScene {
   }
 
   destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    // Init still in flight: load() will destroy the app once init resolves.
+    if (!this.ready) return;
     if (this.ready) {
       const canvas = this.app.canvas;
       canvas.removeEventListener('pointerdown', this.onCanvasPointerDown);

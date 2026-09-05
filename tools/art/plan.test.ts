@@ -141,8 +141,8 @@ describe('buildFramePrompt', () => {
 
 describe('buildPortraitPrompt', () => {
   it('includes archetype and bio as descriptors, and the requested expression', () => {
-    const job = buildPortraitPrompt(pilots.pilot_veteran, 'shouting');
-    expect(job.key).toBe('pilot_veteran_shouting');
+    const job = buildPortraitPrompt(pilots.pilot_veteran, 'shout');
+    expect(job.key).toBe('pilot_veteran_shout');
     expect(job.prompt).toContain('veteran pilot');
     expect(job.prompt).toContain('Was Compact once.');
     expect(job.prompt).toContain('expression: shouting');

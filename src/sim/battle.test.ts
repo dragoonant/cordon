@@ -437,3 +437,20 @@ describe('resolveBattle: degenerate inputs', () => {
     expect(end.reason).toBe('rounds');
   });
 });
+
+describe('resolveBattle: enemy pilot instance ids', () => {
+  it('pilots whose ids carry a `defId#suffix` still resolve their PilotDef and attack', () => {
+    const side = weakSideB();
+    const oldId = 'pilot_grunt';
+    const newId = 'pilot_grunt#spawn_x#0';
+    const pilot = side.pilots[oldId];
+    delete side.pilots[oldId];
+    pilot.id = newId;
+    side.pilots[newId] = pilot;
+    side.squad.slots = side.squad.slots.map((s) => (s && s.pilotId === oldId ? { ...s, pilotId: newId } : s));
+    side.squad.leaderPilotId = newId;
+
+    const res = resolveBattle(strongSideA(), side, baseCtx(), data);
+    expect(res.events.some((e) => e.t === 'attack' && e.side === 'B')).toBe(true);
+  });
+});

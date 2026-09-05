@@ -187,9 +187,13 @@ function buildSector(rng: Rng, ascension: number, data: GameData, unlocks: Unloc
 
   const applyThreat = (base: 1 | 2 | 3): 1 | 2 | 3 => (flags.extraThreat ? (Math.min(3, base + 1) as 1 | 2 | 3) : base);
 
+  // Draw labels without replacement so a sector never shows the same name twice.
+  const spacePool = rng.shuffle([...SPACE_LABELS]);
+  const surfacePool = rng.shuffle([...SURFACE_LABELS]);
   const makeNode = (kind: NodeKind, col: number, row: number): RunNode => {
-    const mapKind = pickMapKind(rng, col);
-    const labelPool = mapKind === 'space' ? SPACE_LABELS : SURFACE_LABELS;
+    let mapKind = pickMapKind(rng, col);
+    if (kind === 'boss') mapKind = 'space'; // only a space boss map ships in this slice
+    const labelPool = mapKind === 'space' ? spacePool : surfacePool;
     const node: RunNode = {
       id: `node_c${col}_r${row}`,
       kind,
@@ -199,7 +203,7 @@ function buildSector(rng: Rng, ascension: number, data: GameData, unlocks: Unloc
       edges: [],
       visited: false,
       cleared: false,
-      label: rng.pick(labelPool),
+      label: labelPool.pop() ?? rng.pick(mapKind === 'space' ? SPACE_LABELS : SURFACE_LABELS),
       threat: applyThreat(baseThreatForCol(col)),
     };
     if (kind === 'distress') node.eventId = rng.pick(eventPool);
@@ -318,18 +322,42 @@ function powerOf(data: GameData, weaponId: Id | null, systemId: Id | null): numb
   return (weaponId ? data.weapons[weaponId]?.power ?? 0 : 0) + (systemId ? data.systems[systemId]?.power ?? 0 : 0);
 }
 
+/**
+ * Preferred starter kit per archetype (ids by preference order; first unlocked
+ * & flyable wins). Keeps the opening squads varied and row-sensible: fronts
+ * carry a lance, backs carry a rifle/railgun, the engineer repairs.
+ */
+const STARTER_KIT: Partial<Record<PilotDef['archetype'], { frames: Id[]; weaponA: Id[]; weaponB: Id[]; systems: Id[] }>> = {
+  veteran: { frames: ['frame_line', 'frame_trooper'], weaponA: ['wpn_lance'], weaponB: ['wpn_assault_rifle'], systems: ['sys_shield'] },
+  hotshot: { frames: ['frame_skirmish', 'frame_interceptor'], weaponA: ['wpn_lance'], weaponB: ['wpn_vulcans'], systems: ['sys_booster'] },
+  marksman: { frames: ['frame_interceptor', 'frame_skirmish'], weaponA: ['wpn_railgun', 'wpn_assault_rifle'], weaponB: ['wpn_assault_rifle'], systems: ['sys_targeting'] },
+  rookie: { frames: ['frame_skirmish'], weaponA: ['wpn_shield_blade', 'wpn_lance'], weaponB: ['wpn_assault_rifle'], systems: ['sys_eject_assist'] },
+  engineer: { frames: ['frame_line', 'frame_trooper'], weaponA: ['wpn_repair_arm'], weaponB: ['wpn_assault_rifle'], systems: ['sys_repair_drone'] },
+  scout: { frames: ['frame_interceptor', 'frame_skirmish'], weaponA: ['wpn_missile_pod', 'wpn_assault_rifle'], weaponB: ['wpn_vulcans'], systems: ['sys_recon_array', 'sys_booster'] },
+  salvager: { frames: ['frame_line', 'frame_skirmish'], weaponA: ['wpn_lance'], weaponB: ['wpn_missile_pod'], systems: ['sys_shield'] },
+  wildcard: { frames: ['frame_interceptor', 'frame_line'], weaponA: ['wpn_lance'], weaponB: ['wpn_assault_rifle'], systems: ['sys_booster'] },
+};
+
 /** Builds one starting mech for `pilot`, pre-equipped, not drawn from run.frames inventory. */
 function buildStartingMech(pilot: Pilot, index: number, unlocks: Unlocks, data: GameData): Mech {
-  const frame = lightestFlyableFrame(pilot, unlocks.frames, data) ?? Object.values(data.frames)[0];
-  const weaponA = firstUnlockedWeapon(unlocks.weapons, data, 'melee');
-  let weaponB: Id | null = firstUnlockedWeapon(unlocks.weapons, data, 'ranged');
+  const kit = STARTER_KIT[data.pilots[pilot.id]?.archetype ?? 'rookie'];
+  const pick = (prefs: Id[] | undefined, pool: Id[]): Id | null => prefs?.find((id) => pool.includes(id)) ?? null;
+
+  const preferredFrame = pick(kit?.frames, unlocks.frames);
+  const frame =
+    (preferredFrame && canPilotFly(pilot, data.frames[preferredFrame]) ? data.frames[preferredFrame] : null) ??
+    lightestFlyableFrame(pilot, unlocks.frames, data) ??
+    Object.values(data.frames)[0];
+
+  const weaponA = pick(kit?.weaponA, unlocks.weapons) ?? firstUnlockedWeapon(unlocks.weapons, data, 'melee');
+  let weaponB: Id | null = pick(kit?.weaponB, unlocks.weapons) ?? firstUnlockedWeapon(unlocks.weapons, data, 'ranged');
   if (weaponB === weaponA) weaponB = null;
 
   let power = powerOf(data, weaponA, null);
   if (weaponB && power + (data.weapons[weaponB]?.power ?? 0) > frame.generator) weaponB = null;
   if (weaponB) power += data.weapons[weaponB]?.power ?? 0;
 
-  let system: Id | null = firstUnlockedSystem(unlocks.systems, data);
+  let system: Id | null = pick(kit?.systems, unlocks.systems) ?? firstUnlockedSystem(unlocks.systems, data);
   if (system && power + (data.systems[system]?.power ?? 0) > frame.generator) system = null;
 
   return {
@@ -468,9 +496,13 @@ const MAP_ELIGIBLE_KINDS: NodeKind[] = ['battle', 'rescue', 'salvage', 'rival', 
 
 function pickMapId(node: RunNode, data: GameData, rng: Rng): Id | undefined {
   const all = Object.values(data.maps);
-  let candidates = all.filter((m) => m.id.includes(node.mapKind) || m.kind === node.mapKind);
+  let candidates = all.filter((m) => m.kind === node.mapKind);
+  // Boss maps are reserved for the boss node.
+  if (node.kind !== 'boss') candidates = candidates.filter((m) => !m.id.includes('boss'));
   if (node.kind === 'boss') {
-    const preferred = candidates.filter((m) => m.id.includes('boss'));
+    // A boss map must exist for the run to be winnable; prefer any boss map
+    // even if its kind differs from the node's rolled kind.
+    const preferred = all.filter((m) => m.id.includes('boss'));
     if (preferred.length) candidates = preferred;
   } else if (node.kind === 'rescue') {
     const preferred = candidates.filter((m) => m.id.includes('rescue'));
@@ -479,6 +511,11 @@ function pickMapId(node: RunNode, data: GameData, rng: Rng): Id | undefined {
   if (!candidates.length) candidates = all;
   if (!candidates.length) return undefined;
   return rng.pick(candidates).id;
+}
+
+/** Reinforcement frame: a compact line frame if it exists, else the template's own. */
+function extraFrameFor(templateFrameId: Id, data: GameData): Id {
+  return data.frames['frame_compact_line'] ? 'frame_compact_line' : templateFrameId;
 }
 
 function buildEnemySquad(
@@ -490,9 +527,23 @@ function buildEnemySquad(
 ): Squad {
   const slots: (SlotAssignment | null)[] = [null, null, null, null, null, null];
   let leaderPilotId: Id | null = null;
-  const bonus = Math.max(0, threat - 1) * 10;
+  // Bosses and rivals are hand-tuned; ordinary spawns scale with node threat by
+  // gaining bodies (threat 2: +1 mech, threat 3: +2) plus a small aptitude bump.
+  const handTuned = !!spawn.isBoss || !!spawn.isRival;
+  const bonus = handTuned ? 0 : Math.max(0, threat - 1) * 6;
+  const extra = handTuned ? 0 : Math.max(0, threat - 1);
+  const composition = [...spawn.composition];
+  if (extra > 0 && spawn.composition.length > 0) {
+    const template = spawn.composition[spawn.composition.length - 1];
+    const free = ([0, 1, 2, 3, 4, 5] as SlotIndex[]).filter((i) => !spawn.composition.some((c) => c.slot === i));
+    for (let i = 0; i < extra && i < free.length; i++) {
+      // Fill front row first so reinforcements screen the originals.
+      const slot = free.sort((a, b) => a - b)[i];
+      composition.push({ ...template, slot, frameId: extraFrameFor(template.frameId, data) });
+    }
+  }
 
-  for (const part of spawn.composition) {
+  for (const part of composition) {
     const def = data.pilots[part.pilotDefId];
     if (!def) continue;
     const instanceId = `${part.pilotDefId}#${spawn.id}#${part.slot}`;

@@ -50,6 +50,19 @@ import { rowOf, FRONT_SLOTS, BACK_SLOTS } from './types';
 import { Rng } from './rng';
 import { RULES, effectiveStats, mechLoad, weatherModifiers } from './rules';
 
+/**
+ * Enemy pilots are instances of a PilotDef with ids of the form
+ * `defId#spawn#slot` (see run.ts); resolve the def by stripping the suffix.
+ */
+function pilotDefFor(data: GameData, pilotId: Id): PilotDef | undefined {
+  return data.pilots[pilotId] ?? data.pilots[pilotId.split('#')[0]];
+}
+
+/** rng.pick that tolerates an empty line pool. */
+function pickLine(rng: Rng, lines: readonly string[] | undefined): string | undefined {
+  return lines && lines.length ? rng.pick(lines) : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Internal runtime state
 // ---------------------------------------------------------------------------
@@ -391,7 +404,7 @@ function fireWeapon(
 ): void {
   const attackerMech = attackerSide.mechs[attackerMechId];
   const attackerPilot = attackerSide.pilots[attackerPilotId];
-  const attackerDef = data.pilots[attackerPilotId];
+  const attackerDef = pilotDefFor(data, attackerPilotId);
   if (!attackerMech || !attackerPilot || !attackerDef) return;
 
   const row = currentRow(attackerSide, attackerMechId);
@@ -491,7 +504,7 @@ function fireWeapon(
   const killed = finalDefMech.hp <= 0 && !finalDefMech.destroyed;
   finalDefMech.hp = Math.max(0, finalDefMech.hp);
 
-  const line = killed ? rng.pick(attackerDef.lines.attack) : rng.chance(0.3) ? rng.pick(attackerDef.lines.attack) : undefined;
+  const line = killed ? pickLine(rng, attackerDef.lines.attack) : rng.chance(0.3) ? pickLine(rng, attackerDef.lines.attack) : undefined;
 
   events.push({
     t: 'attack',
@@ -511,7 +524,7 @@ function fireWeapon(
   });
 
   if (anyCrit) {
-    events.push({ t: 'cutin', side: attackerSide.key, pilotId: attackerPilotId, kind: 'crit', line: rng.pick(attackerDef.lines.crit) });
+    events.push({ t: 'cutin', side: attackerSide.key, pilotId: attackerPilotId, kind: 'crit', line: pickLine(rng, attackerDef.lines.crit) ?? '' });
   }
 
   if (anyLanded && attackerSide.key === 'A') {
@@ -562,7 +575,7 @@ function handleDestruction(
     defenderSide.squad.morale = Math.max(0, defenderSide.squad.morale - 20);
     events.push({ t: 'morale', side: defenderSide.key, delta: -20, reason: 'pilot_death' });
 
-    const def = data.pilots[defenderPilotId];
+    const def = pilotDefFor(data, defenderPilotId);
     const ltDef = def ? data.callouts[def.lastTransmissionId] : null;
     if (def && ltDef) {
       events.push({ t: 'last_transmission', side: defenderSide.key, pilotId: defenderPilotId, calloutId: ltDef.id, line: ltDef.line, effect: ltDef.effect });
@@ -581,7 +594,7 @@ function handleDestruction(
   defenderSide.mechsLost.push({ side: defenderSide.key, mechId: defenderMechId, recoverable });
 
   const killerPilot = attackerSide.pilots[attackerPilotId];
-  const killerDef = data.pilots[attackerPilotId];
+  const killerDef = pilotDefFor(data, attackerPilotId);
   if (killerPilot && killerDef) {
     killerPilot.kills += 1;
     attackerSide.killsByPilot[attackerPilotId] = (attackerSide.killsByPilot[attackerPilotId] ?? 0) + 1;
@@ -589,7 +602,7 @@ function handleDestruction(
     events.push({ t: 'morale', side: attackerSide.key, delta: 5, reason: 'kill' });
     if (killerPilot.kills >= RULES.ACE_KILLS) killerPilot.ace = true;
 
-    events.push({ t: 'cutin', side: attackerSide.key, pilotId: attackerPilotId, kind: 'kill', line: rng.pick(killerDef.lines.kill) });
+    events.push({ t: 'cutin', side: attackerSide.key, pilotId: attackerPilotId, kind: 'kill', line: pickLine(rng, killerDef.lines.kill) ?? '' });
 
     if (aceAtStart[attackerSide.key][attackerPilotId] && !attackerSide.finisherFired.has(attackerPilotId)) {
       attackerSide.finisherFired.add(attackerPilotId);

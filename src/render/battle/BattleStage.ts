@@ -10,7 +10,7 @@
  * created inside the constructor/methods, so importing this module is safe
  * even outside a browser (e.g. from a test runner).
  */
-import { Application, Container, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
+import { Application, ColorMatrixFilter, Container, Graphics, Sprite, Text, type TextStyleOptions } from 'pixi.js';
 import type { BattleEvent, BattleResult, BattleSide, Faction, GameData, Id, MapKind, SlotIndex, Terrain } from '@sim/types';
 import { rowOf } from '@sim/types';
 import { getMechTexture, getPortraitTexture, FACTION_ACCENT } from '../sprites';
@@ -174,6 +174,11 @@ export class BattleStage {
       resolution: typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio || 1) : 1,
     });
 
+    // destroy() may have run while init was pending (React StrictMode).
+    if (this.destroyed) {
+      this.app.destroy(true, { children: true, texture: false, textureSource: false });
+      return;
+    }
     const canvas = this.app.canvas as HTMLCanvasElement;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
@@ -201,6 +206,7 @@ export class BattleStage {
       this.resizeObserver.observe(this.container);
     }
     this.handleResize();
+    this.initDone = true;
   }
 
   private handleResize(): void {
@@ -219,6 +225,7 @@ export class BattleStage {
 
   async play(result: BattleResult, sides: { sideA: BattleSide; sideB: BattleSide }, opts: BattleStagePlayOpts): Promise<void> {
     await this.ready;
+    if (this.destroyed) return;
 
     this.opts = opts;
     this.result = result;
@@ -263,11 +270,18 @@ export class BattleStage {
     this.clock?.setSpeedDiv(speed === 'fast' ? 3 : 1);
   }
 
+  private destroyed = false;
+  private initDone = false;
+
   destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
     this.clock?.cancelAll();
     this.mechViews.clear();
+    // If init is still pending, initApp() tears the app down when it resolves.
+    if (!this.initDone) return;
     // texture: false — mech/portrait textures are cached and shared by src/render/sprites; only this app's own display tree is torn down.
     this.app.destroy(true, { children: true, texture: false, textureSource: false });
   }
@@ -706,7 +720,7 @@ export class BattleStage {
     await this.clock.wait(900);
 
     if (e.pilotDied) {
-      const filter = new (await import('pixi.js')).ColorMatrixFilter();
+      const filter = new ColorMatrixFilter();
       this.world.filters = [filter];
       const text = new Text({ text: 'PILOT LOST', style: { ...BANNER_STYLE, fill: 0xe0483e, fontSize: 46 } });
       text.anchor.set(0.5);
@@ -806,7 +820,7 @@ export class BattleStage {
       if (defender) void this.cameraPunch(defender);
       if (hit.hit && defender) {
         this.flashWhite(defender);
-        this.popFloatingText(defender, hit.crit ? `${hit.damage}` : `${hit.damage}`, hit.crit ? 0xffc23c : 0xf2efe6, hit.crit);
+        this.popFloatingText(defender, `${hit.damage}`, hit.crit ? 0xffc23c : 0xf2efe6, hit.crit);
         const isLastHit = hi === e.hits.length - 1;
         defender.hp = Math.max(0, isLastHit ? e.defenderHpAfter : defender.hp - hit.damage);
         this.redrawHpBar(defender);

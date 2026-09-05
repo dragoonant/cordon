@@ -209,7 +209,7 @@ describe('prepareMap', () => {
     expect(again!.map.id).toBe(prepared!.map.id);
   });
 
-  it('scales enemy aptitudes by +10 per threat level above 1', () => {
+  it('scales ordinary enemy squads by threat: +6 aptitude per level and extra mechs', () => {
     const run = freshRun();
     const node = run.sectors[0].nodes.find((n) => n.col === 1)!;
     node.kind = 'battle';
@@ -222,7 +222,12 @@ describe('prepareMap', () => {
     const grunt1Instance = Object.entries(prepared.enemies.pilots).find(([id]) => pilotDefIdOf(id) === 'pilot_grunt_1');
     expect(grunt1Instance).toBeDefined();
     const [, pilot] = grunt1Instance!;
-    expect(pilot.aptitudes.gunnery).toBe(Math.min(100, FIXTURE_DATA.pilots.pilot_grunt_1.baseAptitudes.gunnery + 20));
+    expect(pilot.aptitudes.gunnery).toBe(Math.min(100, FIXTURE_DATA.pilots.pilot_grunt_1.baseAptitudes.gunnery + 12));
+    // threat 3 adds two bodies beyond the spawn's own composition (if slots allow)
+    const spawn = prepared.map.enemySquads[0];
+    const squad = prepared.enemies.squads.find((q) => q.id === spawn.id)!;
+    const filled = squad.slots.filter(Boolean).length;
+    expect(filled).toBe(Math.min(6, spawn.composition.length + 2));
   });
 
   it('prefers a rescue-flavored map for rescue nodes', () => {

@@ -188,7 +188,11 @@ export const useStore = create<Store>((set, get) => ({
     try {
       const data = loadGameData();
       let save = await loadSave();
-      if (!save || !save.unlocks) save = defaultSave(data);
+      // loadSave() can't see content, so a fresh install comes back with empty
+      // unlocks; seed from data in that case.
+      if (!save || !save.unlocks || (save.unlocks.pilots.length === 0 && !save.activeRun)) {
+        save = defaultSave(data);
+      }
       initAudio(save.settings);
       set({ data, save, run: save.activeRun ?? null, screen: 'title' });
       playMusic('title');
@@ -218,7 +222,12 @@ export const useStore = create<Store>((set, get) => ({
   continueRun() {
     const { run } = get();
     if (!run) return;
-    set({ screen: 'node_map', world: null, map: null });
+    set({ world: null, map: null });
+    // If the save was made mid-node (briefing/map/depot…), re-enter that node
+    // rather than stranding the player on the graph with nowhere to go.
+    const node = currentNode(run);
+    if (!node.cleared && node.kind !== 'start') routeNode(node, set, get);
+    else set({ screen: 'node_map' });
   },
 
   async abandonRun() {
@@ -469,6 +478,9 @@ export const useStore = create<Store>((set, get) => ({
     set((s) => ({ hudTick: s.hudTick + 1 }));
   },
 }));
+
+// Debug handle for devtools / QA scripts.
+if (typeof window !== 'undefined') (window as unknown as { __cordon: unknown }).__cordon = useStore;
 
 // ---------------------------------------------------------------------------
 

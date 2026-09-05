@@ -1365,14 +1365,6 @@
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
             "slot": 3
-          },
-          {
-            "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_lancer_pod",
-            "weaponB": null,
-            "system": null,
-            "pilotDefId": "pilot_cmp_grunt_c",
-            "slot": 4
           }
         ],
         "pos": {

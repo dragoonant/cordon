@@ -71,14 +71,14 @@ export class ObjectiveView {
     this.container.x = this.pos.x * TILE_SIZE;
     this.container.y = this.pos.y * TILE_SIZE;
 
-    if (state.status !== this.lastStatus) {
+    const statusChanged = state.status !== this.lastStatus;
+    if (statusChanged) {
       this.redrawIcon(state.status);
       this.lastStatus = state.status;
     }
-    if (state.progress !== this.lastProgress) {
+    if (statusChanged || state.progress !== this.lastProgress) {
       this.progressRing.clear();
-      const color = state.status === 'failed' ? STATUS_COLOR.failed : STATUS_COLOR.active;
-      progressArc(this.progressRing, 0, 0, this.radiusPx, state.progress, { color, width: 3, alpha: 0.9 });
+      progressArc(this.progressRing, 0, 0, this.radiusPx, state.progress, { color: STATUS_COLOR[state.status], width: 3, alpha: 0.9 });
       this.lastProgress = state.progress;
     }
 

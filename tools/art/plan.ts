@@ -11,8 +11,16 @@ import type { Faction, FrameDef, Id, PilotDef } from '../../src/sim/types';
 
 export const NEGATIVE_PROMPT_SPRITE = 'realistic, photo, blurry, text, watermark, multiple robots, cropped';
 
-export const PORTRAIT_EXPRESSIONS = ['neutral', 'shouting', 'strained', 'grinning'] as const;
+/** Keys match the runtime sprite loader (`/portraits/<id>_<expression>.png`). */
+export const PORTRAIT_EXPRESSIONS = ['neutral', 'shout', 'strained', 'grin'] as const;
 export type PortraitExpression = (typeof PORTRAIT_EXPRESSIONS)[number];
+/** Prompt wording per expression key. */
+const EXPRESSION_PROMPT: Record<PortraitExpression, string> = {
+  neutral: 'neutral, calm',
+  shout: 'shouting, mouth open, brows down',
+  strained: 'strained, gritted teeth, sweat',
+  grin: 'grinning, confident',
+};
 
 /** Fixed per GDD §10 — one backdrop per terrain family, not derived from map data. */
 export const BACKDROP_SCENES: { key: string; scene: string }[] = [
@@ -76,7 +84,7 @@ export function buildPortraitPrompt(pilot: PilotDef, expression: PortraitExpress
   const descriptors = `${pilot.archetype} pilot, ${pilot.bio}`;
   const prompt =
     `anime portrait, chibi style, mecha pilot in flight suit, ${descriptors}, ` +
-    `expression: ${expression}, bust shot, facing slightly left, cel shaded, flat colors, ` +
+    `expression: ${EXPRESSION_PROMPT[expression]}, bust shot, facing slightly left, cel shaded, flat colors, ` +
     `plain solid #00ff00 green background`;
   return { key: `${pilot.id}_${expression}`, kind: 'portrait', prompt, width: 512, height: 512 };
 }
