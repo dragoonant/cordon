@@ -17,7 +17,8 @@
 import { Application, Assets, Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import type { Faction, GameData, Id, Mech } from '@sim/types';
 import { FACTION_ACCENT } from './palette';
-import { probeAsset } from './assetProbe';
+import { probeFirstExisting } from './assetProbe';
+import { loadChromaKeyedFrameTexture } from './chromaKey';
 import { getCachedTexture, clearSpriteCache as clearCache } from './textureCache';
 import { attachPointsFor, boundsFor, buildFrameContainer } from './drawFrame';
 import { buildWeaponOverlay } from './drawWeapon';
@@ -53,9 +54,10 @@ function bake(app: Application, root: Container, anchor: { x: number; y: number 
   return tex;
 }
 
-async function loadPngIfPresent(url: string): Promise<Texture | null> {
-  const exists = await probeAsset(url);
-  if (!exists) return null;
+/** Loads a hand-authored PNG/JPG at `baseUrl` (no extension) if either exists — used for portraits, which need no chroma-keying. */
+async function loadPortraitIfPresent(baseUrl: string): Promise<Texture | null> {
+  const url = await probeFirstExisting(baseUrl, ['png', 'jpg']);
+  if (!url) return null;
   try {
     return await Assets.load<Texture>(url);
   } catch {
@@ -74,9 +76,14 @@ export async function getFrameTexture(
   return getCachedTexture(key, async () => {
     const frame = data.frames[frameId];
     if (!frame) throw new Error(`getFrameTexture: unknown frame id "${frameId}"`);
-    const png = await loadPngIfPresent(`/sprites/frames/${frame.spriteKey}_${scale}.png`);
-    if (png) return png;
     const H = heightFor(scale);
+    const png = await loadChromaKeyedFrameTexture(frame.spriteKey, scale, H);
+    if (png) {
+      const sprite = new Sprite(png);
+      sprite.anchor.set(0.5, 1);
+      const root = wrapFacing(sprite, faction);
+      return bake(app, root, { x: 0.5, y: 1 });
+    }
     const built = buildFrameContainer(frame.silhouette, faction, H, scale === 'battle');
     const root = wrapFacing(built.container, faction);
     return bake(app, root, { x: 0.5, y: 1 });
@@ -99,7 +106,7 @@ export async function getMechTexture(
     const detailed = scale === 'battle';
     const art = new Container();
 
-    const png = await loadPngIfPresent(`/sprites/frames/${frame.spriteKey}_${scale}.png`);
+    const png = await loadChromaKeyedFrameTexture(frame.spriteKey, scale, H);
     if (png) {
       const sprite = new Sprite(png);
       sprite.anchor.set(0.5, 1);
@@ -137,7 +144,7 @@ export async function getPortraitTexture(
   return getCachedTexture(key, async () => {
     const pilot = data.pilots[pilotDefId];
     if (!pilot) throw new Error(`getPortraitTexture: unknown pilot id "${pilotDefId}"`);
-    const png = await loadPngIfPresent(`/portraits/${pilot.portraitKey}_${expression}.png`);
+    const png = await loadPortraitIfPresent(`/portraits/${pilot.portraitKey}_${expression}`);
     if (png) return png;
     const container = buildPortraitContainer(pilotDefId, pilot.faction, expression, pilot.callsign, 96);
     return bake(app, container, { x: 0.5, y: 0.5 });

@@ -8,3 +8,6 @@
 # Build / deps
 node_modules/
 dist/
+
+# Raw AI-generated art (pre-key); published copies live in public/sprites/frames and public/portraits
+public/sprites/raw/

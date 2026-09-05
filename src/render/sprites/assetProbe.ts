@@ -17,7 +17,11 @@ export function probeAsset(url: string): Promise<boolean> {
     try {
       if (typeof fetch !== 'function') return false;
       const res = await fetch(url, { method: 'HEAD' });
-      return res.ok;
+      if (!res.ok) return false;
+      // Dev servers (Vite) answer unknown paths with index.html + 200 (SPA
+      // fallback), so a 200 alone doesn't prove the asset exists.
+      const type = res.headers.get('content-type') ?? '';
+      return type.startsWith('image/') || type.startsWith('audio/') || type.startsWith('application/octet-stream');
     } catch {
       return false;
     }
@@ -29,4 +33,18 @@ export function probeAsset(url: string): Promise<boolean> {
 /** Exposed for tests / the sprite cache reset. */
 export function clearAssetProbeCache(): void {
   existsCache.clear();
+}
+
+/**
+ * Tries `${baseUrl}.${ext}` for each of `exts` in order, returning the first
+ * URL that HEAD-checks OK, or null if none exist. Used where the art pipeline
+ * (tools/art) may have published either a PNG or a JPEG for the same asset
+ * key, depending on what the generator actually returned.
+ */
+export async function probeFirstExisting(baseUrl: string, exts: readonly string[]): Promise<string | null> {
+  for (const ext of exts) {
+    const url = `${baseUrl}.${ext}`;
+    if (await probeAsset(url)) return url;
+  }
+  return null;
 }

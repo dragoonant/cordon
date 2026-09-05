@@ -9,28 +9,45 @@
  *
  * Usage:
  *   npx tsx tools/art/generate.ts --dry-run
- *   npx tsx tools/art/generate.ts [--force] [--only frames|portraits|backdrops] [--limit N] [--publish] [--model <id>] [--provider router|api-inference]
+ *   npx tsx tools/art/generate.ts [--force] [--only frames|portraits|backdrops] [--limit N] [--publish] [--model <id>] [--provider fal-ai|hf-inference]
+ *
+ * PROVIDERS:
+ *   fal-ai (default)  POST https://router.huggingface.co/fal-ai/fal-ai/<model> (model defaults to
+ *                      "flux/schnell") with a JSON body ({prompt, image_size, num_inference_steps, ...}),
+ *                      using the same HF token. Response is JSON `{"images":[{"url": ...}], ...}`; the
+ *                      actual image bytes are downloaded from `images[0].url`. This is the endpoint
+ *                      confirmed working as of 2026-09 — plain hf-inference text-to-image models
+ *                      (including the old default, black-forest-labs/FLUX.1-schnell) now return 410.
+ *   hf-inference       POST https://router.huggingface.co/hf-inference/models/<model>, classic HF
+ *                      Inference API shape (binary image body). Kept selectable in case HF restores a
+ *                      working model on this route, but expect 410/400 for now. The even older
+ *                      api-inference.huggingface.co host is dead and has been removed entirely — no
+ *                      fallback to it remains.
  *
  * OUTPUT LAYOUT — read this before running for real:
  *   public/sprites/raw/<key>.<ext>        every generated image, as received (png or jpg), always written.
  *   public/sprites/frames/README.md       explains the plain-#00ff00-green-background chroma-key convention
- *                                         placeholder frame/portrait art uses; written once, real runs only.
- *   public/sprites/<spriteKey>_battle.png } only written with --publish, and only when the raw response was
- *   public/sprites/<spriteKey>_map.png    } verified to actually be a PNG (magic-byte check, not just the
- *   public/portraits/<portraitKey>_<expr>.png } HTTP content-type). Until --publish is used, the game keeps
- *                                         using its procedural placeholders — nothing under public/sprites/
- *   (both are literal copies of the same raw   or public/portraits/ is overwritten by an unreviewed batch.
- *    generated image; the sprite loader scales frame art for map vs. battle context, so no resizing here.)
+ *                                         placeholder frame art uses; written once, real runs only.
+ *   public/sprites/frames/<spriteKey>_battle.<png|jpg> } only written with --publish, and only when the raw
+ *   public/sprites/frames/<spriteKey>_map.<png|jpg>    } response was verified (by magic bytes, not just the
+ *   public/portraits/<portraitKey>_<expr>.<png|jpg>    } HTTP content-type) to actually be a PNG or JPEG —
+ *                                         extension follows the real format. Until --publish is used, the
+ *                                         game keeps using its procedural placeholders — nothing under
+ *                                         public/sprites/frames/ or public/portraits/ is overwritten by an
+ *                                         unreviewed batch. (Both frame files are literal copies of the same
+ *                                         raw generated image; the sprite loader scales frame art for map vs.
+ *                                         battle context and chroma-keys the green out at runtime, so no
+ *                                         image processing happens here.)
  *
  * This tool does NOT depend on any image library (no sharp, no canvas) — it
- * only ever copies bytes it already has. If Hugging Face ever returns
- * anything other than PNG/JPEG, the raw file is still saved (for inspection)
- * but publishing that job is skipped with a warning.
+ * only ever copies bytes it already has. If a provider ever returns anything
+ * other than PNG/JPEG, the raw file is still saved (for inspection) but
+ * publishing that job is skipped with a warning.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { AuthError, sleep } from '../shared/fetchRetry';
+import { AuthError, fetchRetry, sleep } from '../shared/fetchRetry';
 import { describeSecretPresence, readSecret } from '../shared/secrets';
 import { ensureDir, writeFileAtomic } from '../shared/fsx';
 import { error, info, logCounts, warn } from '../shared/log';
@@ -51,18 +68,22 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
 const RAW_DIR = path.join(ROOT, 'public/sprites/raw');
 const SPRITES_DIR = path.join(ROOT, 'public/sprites');
+const FRAMES_DIR = path.join(SPRITES_DIR, 'frames');
 const PORTRAITS_DIR = path.join(ROOT, 'public/portraits');
-const FRAMES_README_PATH = path.join(ROOT, 'public/sprites/frames/README.md');
+const FRAMES_README_PATH = path.join(FRAMES_DIR, 'README.md');
 const MANIFEST_PATH = path.join(ROOT, 'public/sprites/manifest.json');
 
-const DEFAULT_MODEL = 'black-forest-labs/FLUX.1-schnell';
+/** Model id for provider 'fal-ai' — a path segment under router.huggingface.co/fal-ai/fal-ai/. */
+const DEFAULT_FAL_MODEL = 'flux/schnell';
+/** Model id for provider 'hf-inference' — a model repo id under router.huggingface.co/hf-inference/models/. */
+const DEFAULT_HF_MODEL = 'black-forest-labs/FLUX.1-schnell';
 
 // ---------------------------------------------------------------------------
 // CLI args
 // ---------------------------------------------------------------------------
 
 type Category = 'frames' | 'portraits' | 'backdrops';
-type Provider = 'auto' | 'router' | 'api-inference';
+type Provider = 'fal-ai' | 'hf-inference';
 
 interface CliArgs {
   dryRun: boolean;
@@ -70,14 +91,19 @@ interface CliArgs {
   only?: Category[];
   limit?: number;
   publish: boolean;
-  model: string;
+  /** undefined means "use the provider's default model". */
+  model?: string;
   provider: Provider;
 }
 
 const VALID_CATEGORIES: Category[] = ['frames', 'portraits', 'backdrops'];
 
+function defaultModelFor(provider: Provider): string {
+  return provider === 'fal-ai' ? DEFAULT_FAL_MODEL : DEFAULT_HF_MODEL;
+}
+
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { dryRun: false, force: false, publish: false, model: DEFAULT_MODEL, provider: 'auto' };
+  const args: CliArgs = { dryRun: false, force: false, publish: false, provider: 'fal-ai' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     switch (a) {
@@ -108,13 +134,13 @@ function parseArgs(argv: string[]): CliArgs {
         }
         break;
       case '--model':
-        args.model = argv[++i] ?? DEFAULT_MODEL;
+        args.model = argv[++i];
         break;
       case '--provider':
         {
           const p = argv[++i];
-          if (p !== 'router' && p !== 'api-inference') {
-            error(TAG, `--provider must be "router" or "api-inference", got "${p}"`);
+          if (p !== 'fal-ai' && p !== 'hf-inference') {
+            error(TAG, `--provider must be "fal-ai" or "hf-inference", got "${p}"`);
             process.exit(1);
           }
           args.provider = p;
@@ -158,11 +184,12 @@ function loadData(): ArtData | null {
 // Hugging Face request
 // ---------------------------------------------------------------------------
 
-function routerUrl(model: string): string {
+function hfInferenceUrl(model: string): string {
   return `https://router.huggingface.co/hf-inference/models/${model}`;
 }
-function apiInferenceUrl(model: string): string {
-  return `https://api-inference.huggingface.co/models/${model}`;
+/** fal's serverless models are exposed through the HF router at fal-ai/fal-ai/<model>. */
+function falUrl(model: string): string {
+  return `https://router.huggingface.co/fal-ai/fal-ai/${model}`;
 }
 
 interface HfImageResult {
@@ -170,14 +197,30 @@ interface HfImageResult {
   contentType: string;
 }
 
+/** Deterministic 32-bit hash of a job key, used as fal's "seed" so reruns of the same job are reproducible. */
+function stableSeed(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 /**
- * POSTs one image job to one HF endpoint. Handles the two HF-specific
- * transient cases that a generic status-code retry can't: 503 "model is
- * loading" (body carries an estimated_time in seconds to wait) and 429
- * rate limiting (plain exponential backoff, HF doesn't reliably send
+ * POSTs one image job to one classic HF Inference endpoint. Handles the two
+ * HF-specific transient cases that a generic status-code retry can't: 503
+ * "model is loading" (body carries an estimated_time in seconds to wait) and
+ * 429 rate limiting (plain exponential backoff, HF doesn't reliably send
  * Retry-After on this route). Throws AuthError immediately on 401/403.
+ *
+ * As of 2026-09 every hf-inference text-to-image model we've probed
+ * (including the historical default here) returns 400/410 — this path is
+ * kept for when/if HF restores a working model on this route, not because
+ * it currently succeeds. Use --provider fal-ai (the default) instead.
  */
-async function requestImageOnce(token: string, endpoint: string, job: ImageJob): Promise<HfImageResult> {
+async function requestHfInference(token: string, model: string, job: ImageJob): Promise<HfImageResult> {
+  const endpoint = hfInferenceUrl(model);
   const maxAttempts = 5;
   let lastStatus: number | undefined;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -228,28 +271,51 @@ async function requestImageOnce(token: string, endpoint: string, job: ImageJob):
 }
 
 /**
- * Tries the requested provider(s) in order. With --provider unset ('auto')
- * this tries the newer router endpoint first and falls back to the classic
- * api-inference host on any non-auth failure, per HF's endpoint migration.
- * An explicit --provider pins to exactly that one endpoint, no fallback.
+ * POSTs one image job to fal's flux/schnell (or another fal model) via the HF
+ * router. Uses the shared fetchRetry helper (handles 429/5xx backoff, throws
+ * AuthError on 401/403) for both the generation request and the follow-up
+ * download of the returned image URL — fal returns JSON with a hosted image
+ * URL, not raw image bytes, per the response shape confirmed against the
+ * live endpoint.
  */
-async function requestImage(token: string, model: string, provider: Provider, job: ImageJob): Promise<HfImageResult> {
-  const endpoints =
-    provider === 'router' ? [routerUrl(model)] : provider === 'api-inference' ? [apiInferenceUrl(model)] : [routerUrl(model), apiInferenceUrl(model)];
-
-  let lastError: unknown;
-  for (let i = 0; i < endpoints.length; i++) {
-    try {
-      return await requestImageOnce(token, endpoints[i], job);
-    } catch (err) {
-      if (err instanceof AuthError) throw err;
-      lastError = err;
-      if (i < endpoints.length - 1) {
-        warn(TAG, `${job.key}: ${endpoints[i]} failed (${(err as Error).message}); trying fallback endpoint`);
-      }
-    }
+async function requestFalAi(token: string, model: string, job: ImageJob): Promise<HfImageResult> {
+  const endpoint = falUrl(model);
+  const res = await fetchRetry(
+    endpoint,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: job.prompt,
+        image_size: { width: job.width, height: job.height },
+        num_inference_steps: 4,
+        output_format: 'png',
+        seed: stableSeed(job.key),
+      }),
+    },
+    { timeoutMs: 120000 }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`fal-ai request failed (HTTP ${res.status}) for ${job.key} at ${endpoint}: ${text.slice(0, 300)}`);
   }
-  throw lastError ?? new Error(`${job.key}: no HF endpoints configured`);
+  const body = (await res.json().catch(() => ({}))) as { images?: { url?: string; content_type?: string }[] };
+  const first = body.images?.[0];
+  if (!first?.url) {
+    throw new Error(`fal-ai response for ${job.key} had no images[0].url`);
+  }
+  const imgRes = await fetchRetry(first.url, {}, { timeoutMs: 60000 });
+  if (!imgRes.ok) {
+    throw new Error(`fal-ai image download failed (HTTP ${imgRes.status}) for ${job.key} at ${first.url}`);
+  }
+  const contentType = imgRes.headers.get('content-type') ?? first.content_type ?? '';
+  const buffer = Buffer.from(await imgRes.arrayBuffer());
+  return { buffer, contentType };
+}
+
+/** Dispatches to the selected provider. Each provider is a single pinned endpoint — no cross-provider fallback. */
+async function requestImage(token: string, model: string, provider: Provider, job: ImageJob): Promise<HfImageResult> {
+  return provider === 'fal-ai' ? requestFalAi(token, model, job) : requestHfInference(token, model, job);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,6 +335,18 @@ function isPng(buffer: Buffer): boolean {
   return sig.every((byte, i) => buffer[i] === byte);
 }
 
+/** True only if the buffer actually starts with the JPEG magic bytes — never trust content-type alone. */
+function isJpeg(buffer: Buffer): boolean {
+  return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+}
+
+/** Classifies a raw image buffer by its real magic bytes, independent of whatever extension it was saved under. */
+function classifyImage(buffer: Buffer): 'png' | 'jpg' | null {
+  if (isPng(buffer)) return 'png';
+  if (isJpeg(buffer)) return 'jpg';
+  return null;
+}
+
 function findRawExtension(key: string): string | null {
   for (const ext of ['png', 'jpg', 'jpeg', 'bin']) {
     if (existsSync(path.join(RAW_DIR, `${key}.${ext}`))) return ext;
@@ -276,30 +354,34 @@ function findRawExtension(key: string): string | null {
   return null;
 }
 
-const FRAMES_README = `# Placeholder frame/portrait sprites — green-key convention
+const FRAMES_README = `# Placeholder frame sprites — green-key convention
 
-Every frame and portrait prompt generated by \`tools/art/generate.ts\` asks the
-model for a **plain solid #00ff00 (pure green) background**. That's a chroma
-key: the render pipeline (or a human doing cleanup) treats that exact color
-as transparent.
+Every **frame** prompt generated by \`tools/art/generate.ts\` asks the model
+for a **plain solid #00ff00 (pure green) background**. That's a chroma key:
+the runtime sprite loader (\`src/render/sprites\`) treats pixels close to that
+color as transparent when it loads a frame PNG/JPG, feathering the edge and
+trimming the fully-transparent margins before scaling to the on-screen size.
+
+**Portraits do not use this convention.** Portraits are displayed as square
+cards, need no keying, and are prompted with an actual background (dark
+gunmetal gradient, amber rim light) — see \`buildPortraitPrompt\` in
+\`tools/art/plan.ts\`.
 
 This tool ships with **no image-processing dependency** (no \`sharp\`, no
-\`canvas\`) — it only saves the bytes the API returns. It does **not** cut the
-green out for you. Two consequences:
+\`canvas\`) — it only saves the bytes the API returns; the chroma-keying
+happens in the browser at load time, not here. Two consequences:
 
 1. Files under \`public/sprites/raw/\` are the untouched model output —
-   green background and all. They are the brief for a human (or a follow-up
-   tool change) to key out and clean up, per GDD §10.
-2. Files under \`public/sprites/<spriteKey>_battle.png\` /
-   \`_map.png\` and \`public/portraits/<portraitKey>_<expression>.png\` are only
-   written when \`--publish\` is passed, and only for jobs whose raw output was
-   verified (by magic bytes, not just HTTP content-type) to actually be a
-   PNG. Until a human reviews a batch and runs with \`--publish\`, the game
-   keeps using its procedural placeholder shapes instead of these images.
-
-If you introduce real chroma-keying later, do it as a separate build step
-that reads \`public/sprites/raw/\` — don't reach for an image library from
-inside this generation script without updating this note.
+   green background and all, for frames. They are the brief for a human to
+   review before publishing.
+2. Files under \`public/sprites/frames/<spriteKey>_battle.<png|jpg>\` /
+   \`_map.<png|jpg>\` and \`public/portraits/<portraitKey>_<expression>.<png|jpg>\`
+   are only written when \`--publish\` is passed, and only for jobs whose raw
+   output was verified (by magic bytes, not just HTTP content-type) to
+   actually be a PNG or JPEG — the extension follows the real format so the
+   runtime loader (which probes both) picks the right one. Until a human
+   reviews a batch and runs with \`--publish\`, the game keeps using its
+   procedural placeholder shapes instead of these images.
 `;
 
 // ---------------------------------------------------------------------------
@@ -334,29 +416,38 @@ async function processJob(
   return { job, status: 'generated' };
 }
 
-/** Publishes a frame job's raw PNG as the two loader-convention filenames. Skips (with a warning) if not a real PNG. */
+/**
+ * Publishes a frame job's raw image as the two loader-convention filenames
+ * under public/sprites/frames/ (the runtime loader — src/render/sprites —
+ * probes that path for both .png and .jpg). Skips (with a warning) if the
+ * raw bytes aren't actually a PNG or JPEG, regardless of what extension the
+ * raw file was saved under.
+ */
 function publishFrame(job: ImageJob, spriteKey: string): void {
   const ext = findRawExtension(job.key);
   if (!ext) return;
   const raw = readFileSync(path.join(RAW_DIR, `${job.key}.${ext}`));
-  if (!isPng(raw)) {
-    warn(TAG, `${job.key}: raw output is not a real PNG (ext .${ext}); skipping publish`);
+  const kind = classifyImage(raw);
+  if (!kind) {
+    warn(TAG, `${job.key}: raw output is not a real PNG or JPEG (ext .${ext}); skipping publish`);
     return;
   }
-  writeFileAtomic(path.join(SPRITES_DIR, `${spriteKey}_battle.png`), raw);
-  writeFileAtomic(path.join(SPRITES_DIR, `${spriteKey}_map.png`), raw);
+  ensureDir(FRAMES_DIR);
+  writeFileAtomic(path.join(FRAMES_DIR, `${spriteKey}_battle.${kind}`), raw);
+  writeFileAtomic(path.join(FRAMES_DIR, `${spriteKey}_map.${kind}`), raw);
 }
 
-/** Publishes a portrait job's raw PNG as public/portraits/<portraitKey>_<expression>.png. Skips if not a real PNG. */
+/** Publishes a portrait job's raw image as public/portraits/<portraitKey>_<expression>.<png|jpg>. Skips if not real PNG/JPEG. */
 function publishPortrait(job: ImageJob, portraitKey: string, expression: string): void {
   const ext = findRawExtension(job.key);
   if (!ext) return;
   const raw = readFileSync(path.join(RAW_DIR, `${job.key}.${ext}`));
-  if (!isPng(raw)) {
-    warn(TAG, `${job.key}: raw output is not a real PNG (ext .${ext}); skipping publish`);
+  const kind = classifyImage(raw);
+  if (!kind) {
+    warn(TAG, `${job.key}: raw output is not a real PNG or JPEG (ext .${ext}); skipping publish`);
     return;
   }
-  writeFileAtomic(path.join(PORTRAITS_DIR, `${portraitKey}_${expression}.png`), raw);
+  writeFileAtomic(path.join(PORTRAITS_DIR, `${portraitKey}_${expression}.${kind}`), raw);
 }
 
 // ---------------------------------------------------------------------------
@@ -377,7 +468,8 @@ async function main(): Promise<void> {
 
   const plan = buildArtPlan(data, { only: args.only, limit: args.limit });
   printPlanSummary(plan);
-  info(TAG, `model: ${args.model}, provider: ${args.provider}${args.publish ? ' (publish enabled)' : ' (raw only — pass --publish to update public/sprites, public/portraits)'}`);
+  const model = args.model ?? defaultModelFor(args.provider);
+  info(TAG, `model: ${model}, provider: ${args.provider}${args.publish ? ' (publish enabled)' : ' (raw only — pass --publish to update public/sprites/frames, public/portraits)'}`);
 
   if (args.dryRun) {
     const estChars = plan.jobs.reduce((n, j) => n + j.prompt.length, 0);
@@ -409,7 +501,7 @@ async function main(): Promise<void> {
   try {
     await runPool(plan.jobs, 2, async (job) => {
       try {
-        const outcome = await processJob(token, args.model, args.provider, job, args.force);
+        const outcome = await processJob(token, model, args.provider, job, args.force);
         if (outcome.status === 'generated') {
           generated++;
           info(TAG, `generated raw/${job.key}`);
@@ -433,6 +525,7 @@ async function main(): Promise<void> {
 
   if (args.publish) {
     ensureDir(SPRITES_DIR);
+    ensureDir(FRAMES_DIR);
     ensureDir(PORTRAITS_DIR);
     for (const job of plan.jobs) {
       if (job.kind === 'frame') {

@@ -57,7 +57,7 @@ import {
 import { resolveBattle } from '@sim/battle';
 import { forecast as computeForecast } from '@sim/forecast';
 import { hashString } from '@sim/rng';
-import { initAudio, playMusic, playSfx, updateAudioSettings } from '@audio/index';
+import { initAudio, loadVoiceManifest, playMusic, playSfx, updateAudioSettings } from '@audio/index';
 
 export type Screen =
   | 'boot'
@@ -194,6 +194,7 @@ export const useStore = create<Store>((set, get) => ({
         save = defaultSave(data);
       }
       initAudio(save.settings);
+      void loadVoiceManifest(); // voiced Callouts are keyed off this; fire-and-forget
       set({ data, save, run: save.activeRun ?? null, screen: 'title' });
       playMusic('title');
     } catch (e) {

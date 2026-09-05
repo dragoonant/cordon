@@ -79,13 +79,17 @@ export function eligiblePortraitPilots(pilots: Record<Id, PilotDef>): PilotDef[]
   );
 }
 
-/** One bust-shot portrait prompt for one pilot expression. */
+/**
+ * One bust-shot portrait prompt for one pilot expression. Portraits are
+ * displayed as square cards (no chroma-key compositing needed), so — unlike
+ * frames — they get an actual background instead of the #00ff00 key color.
+ */
 export function buildPortraitPrompt(pilot: PilotDef, expression: PortraitExpression): ImageJob {
   const descriptors = `${pilot.archetype} pilot, ${pilot.bio}`;
   const prompt =
     `anime portrait, chibi style, mecha pilot in flight suit, ${descriptors}, ` +
     `expression: ${EXPRESSION_PROMPT[expression]}, bust shot, facing slightly left, cel shaded, flat colors, ` +
-    `plain solid #00ff00 green background`;
+    `dark gunmetal gradient background, subtle amber rim light`;
   return { key: `${pilot.id}_${expression}`, kind: 'portrait', prompt, width: 512, height: 512 };
 }
 
