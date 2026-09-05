@@ -44,8 +44,8 @@ function baseColor(terrain: Terrain, kind: MapKind): number {
 
 // Inflate the filled diamond slightly so adjacent tiles overlap by ~1px and
 // hide anti-aliasing seams; the outline is drawn at true size on top.
-const FILL_OVERLAP = 1.03;
-const OUTLINE_ALPHA = 0.06;
+const FILL_OVERLAP = 1.07; // enough to swallow the rotated sprites' anti-aliased edges
+const OUTLINE_ALPHA = 0.025;
 
 /** Per-terrain hand-authored art, probed once and cached for the process lifetime (another agent publishes these to `public/sprites/map/`). */
 const terrainTextureCache = new Map<string, Promise<Texture | null>>();
