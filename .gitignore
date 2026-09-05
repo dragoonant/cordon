@@ -1,0 +1,10 @@
+# Secrets — never commit
+.hf_token
+.HF_token
+.elevenlabs_key
+.env
+.env.*
+
+# Build / deps
+node_modules/
+dist/
