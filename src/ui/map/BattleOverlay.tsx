@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { BattleEvent } from '@sim/types';
 import { BattleStage } from '@render/battle/BattleStage';
-import { playVoice } from '@audio/index';
+import { playBattleSfx, playVoice } from '@audio/index';
 import { Button } from '@ui/components';
 import { useStore } from '@ui/store';
 import { battleEventText } from './battleText';
@@ -32,6 +32,7 @@ export function BattleOverlay() {
         // Voice lines fire when the stage reaches the event, so they line up
         // with the cut-in rather than playing at commit time.
         try {
+          playBattleSfx(e, data);
           if (e.t === 'last_transmission') void playVoice(e.pilotId.split('#')[0], 'last');
           else if (e.t === 'callout') void playVoice(e.pilotId.split('#')[0], e.calloutId);
           else if (e.t === 'finisher') void playVoice(e.pilotId.split('#')[0], 'finisher');

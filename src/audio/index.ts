@@ -19,6 +19,9 @@
 import { Howl } from 'howler';
 
 import { createProceduralMusic, type MusicTrack } from './procMusic';
+import { getSfxAudioContext, playBattleSfx, playMapSfx, playSfx, setSfxVolume, type SfxName } from './sfx';
+
+export { playBattleSfx, playMapSfx, playSfx, type SfxName };
 
 // Check for browser environment (safe for vitest)
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -26,8 +29,6 @@ const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefine
 function isOperating(): boolean {
   return isBrowser && typeof (window as any).AudioContext !== 'undefined';
 }
-
-const getAudioContext = () => (isBrowser ? (window as any).AudioContext || (window as any).webkitAudioContext : null);
 
 export interface VoiceManifest {
   version: number;
@@ -53,7 +54,6 @@ let currentVoiceHowl: any = null;
 // rest of this module treats them interchangeably. See module comment.
 let currentMusicHowl: any = null;
 let currentMusicIsProcedural = false;
-let audioContext: AudioContext | null = null;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings
@@ -64,6 +64,7 @@ let audioContext: AudioContext | null = null;
  */
 export function initAudio(settings: { voice: boolean; music: number; sfx: number }): void {
   state = { ...settings };
+  setSfxVolume(state.sfx);
 }
 
 /**
@@ -71,6 +72,10 @@ export function initAudio(settings: { voice: boolean; music: number; sfx: number
  */
 export function updateAudioSettings(partial: Partial<{ voice: boolean; music: number; sfx: number }>): void {
   state = { ...state, ...partial };
+
+  if (partial.sfx !== undefined) {
+    setSfxVolume(state.sfx);
+  }
 
   // Apply volume updates to currently playing music if it exists
   if (currentMusicHowl && state.music !== undefined) {
@@ -186,66 +191,14 @@ export function stopVoice(): void {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SFX synthesis (procedural, no asset files)
+//
+// The actual synth kit lives in sfx.ts (playSfx/playBattleSfx/playMapSfx,
+// re-exported at the top of this file) so it can own its own SfxName union
+// and share one AudioContext with the procedural music fallback below via
+// getSfxAudioContext(). Volume is mirrored into sfx.ts via setSfxVolume()
+// in initAudio/updateAudioSettings above, so playBattleSfx/playMapSfx
+// respect the sfx setting even when the UI calls them directly.
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Synthesize and play a short SFX. Procedural generation via WebAudio;
- * respects sfx volume. No-op if AudioContext unavailable or SFX disabled.
- */
-export function playSfx(name: 'ui_click' | 'ui_confirm' | 'ui_back' | 'hit' | 'crit' | 'miss' | 'explosion' | 'callout' | 'alert' | 'victory' | 'defeat'): void {
-  if (!state.sfx || state.sfx === 0 || !isOperating()) {
-    return;
-  }
-
-  // Lazily create AudioContext after first user gesture (try/catch handles failure)
-  try {
-    if (!audioContext) {
-      const AudioCtx = getAudioContext();
-      if (!AudioCtx) return;
-      audioContext = new AudioCtx();
-    }
-
-    const ctx = audioContext;
-    if (!ctx) return;
-    const now = ctx.currentTime;
-
-    // Define SFX by type: { freq, duration, attack, release }
-    const specs: Record<string, { freq: number; dur: number; attack: number; release: number }> = {
-      ui_click: { freq: 800, dur: 0.1, attack: 0.01, release: 0.05 },
-      ui_confirm: { freq: 600, dur: 0.15, attack: 0.01, release: 0.1 },
-      ui_back: { freq: 400, dur: 0.12, attack: 0.01, release: 0.08 },
-      hit: { freq: 150, dur: 0.08, attack: 0.01, release: 0.05 },
-      crit: { freq: 300, dur: 0.15, attack: 0.01, release: 0.1 },
-      miss: { freq: 100, dur: 0.1, attack: 0.02, release: 0.06 },
-      explosion: { freq: 80, dur: 0.3, attack: 0.02, release: 0.2 },
-      callout: { freq: 550, dur: 0.2, attack: 0.01, release: 0.12 },
-      alert: { freq: 700, dur: 0.2, attack: 0.01, release: 0.1 },
-      victory: { freq: 800, dur: 0.4, attack: 0.02, release: 0.2 },
-      defeat: { freq: 200, dur: 0.3, attack: 0.05, release: 0.2 },
-    };
-
-    const spec = specs[name];
-    if (!spec) return;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.value = spec.freq;
-    osc.connect(gain);
-
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(state.sfx, now + spec.attack);
-    gain.gain.linearRampToValueAtTime(0, now + spec.dur);
-
-    gain.connect(ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + spec.dur);
-  } catch {
-    // AudioContext not available or couldn't be created; silent no-op
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Music playback with crossfade
@@ -317,15 +270,12 @@ export function playMusic(track: 'title' | 'map_space' | 'map_surface' | 'battle
     }
 
     // Fallback path: no mp3 (or Howl couldn't make one) -- synthesize.
+    // Shares its AudioContext with sfx.ts's SFX kit (getSfxAudioContext)
+    // so music and SFX mix through one real output.
     if (!newPlayer) {
       try {
-        let ctx = audioContext;
-        if (!ctx) {
-          const AudioCtx = getAudioContext();
-          if (!AudioCtx) return;
-          ctx = new AudioCtx() as AudioContext;
-          audioContext = ctx;
-        }
+        const ctx = getSfxAudioContext();
+        if (!ctx) return;
         newPlayer = createProceduralMusic(ctx, track as MusicTrack);
       } catch {
         // AudioContext unavailable or construction failed; silent no-op,

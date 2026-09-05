@@ -57,7 +57,7 @@ import {
 import { resolveBattle } from '@sim/battle';
 import { forecast as computeForecast } from '@sim/forecast';
 import { hashString } from '@sim/rng';
-import { initAudio, loadVoiceManifest, playMusic, playSfx, updateAudioSettings } from '@audio/index';
+import { initAudio, loadVoiceManifest, playMapSfx, playMusic, playSfx, updateAudioSettings } from '@audio/index';
 
 export type Screen =
   | 'boot'
@@ -530,17 +530,15 @@ function drainEvents(world: WorldState, set: (p: Partial<State>) => void, data: 
   for (const e of world.events) {
     if (seenEvents.has(e)) continue;
     seenEvents.add(e);
+    playMapSfx(e);
     if (e.t === 'captain') set({ captainLine: e.line });
     else if (e.t === 'objective' && e.status === 'complete') {
       set({ captainLine: pickLine(data.captainLines.objectiveComplete, world.tick) });
-      playSfx('victory');
     } else if (e.t === 'objective' && e.status === 'failed') {
       set({ captainLine: pickLine(data.captainLines.objectiveFailed, world.tick) });
-      playSfx('defeat');
     } else if (e.t === 'last_transmission') {
       void playVoiceFor(e.pilotId, 'last');
-    } else if (e.t === 'contact') playSfx('alert');
-    else if (e.t === 'map_end') {
+    } else if (e.t === 'map_end') {
       set({ screen: 'map_result' });
       playSfx(e.outcome === 'victory' ? 'victory' : 'defeat');
     }
