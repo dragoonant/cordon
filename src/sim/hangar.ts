@@ -147,23 +147,26 @@ export function assignSlot(
   if (!pilot.alive) return { ok: false, reason: 'Pilot is dead' };
   if (pilot.injuredFor > 0) return { ok: false, reason: 'Pilot is injured' };
 
-  const pilotElsewhere = assignedPilotIds(run);
-  const currentOccupant = squad.slots[slotIndex];
-  if (currentOccupant?.pilotId !== assignment.pilotId && pilotElsewhere.has(assignment.pilotId)) {
-    return { ok: false, reason: 'Pilot already assigned to a squad' };
-  }
-
   const mech = run.mechs[assignment.mechId];
   if (!mech) return { ok: false, reason: 'Mech not found' };
   if (mech.destroyed) return { ok: false, reason: 'Mech is destroyed' };
-  const mechElsewhere = assignedMechIds(run);
-  if (currentOccupant?.mechId !== assignment.mechId && mechElsewhere.has(assignment.mechId)) {
-    return { ok: false, reason: 'Mech already assigned to a squad' };
-  }
 
   const frame = data.frames[mech.frameId];
   if (!frame) return { ok: false, reason: 'Frame not found' };
   if (!canPilotFly(pilot, frame)) return { ok: false, reason: 'Pilot is not certified for this frame' };
+
+  // A pilot or mech already seated somewhere else is *moved*, not refused —
+  // that's what dragging into a new slot means. Vacate the old seat first.
+  for (const sq of run.squads) {
+    sq.slots.forEach((s, i) => {
+      if (!s) return;
+      if (sq.id === squadId && i === slotIndex) return;
+      if (s.pilotId === assignment.pilotId || s.mechId === assignment.mechId) {
+        sq.slots[i] = null;
+        if (sq.leaderPilotId === s.pilotId) promoteLeader(sq);
+      }
+    });
+  }
 
   squad.slots[slotIndex] = assignment;
   if (squad.leaderPilotId === null) squad.leaderPilotId = assignment.pilotId;

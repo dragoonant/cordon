@@ -1,6 +1,7 @@
 import React from 'react';
 import './theme.css';
 import { useStore } from '@ui/store';
+import { ErrorBoundary } from './ErrorBoundary';
 import { BootScreen } from './screens/BootScreen';
 import { TitleScreen } from './screens/TitleScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -46,7 +47,7 @@ export function App() {
 
   return (
     <div className="cordon-root">
-      {renderScreen(screen)}
+      <ErrorBoundary key={screen}>{renderScreen(screen)}</ErrorBoundary>
       <div className="cordon-vignette" />
       <div className="cordon-scanlines" />
       {error && (

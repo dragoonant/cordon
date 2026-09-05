@@ -280,13 +280,20 @@ export class MapScene {
       window.removeEventListener('pointermove', this.onWindowPointerMove);
       window.removeEventListener('pointerup', this.onWindowPointerUp);
     }
-    this.deployZoneView?.destroy();
-    for (const v of this.objectiveViews.values()) v.destroy();
+    // Stop rendering first so no frame runs against half-destroyed children,
+    // then let app.destroy({children:true}) tear the display tree down once.
+    // Destroying views individually and then again via the app double-destroys
+    // Pixi containers and throws inside React's cleanup.
+    this.app.ticker.stop();
     this.objectiveViews.clear();
-    for (const v of this.squadViews.values()) v.destroy();
     this.squadViews.clear();
-    this.pendingBattleView.destroy();
-    this.app.destroy(true, { children: true, texture: false });
+    this.deployZoneView = null;
+    try {
+      this.app.destroy(true, { children: true, texture: false });
+    } catch (e) {
+      // Never let a teardown error escape into React's unmount path.
+      console.warn('MapScene teardown', e);
+    }
     this.ready = false;
   }
 

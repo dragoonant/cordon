@@ -116,16 +116,19 @@ describe('equip', () => {
 });
 
 describe('assignSlot', () => {
-  it('rejects a pilot already assigned to another squad', () => {
+  it('moves a pilot already seated elsewhere instead of refusing (vacates the old slot)', () => {
     const run = freshRun();
     const veteranSlot = run.squads[0].slots[0]!;
-    const spareMechId = run.squads[1].slots[1]!.mechId; // engineer's mech, currently occupied — use an empty slot's mech instead
-    // Build a spare mech to attempt reassignment onto.
     run.frames.push('frame_light_ground_relay');
     const spare = buildMech(run, 'frame_light_ground_relay', FIXTURE_DATA)!;
     const result = assignSlot(run, run.squads[1].id, 2, { pilotId: veteranSlot.pilotId, mechId: spare.id }, FIXTURE_DATA);
-    expect(result.ok).toBe(false);
-    expect(result.reason).toMatch(/already assigned/i);
+    expect(result.ok).toBe(true);
+    expect(run.squads[0].slots[0]).toBeNull();
+    expect(run.squads[1].slots[2]).toEqual({ pilotId: veteranSlot.pilotId, mechId: spare.id });
+    // old squad promoted a new leader if the veteran led it
+    expect(run.squads[0].leaderPilotId).not.toBe(veteranSlot.pilotId);
+    // the vacated mech is now unassigned
+    expect(unassignedMechs(run)).toContain(veteranSlot.mechId);
   });
 
   it('rejects a destroyed mech', () => {

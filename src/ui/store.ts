@@ -269,6 +269,7 @@ export const useStore = create<Store>((set, get) => ({
   closeHangar() {
     const p = get().prevScreen;
     set({ screen: p && p !== 'hangar' ? p : 'node_map', prevScreen: null });
+    void saveNow(get); // hangar edits mutate run in place; persist them
   },
 
   launchMap() {
@@ -449,6 +450,7 @@ export const useStore = create<Store>((set, get) => ({
         const key = kind === 'weapon' ? 'weapons' : kind === 'system' ? 'systems' : 'frames';
         set({ depot: { ...depot, [key]: depot[key].filter((o) => o.id !== id) } });
       }
+      void saveNow(get);
     }
     get().bump();
   },

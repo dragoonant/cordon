@@ -603,6 +603,27 @@ function updateConvoyMovement(world: WorldState, map: MapDef, dt: number, def: O
     const t = d === 0 ? 0 : step / d;
     state.pos = { x: state.pos.x + dx * t, y: state.pos.y + dy * t };
   }
+  // Progress = distance travelled along the route, so the HUD arc means something.
+  if (state.status !== 'complete') state.progress = convoyProgress(def.path, state.pos, state.pathIndex ?? 0);
+}
+
+function convoyProgress(path: Vec2[], pos: Vec2, pathIndex: number): number {
+  let total = 0;
+  const seg: number[] = [];
+  for (let i = 1; i < path.length; i++) {
+    const l = Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+    seg.push(l);
+    total += l;
+  }
+  if (total === 0) return 0;
+  // Completed segments are those before the current target waypoint.
+  let done = 0;
+  for (let i = 1; i < Math.min(pathIndex, path.length); i++) done += seg[i - 1];
+  if (pathIndex >= 1 && pathIndex < path.length) {
+    const prev = path[pathIndex - 1];
+    done += Math.hypot(pos.x - prev.x, pos.y - prev.y);
+  }
+  return Math.max(0, Math.min(1, done / total));
 }
 
 function updateObjectives(world: WorldState, map: MapDef, dt: number): void {

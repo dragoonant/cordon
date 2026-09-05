@@ -282,8 +282,14 @@ export class BattleStage {
     this.mechViews.clear();
     // If init is still pending, initApp() tears the app down when it resolves.
     if (!this.initDone) return;
-    // texture: false — mech/portrait textures are cached and shared by src/render/sprites; only this app's own display tree is torn down.
-    this.app.destroy(true, { children: true, texture: false, textureSource: false });
+    // Stop rendering before teardown so no frame touches destroyed children.
+    this.app.ticker.stop();
+    try {
+      // texture: false — mech/portrait textures are cached and shared by src/render/sprites; only this app's own display tree is torn down.
+      this.app.destroy(true, { children: true, texture: false, textureSource: false });
+    } catch (e) {
+      console.warn('BattleStage teardown', e);
+    }
   }
 
   // -------------------------------------------------------------------
