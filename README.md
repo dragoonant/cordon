@@ -74,7 +74,7 @@ public/               Static assets — sprites, audio, portraits
 
 ## Known gaps (v0.1)
 
-- **No music yet.** Battle has procedural SFX only. To add a track, drop an MP3 into `public/audio/music/<track>.mp3` named one of: `title`, `map_space`, `map_surface`, `battle`, `boss`, `result`.
+- **Music** — six Creative Commons tracks from OpenGameArt ship in `public/audio/music/` (see `CREDITS.md` there; CC-BY attribution required). Replace any of them with a same-named mp3 (`title`, `map_space`, `map_surface`, `battle`, `boss`, `result`); the procedural generator only runs when a file is missing.
 - **One sector per run.** Full roguelite route choice across three sectors is coming.
 - **Mid-map progress isn't saved.** Quitting during a map restarts that map. Full save on node completion works.
 - **Placeholder procedural sprites.** Until the art pipeline publishes generated frames and portraits, the game uses simple shapes. `npm run art -- --only frames --publish` to install them.
