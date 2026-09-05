@@ -41,7 +41,7 @@ const LABEL_STYLE: TextStyleOptions = {
 };
 
 const BANNER_STYLE: TextStyleOptions = {
-  fontFamily: BODY_FONT,
+  fontFamily: DISPLAY_FONT,
   fontWeight: '900',
   fontSize: 54,
   fill: 0xf2efe6,
@@ -50,7 +50,7 @@ const BANNER_STYLE: TextStyleOptions = {
 };
 
 const SUB_BANNER_STYLE: TextStyleOptions = {
-  fontFamily: BODY_FONT,
+  fontFamily: DISPLAY_FONT,
   fontWeight: 'bold',
   fontSize: 22,
   fill: 0xd9d2c0,
@@ -67,7 +67,7 @@ const SPEECH_STYLE: TextStyleOptions = {
 };
 
 const NAME_STYLE: TextStyleOptions = {
-  fontFamily: BODY_FONT,
+  fontFamily: DISPLAY_FONT,
   fontWeight: '900',
   fontStyle: 'italic',
   fontSize: 46,

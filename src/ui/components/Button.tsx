@@ -13,7 +13,7 @@ export interface ButtonProps {
 }
 
 const BASE: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
+  fontFamily: 'var(--font-display)',
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
   fontWeight: 600,
