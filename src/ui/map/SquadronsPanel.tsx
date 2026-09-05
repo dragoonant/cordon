@@ -1,20 +1,21 @@
 import React from 'react';
-import type { GameData, Id, WorldState } from '@sim/types';
+import type { GameData, Id, MapDef, WorldState } from '@sim/types';
 import { playerSquads, squadHpSummary } from '@sim/world';
 import { Bar, Button, Panel, Portrait } from '@ui/components';
-import { livingCount, squadStateLabel } from './mapHelpers';
+import { livingCount, squadPlainStatus } from './mapHelpers';
 import { SquadDetail } from './SquadDetail';
 
 interface Props {
   world: WorldState;
   data: GameData;
+  map: MapDef;
   selectedSquadId: Id | null;
   onSelect: (id: Id) => void;
   onDeploy: (id: Id) => void;
 }
 
 /** Left HUD panel: one row per player squad, plus the selected squad's detail below the list. */
-export function SquadronsPanel({ world, data, selectedSquadId, onSelect, onDeploy }: Props) {
+export function SquadronsPanel({ world, data, map, selectedSquadId, onSelect, onDeploy }: Props) {
   const squads = playerSquads(world);
 
   return (
@@ -38,7 +39,7 @@ export function SquadronsPanel({ world, data, selectedSquadId, onSelect, onDeplo
               >
                 <div className="row gap-s" style={{ justifyContent: 'space-between' }}>
                   <strong>{squad.name}</strong>
-                  <span className="chip mono">{squadStateLabel(squad)}</span>
+                  <span className="chip mono">{squadPlainStatus(squad, world, map)}</span>
                 </div>
                 <div className="row gap-s" style={{ margin: '4px 0' }}>
                   {squad.slots.map((slot, i) => {
@@ -69,6 +70,7 @@ export function SquadronsPanel({ world, data, selectedSquadId, onSelect, onDeplo
                     disabled={alive === 0}
                     onClick={() => onDeploy(squad.id)}
                     style={{ marginTop: 4, width: '100%' }}
+                    data-tutorial="deploy-button"
                   >
                     DEPLOY
                   </Button>

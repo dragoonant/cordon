@@ -10,6 +10,8 @@ export interface ButtonProps {
   small?: boolean;
   title?: string;
   style?: React.CSSProperties;
+  /** Anchor hook for the coach-mark tutorial (`document.querySelector`) — purely cosmetic otherwise. */
+  'data-tutorial'?: string;
 }
 
 const BASE: React.CSSProperties = {
@@ -47,7 +49,7 @@ function variantStyle(variant: ButtonVariant, disabled: boolean): React.CSSPrope
   };
 }
 
-export function Button({ children, onClick, variant = 'ghost', disabled, small, title, style }: ButtonProps) {
+export function Button({ children, onClick, variant = 'ghost', disabled, small, title, style, ...rest }: ButtonProps) {
   const [hover, setHover] = React.useState(false);
   const vs = variantStyle(variant, !!disabled);
   const glow =
@@ -65,6 +67,7 @@ export function Button({ children, onClick, variant = 'ghost', disabled, small, 
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      data-tutorial={rest['data-tutorial']}
       style={{
         ...BASE,
         ...vs,

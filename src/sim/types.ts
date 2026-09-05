@@ -711,6 +711,8 @@ export interface Settings {
   music: number; // 0..1
   sfx: number;
   autoPauseOnContact: boolean;
+  /** Whether the player has completed or skipped the first-map coach-mark tutorial. */
+  tutorialSeen?: boolean;
 }
 
 // ---------------------------------------------------------------------------

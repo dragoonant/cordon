@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '@ui/store';
 import { Bar, Button, Panel, Portrait, Ticker, useData, useHud } from '@ui/components';
 import { NodeGraph } from '@ui/components/NodeGraph';
+import { NodeMapLegend } from './NodeMapLegend';
 import { reachableNodes } from '@sim/run';
 
 export function NodeMapScreen() {
@@ -44,12 +45,15 @@ export function NodeMapScreen() {
         <div className="col grow" style={{ flexBasis: '70%', minWidth: 0 }}>
           <Panel title={sector?.name ?? 'Sector'} style={{ height: '100%' }} padded={false}>
             {sector ? (
-              <NodeGraph
-                sector={sector}
-                currentNodeId={run.currentNodeId}
-                reachableIds={reachable}
-                onSelect={(id) => void travel(id)}
-              />
+              <div style={{ position: 'relative', height: '100%' }}>
+                <NodeGraph
+                  sector={sector}
+                  currentNodeId={run.currentNodeId}
+                  reachableIds={reachable}
+                  onSelect={(id) => void travel(id)}
+                />
+                <NodeMapLegend />
+              </div>
             ) : (
               <div className="muted mono" style={{ padding: 14 }}>
                 No sector data.

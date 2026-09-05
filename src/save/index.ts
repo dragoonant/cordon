@@ -54,6 +54,7 @@ const DEFAULT_SETTINGS: SaveData['settings'] = {
   music: 0.6,
   sfx: 0.8,
   autoPauseOnContact: true,
+  tutorialSeen: false,
 };
 
 /**

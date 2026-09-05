@@ -27,10 +27,13 @@ export function HelpOverlay({ open, onClose }: Props) {
         ))}
       </div>
       <ul style={{ marginTop: 12, paddingLeft: 18, lineHeight: 1.6 }}>
+        <li>Front row absorbs hits and fights close; back row fires from range or heals — match your loadout to the row.</li>
+        <li>Nerve fuels Callouts. Spend it for an edge; it regenerates from wins and from losses alike.</li>
+        <li>Mobility fit matters: space frames are sluggish on the ground, ground frames are clumsy in space.</li>
+        <li>Pilot death is permanent for this run — protect people, not just mechs.</li>
         <li>Pause is free — take your time, nothing moves while you think.</li>
         <li>Contact with an enemy squad is a battle. There's no talking your way out.</li>
         <li>Always check the Forecast before you commit — Callouts can change the odds.</li>
-        <li>Rescues need a squad inside the ring with no enemies nearby.</li>
         <li>Watch your fuel — a stranded squad is a dead squad.</li>
       </ul>
     </Modal>

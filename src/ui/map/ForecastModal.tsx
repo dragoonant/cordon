@@ -28,8 +28,24 @@ export function ForecastModal() {
   const membersB = squadMembers(squadB, world);
   const riskFor = (pilotId: string, mechId: string) => forecast.perMech.find((r) => r.pilotId === pilotId && r.mechId === mechId);
 
+  const RISK_THRESHOLD = 0.15;
+  const pilotsAtRisk = forecast.perMech.filter((m) => m.pilotDeathRisk > RISK_THRESHOLD).length;
+  const winPct = Math.round(forecast.winProb * 100);
+  const headlineColor =
+    pilotsAtRisk >= 2 || forecast.winProb < 0.4 ? 'var(--danger)' : pilotsAtRisk >= 1 || forecast.winProb < 0.65 ? 'var(--amber)' : 'var(--ok)';
+  // "Why": the two modifiers least likely to be good news first — the ones worth reading before you commit.
+  const whyMods = [...forecast.modifiers].sort((a, b) => Number(a.good === true) - Number(b.good === true)).slice(0, 2);
+
   return (
     <Modal open={open} title={`CONTACT — ${squadB.name}`} width={920}>
+      <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: headlineColor, marginBottom: 2 }}>
+        WIN {winPct}% · {pilotsAtRisk} pilot{pilotsAtRisk === 1 ? '' : 's'} at risk
+      </div>
+      {whyMods.length > 0 && (
+        <div className="muted mono" style={{ fontSize: 11, marginBottom: 10 }}>
+          Why: {whyMods.map((m) => `${m.label}: ${m.value}`).join(' · ')}
+        </div>
+      )}
       <div className="row gap-s" style={{ marginBottom: 8 }}>
         <span className="chip mono">{map.kind.toUpperCase()}</span>
         <span className="chip mono">{terrain.toUpperCase()}</span>
@@ -82,6 +98,9 @@ export function ForecastModal() {
         <div className="mono muted" style={{ fontSize: 11, marginBottom: 4 }}>
           CALLOUTS
         </div>
+        <div className="muted" style={{ fontSize: 11, marginBottom: 8 }}>
+          Callouts spend Nerve for an edge this battle. Hover for the trade-off.
+        </div>
         <ForecastCallouts squad={squadA} world={world} data={data} pendingCallouts={pendingCallouts} onToggle={toggleCallout} />
       </div>
 
@@ -89,7 +108,7 @@ export function ForecastModal() {
         <span className="muted" style={{ fontSize: 12 }}>
           No retreat once engaged. Use Callouts wisely.
         </span>
-        <Button variant="primary" onClick={commitBattle}>
+        <Button variant="primary" onClick={commitBattle} data-tutorial="commit-button">
           COMMIT
         </Button>
       </div>

@@ -8,7 +8,7 @@ export interface NodeGraphProps {
   onSelect: (id: Id) => void;
 }
 
-const GLYPH: Record<NodeKind, string> = {
+export const GLYPH: Record<NodeKind, string> = {
   battle: '⚔', // crossed swords
   rescue: '✚', // heavy greek cross
   distress: '⚠', // warning

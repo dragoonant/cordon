@@ -38,6 +38,46 @@ export function weightNum(w: WeightClass): number {
   return WEIGHT_NUM[w];
 }
 
+const LOW_FUEL_RATIO = 0.2;
+
+/** Straight-line tile distance between two positions. */
+export function tileDist(a: { x: number; y: number }, b: { x: number; y: number }): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+/**
+ * Plain-language squad status for the Squadrons list — replaces the raw
+ * SquadState enum with a short phrase a first-time player can act on.
+ * Falls back to `squadStateLabel` for states without a friendlier phrasing.
+ */
+export function squadPlainStatus(squad: Squad, world: WorldState, map: MapDef): string {
+  if (squad.state === 'destroyed') return 'Destroyed';
+  if (squad.state !== 'docked' && squad.maxFuel > 0 && squad.fuel / squad.maxFuel < LOW_FUEL_RATIO) {
+    return 'Low fuel';
+  }
+  switch (squad.state) {
+    case 'docked':
+      return 'Docked — deploy';
+    case 'moving':
+      return 'Moving';
+    case 'idle': {
+      const holding = map.objectives.some((o) => {
+        const st = world.objectives[o.id];
+        return st && st.status !== 'complete' && st.status !== 'failed' && tileDist(squad.pos, st.pos) <= o.radius;
+      });
+      return holding ? 'Holding objective' : 'Idle';
+    }
+    case 'routed':
+      return 'Routed — returning';
+    case 'returning':
+      return 'Returning to dock';
+    case 'engaged':
+      return 'In combat';
+    default:
+      return squadStateLabel(squad);
+  }
+}
+
 /** DOCKED / IDLE / MOVING / ROUTED / DESTROYED / REST / BURN, per the HUD spec. */
 export function squadStateLabel(squad: Squad): string {
   if (squad.effects.some((e) => e.type === 'burn')) return 'BURN';

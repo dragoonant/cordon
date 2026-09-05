@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '@ui/store';
 import { Button, Panel, Portrait, Ticker, useData } from '@ui/components';
 import type { Mobility, ObjectiveKind } from '@sim/types';
+import { failStateText, objectiveWinText } from './howToWin';
 
 const OBJ_ICON: Record<ObjectiveKind, string> = {
   evac_station: '✚',
@@ -92,6 +93,29 @@ export function BriefingScreen() {
           </Panel>
 
           <Ticker text={captainLine} />
+
+          <Panel title="How to Win" accent="compact">
+            <div className="col gap-s">
+              {map.objectives
+                .filter((o) => o.required)
+                .map((o) => (
+                  <div key={o.id} className="row gap-s" style={{ fontSize: 12, alignItems: 'baseline' }}>
+                    <span className="mono" style={{ color: 'var(--amber)' }}>
+                      •
+                    </span>
+                    <span>{objectiveWinText(o, map)}</span>
+                  </div>
+                ))}
+              {map.objectives.every((o) => !o.required) && (
+                <div className="muted mono" style={{ fontSize: 11 }}>
+                  No required objectives — everything here is optional.
+                </div>
+              )}
+              <div className="muted mono" style={{ fontSize: 10, marginTop: 4 }}>
+                {failStateText(map)}
+              </div>
+            </div>
+          </Panel>
 
           <Panel title="Objectives">
             <div className="col gap-s">

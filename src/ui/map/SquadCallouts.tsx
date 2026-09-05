@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { GameData, Id, WorldState } from '@sim/types';
 import { Button } from '@ui/components';
 import { useStore } from '@ui/store';
@@ -10,9 +10,17 @@ interface Props {
   squadId: Id;
 }
 
-/** "CALLOUTS" list for the selected squad's detail panel — overworld callouts only. */
+/**
+ * "CALLOUTS" list for the selected squad's detail panel — overworld callouts
+ * only. Collapsed by default (remembered per squad-detail mount) so a
+ * first-time player isn't greeted with a wall of ability buttons; the toggle
+ * label itself hints there's more here. Hover text is a single line —
+ * description and trade-off in one sentence — rather than the 3-line
+ * multi-field tooltip used elsewhere.
+ */
 export function SquadCallouts({ world, data, squadId }: Props) {
   const callout = useStore((s) => s.callout);
+  const [open, setOpen] = useState(false);
   const squad = world.squads[squadId];
   if (!squad) return null;
   const docked = squad.state === 'docked';
@@ -20,41 +28,43 @@ export function SquadCallouts({ world, data, squadId }: Props) {
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div className="mono muted" style={{ fontSize: 11, marginBottom: 4 }}>
-        CALLOUTS
-      </div>
-      <div className="col gap-s">
-        {pilotIds.map((pilotId) => {
-          const pilot = world.pilots[pilotId];
-          const def = getPilotDef(data, pilotId);
-          if (!pilot || !def) return null;
-          const known = pilot.callouts.filter((cid) => data.callouts[cid]?.kind === 'overworld');
-          if (known.length === 0) return null;
-          return (
-            <div key={pilotId} className="row gap-s" style={{ flexWrap: 'wrap' }}>
-              <span className="mono muted" style={{ fontSize: 10, minWidth: 60 }}>
-                {def.callsign}
-              </span>
-              {known.map((cid) => {
-                const cdef = data.callouts[cid];
-                const affordable = pilot.nerve >= cdef.nerveCost;
-                return (
-                  <Button
-                    key={cid}
-                    small
-                    variant="ghost"
-                    disabled={docked || !affordable}
-                    title={`${cdef.description}\nTradeoff: ${cdef.tradeoff}\n"${cdef.line}"`}
-                    onClick={() => callout(squadId, pilotId, cid)}
-                  >
-                    {cdef.label} ({cdef.nerveCost})
-                  </Button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+      <button className="callouts-toggle" onClick={() => setOpen((v) => !v)}>
+        CALLOUTS {open ? '▴' : '▾'}
+      </button>
+      {open && (
+        <div className="col gap-s" style={{ marginTop: 6 }}>
+          {pilotIds.map((pilotId) => {
+            const pilot = world.pilots[pilotId];
+            const def = getPilotDef(data, pilotId);
+            if (!pilot || !def) return null;
+            const known = pilot.callouts.filter((cid) => data.callouts[cid]?.kind === 'overworld');
+            if (known.length === 0) return null;
+            return (
+              <div key={pilotId} className="row gap-s" style={{ flexWrap: 'wrap' }}>
+                <span className="mono muted" style={{ fontSize: 10, minWidth: 60 }}>
+                  {def.callsign}
+                </span>
+                {known.map((cid) => {
+                  const cdef = data.callouts[cid];
+                  const affordable = pilot.nerve >= cdef.nerveCost;
+                  return (
+                    <Button
+                      key={cid}
+                      small
+                      variant="ghost"
+                      disabled={docked || !affordable}
+                      title={`${cdef.description} (Tradeoff: ${cdef.tradeoff})`}
+                      onClick={() => callout(squadId, pilotId, cid)}
+                    >
+                      {cdef.label} ({cdef.nerveCost})
+                    </Button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

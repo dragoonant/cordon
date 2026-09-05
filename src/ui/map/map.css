@@ -40,11 +40,12 @@
 .formation-cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 4px;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  min-height: 54px;
+  min-height: 32px;
 }
 .formation-cell.empty {
   align-items: center;
@@ -75,6 +76,19 @@
 }
 .contact-row:hover {
   background: rgba(255, 255, 255, 0.04);
+}
+
+.callouts-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+.callouts-toggle:hover {
+  color: var(--fg);
 }
 
 .event-log-strip {

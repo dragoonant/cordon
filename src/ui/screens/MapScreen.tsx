@@ -6,6 +6,7 @@ import '@ui/map/map.css';
 import { BattleOverlay } from '@ui/map/BattleOverlay';
 import { DeployHint } from '@ui/map/DeployHint';
 import { ForecastModal } from '@ui/map/ForecastModal';
+import { guidanceLine } from '@ui/map/guidance';
 import { HelpOverlay } from '@ui/map/HelpOverlay';
 import type { Inspect } from '@ui/map/InspectPopover';
 import { InspectPopover } from '@ui/map/InspectPopover';
@@ -13,8 +14,12 @@ import { EventLogStrip } from '@ui/map/EventLogStrip';
 import { ObjectivesPanel } from '@ui/map/ObjectivesPanel';
 import { SquadronsPanel } from '@ui/map/SquadronsPanel';
 import { TopBar } from '@ui/map/TopBar';
+import { TutorialOverlay } from '@ui/map/tutorial/TutorialOverlay';
+import { useTutorial } from '@ui/map/tutorial/useTutorial';
 import { useMapLoop } from '@ui/map/useMapLoop';
 import { useStore } from '@ui/store';
+
+const CAPTAIN_LINE_FRESH_MS = 8000;
 
 /**
  * The real-time map screen: mounts MapScene into a full-viewport div, drives
@@ -38,6 +43,19 @@ export function MapScreen() {
   const sceneRef = useRef<MapScene | null>(null);
   const [inspect, setInspect] = useState<Inspect>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const tutorial = useTutorial();
+
+  // Ticker falls back to the ambient guidance line once the captain's last
+  // scripted line has been on screen for a while, rather than sitting blank.
+  const lastCaptainAtRef = useRef(Date.now());
+  const prevCaptainRef = useRef(captainLine);
+  if (captainLine !== prevCaptainRef.current) {
+    prevCaptainRef.current = captainLine;
+    lastCaptainAtRef.current = Date.now();
+  }
+  const captainFresh = captainLine != null && Date.now() - lastCaptainAtRef.current < CAPTAIN_LINE_FRESH_MS;
+  const guidance = world && map && data ? guidanceLine(world, map, data) : null;
+  const tickerText = captainFresh ? captainLine : guidance ?? captainLine;
 
   useEffect(() => {
     if (!containerRef.current || !data || !map) return;
@@ -94,21 +112,22 @@ export function MapScreen() {
     <div className="map-screen" style={{ position: 'absolute', inset: 0 }}>
       <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
 
-      <TopBar map={map} world={world} />
-      <SquadronsPanel world={world} data={data} selectedSquadId={selectedSquadId} onSelect={handleSelect} onDeploy={deploy} />
+      <TopBar map={map} world={world} onHelp={() => setShowHelp(true)} />
+      <SquadronsPanel world={world} data={data} map={map} selectedSquadId={selectedSquadId} onSelect={handleSelect} onDeploy={deploy} />
       <ObjectivesPanel world={world} data={data} map={map} onCenter={handleCenter} />
       <InspectPopover inspect={inspect} world={world} map={map} data={data} onClose={() => setInspect(null)} />
 
-      {world.phase === 'deploy' && <DeployHint />}
+      {world.phase === 'deploy' && !(tutorial.active && tutorial.step?.id === 'deploy') && <DeployHint />}
 
       <div style={bottomStyle}>
-        <Ticker text={captainLine} />
+        <Ticker text={tickerText} />
         <EventLogStrip world={world} data={data} />
       </div>
 
       <HelpOverlay open={showHelp} onClose={() => setShowHelp(false)} />
       <ForecastModal />
       <BattleOverlay />
+      <TutorialOverlay tutorial={tutorial} />
     </div>
   );
 }

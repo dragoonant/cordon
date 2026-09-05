@@ -7,11 +7,12 @@ import { fmtTime } from './mapHelpers';
 interface Props {
   map: MapDef;
   world: WorldState;
+  onHelp: () => void;
 }
 
 const KEY_FOR_SPEED: Record<number, string> = { 1: '1', 2: '2', 4: '3' };
 
-export function TopBar({ map, world }: Props) {
+export function TopBar({ map, world, onHelp }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const speed = useStore((s) => s.speed);
   const togglePause = useStore((s) => s.togglePause);
@@ -53,6 +54,9 @@ export function TopBar({ map, world }: Props) {
           </div>
         )}
         <div style={{ flex: 1 }} />
+        <Button variant="ghost" small onClick={onHelp} title="How to play (H)">
+          ?
+        </Button>
         <Button variant="ghost" small onClick={() => setConfirmOpen(true)} title="Withdraw from the map">
           WITHDRAW
         </Button>

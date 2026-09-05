@@ -16,7 +16,7 @@ export function ObjectivesPanel({ world, data, map, onCenter }: Props) {
   const visible = enemySquads(world).filter((sq) => world.visibleEnemyIds.includes(sq.id));
 
   return (
-    <div style={wrapStyle}>
+    <div style={wrapStyle} data-tutorial="objectives-panel">
       <Panel title="OBJECTIVES" accent="compact" padded style={{ pointerEvents: 'auto' }}>
         <div className="col gap-s">
           {map.objectives.map((objDef) => {

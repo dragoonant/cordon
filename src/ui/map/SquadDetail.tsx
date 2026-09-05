@@ -36,14 +36,8 @@ export function SquadDetail({ world, data, squadId }: Props) {
           const pilotDef = getPilotDef(data, slot.pilotId);
           const frame = mech ? data.frames[mech.frameId] : undefined;
           return (
-            <div key={i} className="formation-cell">
-              <span className="mono muted" style={{ fontSize: 10 }}>
-                {row.toUpperCase()}
-              </span>
+            <div key={i} className="formation-cell" title={`${row.toUpperCase()} ROW — ${frame?.name ?? '—'}`}>
               <strong style={{ fontSize: 11 }}>{pilotDef?.callsign ?? slot.pilotId}</strong>
-              <span className="muted" style={{ fontSize: 10 }}>
-                {frame?.name ?? '—'}
-              </span>
               {mech && frame && (
                 <div className="mini-bar">
                   <div
