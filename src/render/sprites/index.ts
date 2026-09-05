@@ -29,7 +29,7 @@ export type { Expression };
 
 export type SpriteScale = 'map' | 'battle';
 
-const SCALE_HEIGHT: Record<SpriteScale, number> = { map: 32, battle: 128 };
+const SCALE_HEIGHT: Record<SpriteScale, number> = { map: 32, battle: 108 };
 
 function heightFor(scale: SpriteScale): number {
   return SCALE_HEIGHT[scale];

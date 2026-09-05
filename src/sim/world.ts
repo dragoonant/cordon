@@ -31,7 +31,7 @@ import type {
   Aptitude,
   Aptitudes,
 } from './types';
-import { findPath, terrainAt, moveCost } from './pathfind';
+import { findPath, terrainAt, moveCost, isPassable } from './pathfind';
 import { Rng, hashString } from './rng';
 
 export interface SideBundle {
@@ -1138,6 +1138,20 @@ function finalizeSquadAfterBattle(
     squad.engageCooldown = 8;
     const home = isPlayer ? map.deployZone.pos : squad.ai?.homePos ?? squad.pos;
     const mobility = squadMobility(squad, world, data, map.kind);
+    // Knock the loser back a few tiles toward home so it isn't left standing
+    // on top of the winner (and instantly re-engaging when cooldowns lapse).
+    const dx = home.x - squad.pos.x;
+    const dy = home.y - squad.pos.y;
+    const len = Math.hypot(dx, dy) || 1;
+    for (let dist = 2.5; dist > 0; dist -= 0.5) {
+      const cand = { x: squad.pos.x + (dx / len) * dist, y: squad.pos.y + (dy / len) * dist };
+      const tx = Math.floor(cand.x);
+      const ty = Math.floor(cand.y);
+      if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) continue;
+      if (!isPassable(map.tiles[ty][tx], mobility, map.kind)) continue;
+      squad.pos = cand;
+      break;
+    }
     squad.path = findPath(map, squad.pos, home, mobility);
     squad.targetPos = { ...home };
   } else if (won) {

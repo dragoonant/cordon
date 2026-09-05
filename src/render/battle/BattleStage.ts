@@ -21,7 +21,10 @@ import { Clock, easeInOutQuad, easeOutBack, easeOutCubic } from './clock';
 const DESIGN_W = 1280;
 const DESIGN_H = 720;
 const GROUND_Y = 500;
-const ROW_Y = [GROUND_Y - 130, GROUND_Y, GROUND_Y + 130];
+// Three slots per row spread vertically; the top/bottom slots also step away
+// from the center line so stacked mechs never cover each other's labels.
+const ROW_Y = [285, 455, 625];
+const ROW_STAGGER_X = 44;
 
 // Loaded via index.html (Google Fonts). Russo One = the sharp anime-mecha
 // display face; Exo 2 for readable lines. Fallbacks keep it legible offline.
@@ -358,15 +361,18 @@ export class BattleStage {
       const frame = this.data.frames[mech.frameId];
       if (!frame) continue;
 
-      const [tex, attackTex] = await Promise.all([
-        getMechTexture(this.app, this.data, mech, faction, 'battle'),
-        getMechPoseTexture(this.app, this.data, mech, faction, 'attack'),
-      ]);
+      // One image per mech on the stage. The generated idle and attack poses
+      // are separate renders and don't look like the same machine, so the
+      // combat pose is the canonical battle sprite; attacks are conveyed by
+      // motion (lunge/recoil/lean), never by swapping to a different picture.
+      const attackTex = await getMechPoseTexture(this.app, this.data, mech, faction, 'attack');
+      const tex = attackTex;
       const sprite = new Sprite(tex); // inherits the texture's baked bottom-center defaultAnchor
 
       const row = rowOf(slot as SlotIndex);
       const posInRow = row === 'front' ? slot : slot - 3;
-      const x = this.formationX(side, row);
+      const stagger = posInRow === 1 ? 0 : side === 'A' ? -ROW_STAGGER_X : ROW_STAGGER_X;
+      const x = this.formationX(side, row) + stagger;
       const y = ROW_Y[posInRow] ?? GROUND_Y;
 
       const container = new Container();
