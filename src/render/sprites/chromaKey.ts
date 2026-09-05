@@ -59,6 +59,43 @@ function greenKeyAlpha(r: number, g: number, b: number): number {
 }
 
 /**
+ * Per-image key color, sampled from the border. The generator's "green" varies
+ * a lot between images — measured corners range from (24,184,17) to
+ * (148,220,103) — so a fixed ratio gate leaves a half-alpha haze on the
+ * desaturated ones. Distance to the sampled color is robust to that.
+ */
+function sampleKeyColor(data: Uint8ClampedArray, w: number, h: number): [number, number, number] | null {
+  const pts: [number, number][] = [];
+  const inset = Math.max(2, Math.floor(Math.min(w, h) * 0.02));
+  for (let i = 0; i < 12; i++) {
+    const t = (i + 0.5) / 12;
+    pts.push([Math.floor(t * (w - 1)), inset], [Math.floor(t * (w - 1)), h - 1 - inset], [inset, Math.floor(t * (h - 1))], [w - 1 - inset, Math.floor(t * (h - 1))]);
+  }
+  const greens = pts
+    .map(([x, y]) => {
+      const i = (y * w + x) * 4;
+      return [data[i], data[i + 1], data[i + 2]] as [number, number, number];
+    })
+    .filter(([r, g, b]) => g > 100 && g > r * 1.15 && g > b * 1.15);
+  // Need a clear majority of the border to be green, else this isn't a keyed image.
+  if (greens.length < pts.length * 0.6) return null;
+  greens.sort((a, b) => a[1] - b[1]);
+  return greens[Math.floor(greens.length / 2)];
+}
+
+/** Alpha from distance to the sampled key color: fully clear inside `lo`, fully opaque past `hi`. */
+function distanceKeyAlpha(r: number, g: number, b: number, key: [number, number, number]): number {
+  const d = Math.hypot(r - key[0], g - key[1], b - key[2]);
+  const lo = 38;
+  const hi = 95;
+  if (d <= lo) return 0;
+  if (d >= hi) return 1;
+  // Only feather pixels that are still green-leaning; keeps light body colors crisp.
+  const greenish = g > r * 1.05 && g > b * 1.05;
+  return greenish ? (d - lo) / (hi - lo) : 1;
+}
+
+/**
  * Draws `img` to a scratch canvas, zeroes alpha on green-keyed pixels
  * (feathered), trims to the bounding box of any non-fully-transparent pixel,
  * then scales (preserving aspect ratio) so the result is `targetHeight` tall.
@@ -78,6 +115,7 @@ function chromaKeyTrimAndScale(img: HTMLImageElement, targetHeight: number): HTM
 
   const imageData = ctx.getImageData(0, 0, srcW, srcH);
   const data = imageData.data;
+  const keyColor = sampleKeyColor(data, srcW, srcH);
 
   let minX = srcW;
   let minY = srcH;
@@ -86,7 +124,9 @@ function chromaKeyTrimAndScale(img: HTMLImageElement, targetHeight: number): HTM
   for (let y = 0; y < srcH; y++) {
     for (let x = 0; x < srcW; x++) {
       const i = (y * srcW + x) * 4;
-      const alpha = greenKeyAlpha(data[i], data[i + 1], data[i + 2]);
+      const alpha = keyColor
+        ? distanceKeyAlpha(data[i], data[i + 1], data[i + 2], keyColor)
+        : greenKeyAlpha(data[i], data[i + 1], data[i + 2]);
       const outAlpha = Math.round(data[i + 3] * alpha);
       data[i + 3] = outAlpha;
       if (outAlpha > 0) {

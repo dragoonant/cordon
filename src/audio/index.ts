@@ -3,7 +3,21 @@
  *
  * Idempotent, safe to import in Node. All DOM/AudioContext access guarded.
  * Music and voice duck/fade automatically; SFX synthesized procedurally.
+ *
+ * Music fallback: playMusic() prefers a real mp3 at
+ * public/audio/music/<track>.mp3 (HEAD-probed, cached in musicExists).
+ * When that file isn't there -- true for every track tonight, since no
+ * composed/licensed music exists yet -- it falls back to the procedural
+ * WebAudio generator in procMusic.ts instead of no-op'ing. Both paths are
+ * driven through the same crossfade code below: procMusic.ts's
+ * ProceduralMusicPlayer implements the same play/fade/volume/stop surface
+ * Howler's Howl does, so currentMusicHowl can hold either one and the rest
+ * of this file (duckMusic, updateAudioSettings, stopMusic) doesn't need to
+ * know which. isProceduralMusicActive() reports which one is live, mostly
+ * for debugging/telemetry.
  */
+
+import { createProceduralMusic, type MusicTrack } from './procMusic';
 
 // Check for browser environment (safe for vitest)
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -33,7 +47,11 @@ let state: AudioState = { voice: false, music: 0, sfx: 0 };
 let voiceManifest: VoiceManifest | null = null;
 let voiceManifestFetchAttempted = false;
 let currentVoiceHowl: any = null;
+// Holds either a Howler Howl (real mp3) or a ProceduralMusicPlayer
+// (procMusic.ts fallback) -- both implement play/fade/volume/stop, so the
+// rest of this module treats them interchangeably. See module comment.
 let currentMusicHowl: any = null;
+let currentMusicIsProcedural = false;
 let audioContext: AudioContext | null = null;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -253,7 +271,10 @@ async function musicTrackExists(track: string): Promise<boolean> {
   try {
     const url = `/audio/music/${track}.mp3`;
     const resp = await fetch(url, { method: 'HEAD' });
-    const exists = resp.ok;
+    // Dev servers answer unknown paths with index.html + 200 (SPA fallback),
+    // so require an audio content-type before believing the track exists.
+    const type = resp.headers.get('content-type') ?? '';
+    const exists = resp.ok && (type.startsWith('audio/') || type.startsWith('application/octet-stream'));
     musicExists.set(track, exists);
     return exists;
   } catch {
@@ -264,57 +285,98 @@ async function musicTrackExists(track: string): Promise<boolean> {
 
 /**
  * Play a looping music track with 800ms crossfade from current track.
- * Checks if track exists at public/audio/music/<track>.mp3; if not, no-op.
- * Never throws.
+ *
+ * Prefers a real mp3 at public/audio/music/<track>.mp3 (HEAD-probed via
+ * musicTrackExists). When it's absent -- or Howl fails to construct it --
+ * falls back to the procedural WebAudio generator in procMusic.ts so music
+ * still plays instead of silently no-op'ing. Never throws.
  */
 export function playMusic(track: 'title' | 'map_space' | 'map_surface' | 'battle' | 'boss' | 'result'): void {
   // Fire the check asynchronously; don't block
   musicTrackExists(track).then((exists) => {
-    if (!exists || !isOperating()) {
+    if (!isOperating()) {
       return;
     }
 
-    const url = `/audio/music/${track}.mp3`;
-    const Howl = (window as any).Howl;
+    let newPlayer: any = null;
 
-    if (!Howl) return;
+    // Preferred path: the real mp3, via Howler.
+    if (exists) {
+      const Howl = (window as any).Howl;
+      if (Howl) {
+        try {
+          newPlayer = new Howl({
+            src: [`/audio/music/${track}.mp3`],
+            loop: true,
+            volume: 0, // start silent; faded in below like the fallback path
+            html5: true,
+          });
+        } catch {
+          newPlayer = null; // fall through to procedural below
+        }
+      }
+    }
+
+    // Fallback path: no mp3 (or Howl couldn't make one) -- synthesize.
+    if (!newPlayer) {
+      try {
+        let ctx = audioContext;
+        if (!ctx) {
+          const AudioCtx = getAudioContext();
+          if (!AudioCtx) return;
+          ctx = new AudioCtx() as AudioContext;
+          audioContext = ctx;
+        }
+        newPlayer = createProceduralMusic(ctx, track as MusicTrack);
+      } catch {
+        // AudioContext unavailable or construction failed; silent no-op,
+        // matching the original "no track, no music" behavior.
+        return;
+      }
+    }
 
     try {
-      const newHowl = new Howl({
-        src: [url],
-        loop: true,
-        volume: state.music,
-        html5: true,
-      });
-
       // Crossfade: fade out old track and fade in new one over 800ms
       const fadeDur = 0.8;
+      const oldPlayer = currentMusicHowl;
 
-      if (currentMusicHowl) {
-        currentMusicHowl.fade(currentMusicHowl.volume(), 0, fadeDur * 1000);
+      if (oldPlayer) {
+        oldPlayer.fade(oldPlayer.volume(), 0, fadeDur * 1000);
         setTimeout(() => {
-          currentMusicHowl?.stop();
+          oldPlayer.stop();
         }, fadeDur * 1000 + 50);
       }
 
-      newHowl.play();
-      newHowl.fade(0, state.music, fadeDur * 1000);
+      newPlayer.play();
+      newPlayer.fade(0, state.music, fadeDur * 1000);
 
-      currentMusicHowl = newHowl;
+      currentMusicHowl = newPlayer;
+      currentMusicIsProcedural = !!newPlayer.isProcedural;
     } catch {
-      // Howl not available or error creating; silent no-op
+      // Error starting playback; silent no-op
     }
   });
 }
 
 /**
- * Stop any currently playing music track.
+ * Stop any currently playing music track (real or procedural).
  */
 export function stopMusic(): void {
   if (currentMusicHowl) {
     currentMusicHowl.stop();
     currentMusicHowl = null;
   }
+  currentMusicIsProcedural = false;
+}
+
+/**
+ * True when the currently playing music is the procedural WebAudio
+ * fallback (procMusic.ts) rather than a real mp3. Always false in Node
+ * (no AudioContext) or before any playMusic() call resolves. For
+ * debugging/telemetry.
+ */
+export function isProceduralMusicActive(): boolean {
+  return currentMusicIsProcedural;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

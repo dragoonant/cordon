@@ -10,8 +10,10 @@ import {
   playMusic,
   stopMusic,
   duckMusic,
+  isProceduralMusicActive,
   VoiceManifest,
 } from './index';
+import { buildPatch, type MusicTrack } from './procMusic';
 
 describe('audio module', () => {
   // Import works in Node environment
@@ -125,5 +127,96 @@ describe('audio module', () => {
   it('playMusic does not throw without Howl', () => {
     initAudio({ voice: true, music: 0.8, sfx: 0.5 });
     expect(() => playMusic('battle')).not.toThrow();
+  });
+
+  // In Node there's no AudioContext, so playMusic() can't fall back to the
+  // procedural generator either -- it should just stay inert.
+  it('isProceduralMusicActive is false in Node (no AudioContext to fall back to)', async () => {
+    initAudio({ voice: true, music: 0.8, sfx: 0.5 });
+    expect(isProceduralMusicActive()).toBe(false);
+    playMusic('battle');
+    // Flush the microtask queue playMusic's musicTrackExists().then() runs on.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(isProceduralMusicActive()).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// procMusic: pure patch composition (no AudioContext needed)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('procMusic buildPatch', () => {
+  const tracks: MusicTrack[] = ['title', 'map_space', 'map_surface', 'battle', 'boss', 'result'];
+
+  it('returns a patch for every track without throwing', () => {
+    for (const track of tracks) {
+      expect(() => buildPatch(track)).not.toThrow();
+    }
+  });
+
+  it('is deterministic: same track always yields the same patch', () => {
+    for (const track of tracks) {
+      const a = buildPatch(track);
+      const b = buildPatch(track);
+      expect(b).toEqual(a);
+    }
+  });
+
+  it('tempo is within a sane orchestral-ish range (60-160 BPM)', () => {
+    for (const track of tracks) {
+      const patch = buildPatch(track);
+      expect(patch.tempoBpm).toBeGreaterThanOrEqual(60);
+      expect(patch.tempoBpm).toBeLessThanOrEqual(160);
+    }
+  });
+
+  it('progression has a plausible chord count and in-range scale degrees', () => {
+    for (const track of tracks) {
+      const patch = buildPatch(track);
+      expect(patch.progression.length).toBeGreaterThanOrEqual(2);
+      expect(patch.progression.length).toBeLessThanOrEqual(4);
+      for (const degree of patch.progression) {
+        expect(degree).toBeGreaterThanOrEqual(0);
+        expect(degree).toBeLessThanOrEqual(6);
+        expect(Number.isInteger(degree)).toBe(true);
+      }
+    }
+  });
+
+  it('motif is a fixed-length phrase (8-16 notes) with in-range scale degrees', () => {
+    for (const track of tracks) {
+      const patch = buildPatch(track);
+      expect(patch.motif.length).toBeGreaterThanOrEqual(8);
+      expect(patch.motif.length).toBeLessThanOrEqual(16);
+      for (const degree of patch.motif) {
+        expect(degree).toBeGreaterThanOrEqual(0);
+        expect(degree).toBeLessThanOrEqual(6);
+        expect(Number.isInteger(degree)).toBe(true);
+      }
+    }
+  });
+
+  it('scale is a 7-note diatonic mode', () => {
+    for (const track of tracks) {
+      const patch = buildPatch(track);
+      expect(patch.scale.length).toBe(7);
+    }
+  });
+
+  it('battle and boss carry the percussive pulse layer; maps and result do not', () => {
+    expect(buildPatch('battle').hasPulseDrum).toBe(true);
+    expect(buildPatch('boss').hasPulseDrum).toBe(true);
+    expect(buildPatch('map_space').hasPulseDrum).toBe(false);
+    expect(buildPatch('map_surface').hasPulseDrum).toBe(false);
+    expect(buildPatch('result').hasPulseDrum).toBe(false);
+    expect(buildPatch('title').hasPulseDrum).toBe(false);
+  });
+
+  it('boss uses the brass-like lead stack; other tracks use plain triangle', () => {
+    expect(buildPatch('boss').leadWave).toBe('brass');
+    for (const track of tracks.filter((t) => t !== 'boss')) {
+      expect(buildPatch(track).leadWave).toBe('triangle');
+    }
   });
 });
