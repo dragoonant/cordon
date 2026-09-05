@@ -1,0 +1,15 @@
+{
+  "_comment": "Maps PilotDef.voiceKey labels to ElevenLabs voice ids. At runtime tools/voice/generate.ts fetches GET /v1/voices and, when a label has 'voiceName', looks up the current id for that name (voice ids can be regenerated on ElevenLabs's side; names are stable). The 'voiceId' field is the hardcoded fallback used if that lookup fails or the label has no voiceName. Unknown labels fall back to heuristics in generate.ts (gender/tone keywords), then to 'default'.",
+  "voices": {
+    "female_low_calm": { "voiceName": "Bella", "voiceId": "EXAVITQu4vr4xnSDxMaL" },
+    "female_bright": { "voiceName": "Rachel", "voiceId": "21m00Tcm4TlvDq8ikWAM" },
+    "female_sharp": { "voiceName": "Domi", "voiceId": "AZnzlk1XvdvUeBnXmlld" },
+    "female_young": { "voiceName": "Elli", "voiceId": "MF3mGyEYCl7XYWbV9V6O" },
+    "male_low_gravel": { "voiceName": "Arnold", "voiceId": "VR6AewLTigWG4xSOukaG" },
+    "male_calm": { "voiceName": "Adam", "voiceId": "pNInz6obpgDQGcFmaJgB" },
+    "male_young": { "voiceName": "Josh", "voiceId": "TxGEqnHWrfWFTfGW9XjX" },
+    "male_smooth": { "voiceName": "Antoni", "voiceId": "ErXwobaYiN019PkySvjV" },
+    "male_steady": { "voiceName": "Sam", "voiceId": "yoZ06aMxZJJ28mfd3POQ" },
+    "default": { "voiceName": "Adam", "voiceId": "pNInz6obpgDQGcFmaJgB" }
+  }
+}

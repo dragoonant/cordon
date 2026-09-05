@@ -1,0 +1,193 @@
+/**
+ * CORDON theme — dark industrial palette, amber (Relay) / steel-blue (Compact) accents.
+ * Imported once from App.tsx.
+ */
+
+:root {
+  --bg: #0b0d12;
+  --panel: rgba(12, 14, 20, 0.88);
+  --panel-solid: #12141c;
+  --fg: #e8e4d8;
+  --muted: #8a8f99;
+  --amber: #ffa53c;
+  --steel: #6fb7ff;
+  --violet: #b08cff;
+  --olive: #7c8a4a;
+  --danger: #e5484d;
+  --ok: #5fbf6a;
+  --border: rgba(255, 255, 255, 0.08);
+  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+.cordon-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.title-glow {
+  text-shadow: 0 0 12px rgba(255, 165, 60, 0.55), 0 0 2px rgba(255, 165, 60, 0.8);
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-s {
+  gap: 6px;
+}
+.gap-m {
+  gap: 14px;
+}
+.gap-l {
+  gap: 28px;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 165, 60, 0.35) rgba(255, 255, 255, 0.04);
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 165, 60, 0.3);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 165, 60, 0.5);
+}
+
+/* Vignette + scanlines for the industrial feel — very subtle. */
+.cordon-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9000;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.cordon-scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9001;
+  opacity: 0.03;
+  background: repeating-linear-gradient(0deg, #fff 0px, #fff 1px, transparent 1px, transparent 3px);
+  mix-blend-mode: overlay;
+}
+
+/* Error toast */
+.cordon-toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9500;
+  max-width: 360px;
+  padding: 10px 14px;
+  background: rgba(60, 12, 14, 0.92);
+  border: 1px solid rgba(229, 72, 77, 0.6);
+  border-radius: 4px;
+  color: #ffd7d7;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  animation: cordon-slide-in 0.2s ease-out;
+}
+
+/* Keyframes */
+@keyframes cordon-typewriter {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes cordon-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes cordon-pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes cordon-slide-in {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cordon-pulse {
+  animation: cordon-pulse 1.6s ease-in-out infinite;
+}

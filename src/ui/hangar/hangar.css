@@ -1,0 +1,84 @@
+/* CORDON — HangarScreen styles. */
+
+.hangar-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 10px;
+}
+
+.hangar-header {
+  padding: 6px 4px;
+}
+
+.hangar-columns {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.roster-row {
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.roster-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.squad-editor {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.squad-editor:last-child {
+  border-bottom: none;
+}
+
+.squad-name-input {
+  background: transparent;
+  border: 1px solid var(--amber);
+  border-radius: 3px;
+  color: var(--fg);
+  padding: 2px 6px;
+  font-size: 13px;
+}
+
+.mech-card {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.mech-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.hangar-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  background: rgba(60, 12, 14, 0.92);
+  border: 1px solid rgba(229, 72, 77, 0.6);
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 2000;
+}
+
+/* Dark-theme native <select>/<input> so they don't look like a stock browser widget. */
+.hangar-screen select,
+.hangar-screen input {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+}

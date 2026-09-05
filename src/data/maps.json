@@ -1,0 +1,1553 @@
+[
+  {
+    "id": "map_space_kessler",
+    "name": "Kessler Field",
+    "kind": "space",
+    "rows": [
+      "..........................",
+      "................rrr.......",
+      ".................r........",
+      "..........................",
+      "......ddd.................",
+      "......dd..................",
+      "......dd..................",
+      "......dd..................",
+      "......ddd.................",
+      "......dddd................",
+      "......ddd.................",
+      "..........................",
+      "..........................",
+      "...............#..........",
+      "...............##.........",
+      ".........................."
+    ],
+    "weather": "none",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 8
+      },
+      "radius": 2
+    },
+    "carrierOnMap": true,
+    "objectives": [
+      {
+        "id": "obj_kessler_station",
+        "kind": "evac_station",
+        "name": "Outpost Kess-7",
+        "pos": {
+          "x": 13,
+          "y": 8
+        },
+        "radius": 2,
+        "holdSeconds": 20,
+        "required": true,
+        "reward": {
+          "scrap": 40,
+          "nerve": 3,
+          "standing": 5,
+          "salvageRolls": 1
+        }
+      },
+      {
+        "id": "obj_kessler_relay",
+        "kind": "relay",
+        "name": "Debris Relay Beacon",
+        "pos": {
+          "x": 20,
+          "y": 4
+        },
+        "radius": 2,
+        "holdSeconds": 3,
+        "required": false,
+        "reward": {
+          "scrap": 20,
+          "nerve": 2,
+          "standing": 2,
+          "salvageRolls": 0
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_kessler_patrol",
+        "name": "Compact Debris Patrol",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_assault_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 18,
+          "y": 12
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 18,
+              "y": 12
+            },
+            {
+              "x": 10,
+              "y": 12
+            },
+            {
+              "x": 10,
+              "y": 6
+            },
+            {
+              "x": 18,
+              "y": 6
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 18,
+            "y": 12
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_kessler_hunt",
+        "name": "Compact Hunter Wing",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_lance",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_missile_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 14,
+          "y": 3
+        },
+        "ai": {
+          "behavior": "hunt",
+          "aggroRadius": 7,
+          "homePos": {
+            "x": 14,
+            "y": 3
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_kessler_intercept",
+        "name": "Compact Beacon Guard",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": "sys_targeting",
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 22,
+          "y": 8
+        },
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 22,
+            "y": 8
+          }
+        },
+        "spawnAt": 0
+      }
+    ],
+    "timeLimit": 600,
+    "description": "A shattered mining platform drifts in a debris belt patrolled by Compact pickets.",
+    "briefing": "Debris field, three contacts. Get the outpost out and don't linger."
+  },
+  {
+    "id": "map_space_halcyon_rescue",
+    "name": "Halcyon Rescue",
+    "kind": "space",
+    "rows": [
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      ".....dddd...............",
+      "....ddddd...............",
+      "....ddd..........###....",
+      "....dd..................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "weather": "none",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 8
+      },
+      "radius": 2
+    },
+    "carrierOnMap": true,
+    "objectives": [
+      {
+        "id": "obj_halcyon_colony",
+        "kind": "evac_colony",
+        "name": "Halcyon Transport",
+        "pos": {
+          "x": 14,
+          "y": 8
+        },
+        "radius": 3,
+        "holdSeconds": 25,
+        "required": true,
+        "reward": {
+          "scrap": 70,
+          "nerve": 4,
+          "standing": 10,
+          "salvageRolls": 2
+        }
+      },
+      {
+        "id": "obj_halcyon_derelict",
+        "kind": "derelict",
+        "name": "Drifting Hulk",
+        "pos": {
+          "x": 20,
+          "y": 3
+        },
+        "radius": 2,
+        "required": false,
+        "ambushSquadIds": [
+          "sq_halcyon_ambush"
+        ],
+        "reward": {
+          "scrap": 30,
+          "nerve": 0,
+          "standing": 0,
+          "salvageRolls": 3
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_halcyon_guard",
+        "name": "Compact Escort Guard",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_lance",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_assault_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 12,
+          "y": 3
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 12,
+            "y": 3
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_halcyon_patrol",
+        "name": "Compact Debris Sweep",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_missile_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 8,
+          "y": 13
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 8,
+              "y": 13
+            },
+            {
+              "x": 6,
+              "y": 9
+            },
+            {
+              "x": 10,
+              "y": 6
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 8,
+            "y": 13
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_halcyon_hunt",
+        "name": "Compact Interceptor Flight",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_railgun",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 18,
+          "y": 8
+        },
+        "ai": {
+          "behavior": "hunt",
+          "aggroRadius": 7,
+          "homePos": {
+            "x": 18,
+            "y": 8
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_halcyon_ambush",
+        "name": "Compact Ambush Cell",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": "sys_cmp_barrier",
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 20,
+          "y": 5
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 20,
+            "y": 5
+          }
+        },
+        "spawnAt": 180
+      }
+    ],
+    "timeLimit": 0,
+    "description": "A colony transport limps through wreckage, jamming every channel with distress calls.",
+    "briefing": "Colony's still transmitting. Get in, get them out, watch the derelict."
+  },
+  {
+    "id": "map_surface_ridgeline",
+    "name": "Ridgeline",
+    "kind": "surface",
+    "rows": [
+      "..........................",
+      "...........##......uuu....",
+      ".....ffffff##.....uuuuuu..",
+      ".....ffffff.......uuuuuu..",
+      ".....ffffff.......uuuuuu..",
+      ".....ffffff........uuuuu..",
+      ".....ffffff...............",
+      "..........................",
+      "..........................",
+      "............m.mmm.........",
+      "............mmmmmm........",
+      "............mmmmmmm.......",
+      "............mmmmmmm.......",
+      "............mmmmmmm.......",
+      "..........................",
+      ".........................."
+    ],
+    "weather": "clear",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 8
+      },
+      "radius": 2
+    },
+    "carrierOnMap": false,
+    "objectives": [
+      {
+        "id": "obj_ridgeline_station",
+        "kind": "evac_station",
+        "name": "Ridgeline Waystation",
+        "pos": {
+          "x": 16,
+          "y": 8
+        },
+        "radius": 2,
+        "holdSeconds": 20,
+        "required": true,
+        "reward": {
+          "scrap": 40,
+          "nerve": 3,
+          "standing": 5,
+          "salvageRolls": 1
+        }
+      },
+      {
+        "id": "obj_ridgeline_convoy",
+        "kind": "convoy",
+        "name": "Ridge Supply Convoy",
+        "pos": {
+          "x": 4,
+          "y": 11
+        },
+        "radius": 1,
+        "path": [
+          {
+            "x": 4,
+            "y": 11
+          },
+          {
+            "x": 10,
+            "y": 11
+          },
+          {
+            "x": 16,
+            "y": 11
+          },
+          {
+            "x": 21,
+            "y": 10
+          }
+        ],
+        "convoySpeed": 0.6,
+        "hp": 100,
+        "required": false,
+        "reward": {
+          "scrap": 50,
+          "nerve": 3,
+          "standing": 8,
+          "salvageRolls": 0
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_ridgeline_patrol",
+        "name": "Compact Forest Patrol",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_lance",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_assault_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 8,
+          "y": 4
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 8,
+              "y": 4
+            },
+            {
+              "x": 8,
+              "y": 8
+            },
+            {
+              "x": 12,
+              "y": 8
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 8,
+            "y": 4
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_ridgeline_guard",
+        "name": "Compact Urban Garrison",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 20,
+          "y": 3
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 20,
+            "y": 3
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_ridgeline_hunt",
+        "name": "Compact Mountain Hunters",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 15,
+          "y": 11
+        },
+        "ai": {
+          "behavior": "hunt",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 15,
+            "y": 11
+          }
+        },
+        "spawnAt": 0
+      }
+    ],
+    "timeLimit": 0,
+    "description": "A forested ridge overlooking an occupied valley, contested by dug-in Compact patrols.",
+    "briefing": "Ridge line's held by Compact patrols. Take the outpost, mind the convoy."
+  },
+  {
+    "id": "map_surface_lowtown_rescue",
+    "name": "Lowtown",
+    "kind": "surface",
+    "rows": [
+      "........................",
+      ".......uuu......uuu.....",
+      "....uuuuuuuuuuuuuuuuu...",
+      "....uuuuuuuuuuuuuuuuu...",
+      "....uuuuuuuuuuuuuuuuu...",
+      "....uuuuuu#uuuuuuuuuuu..",
+      "...uuuuuu##uuuuuuuuuuuu.",
+      "...uuuuuuuuuuuu##uuuuuu.",
+      "...uuuuuuuuuuuuu#uuuuuu.",
+      "....uuuuuuuuuuuuuuuuuu..",
+      "....uuuuuuuuuuuuuuuuuu..",
+      "....uuuuuuuuuuuuuuuuuu..",
+      ".............uuu..uuu...",
+      "........................"
+    ],
+    "weather": "rain",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 7
+      },
+      "radius": 2
+    },
+    "carrierOnMap": false,
+    "objectives": [
+      {
+        "id": "obj_lowtown_convoy",
+        "kind": "convoy",
+        "name": "Lowtown Refugee Convoy",
+        "pos": {
+          "x": 4,
+          "y": 7
+        },
+        "radius": 1,
+        "path": [
+          {
+            "x": 4,
+            "y": 7
+          },
+          {
+            "x": 12,
+            "y": 7
+          },
+          {
+            "x": 20,
+            "y": 7
+          }
+        ],
+        "convoySpeed": 0.6,
+        "hp": 100,
+        "required": true,
+        "reward": {
+          "scrap": 50,
+          "nerve": 3,
+          "standing": 8,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "obj_lowtown_station",
+        "kind": "evac_station",
+        "name": "Lowtown Relief Station",
+        "pos": {
+          "x": 17,
+          "y": 3
+        },
+        "radius": 2,
+        "holdSeconds": 20,
+        "required": false,
+        "reward": {
+          "scrap": 40,
+          "nerve": 3,
+          "standing": 5,
+          "salvageRolls": 1
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_lowtown_guard",
+        "name": "Compact Checkpoint Guard",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_assault_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 8,
+          "y": 3
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 8,
+            "y": 3
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_lowtown_patrol",
+        "name": "Compact Street Patrol",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_missile_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 14,
+          "y": 10
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 14,
+              "y": 10
+            },
+            {
+              "x": 10,
+              "y": 10
+            },
+            {
+              "x": 6,
+              "y": 8
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 14,
+            "y": 10
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_lowtown_hunt",
+        "name": "Compact Rapid Response",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 19,
+          "y": 10
+        },
+        "ai": {
+          "behavior": "hunt",
+          "aggroRadius": 7,
+          "homePos": {
+            "x": 19,
+            "y": 10
+          }
+        },
+        "spawnAt": 0
+      }
+    ],
+    "timeLimit": 540,
+    "description": "A refugee convoy threads through a bombed-out urban district under Compact fire.",
+    "briefing": "Convoy's pinned in Lowtown. Clear a corridor and get them moving."
+  },
+  {
+    "id": "map_space_anvil",
+    "name": "The Anvil",
+    "kind": "space",
+    "rows": [
+      "..........................",
+      "..........................",
+      "..........................",
+      "........ss.......ss.......",
+      "........ss.......ss.......",
+      "........ss.......ss.......",
+      "........ssgggggg.ss.......",
+      "..........gggggg..........",
+      "..........gggggg..........",
+      "..........gggggg..........",
+      "........ss..ggg..ss.......",
+      "........ss.......ss.......",
+      "........ss.......ss.......",
+      "..........................",
+      "..........................",
+      ".........................."
+    ],
+    "weather": "none",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 8
+      },
+      "radius": 2
+    },
+    "carrierOnMap": true,
+    "objectives": [
+      {
+        "id": "obj_anvil_relay",
+        "kind": "relay",
+        "name": "Anvil Relay Node",
+        "pos": {
+          "x": 13,
+          "y": 8
+        },
+        "radius": 2,
+        "holdSeconds": 3,
+        "required": true,
+        "reward": {
+          "scrap": 20,
+          "nerve": 2,
+          "standing": 2,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "obj_anvil_station",
+        "kind": "evac_station",
+        "name": "Anvil Shipyard Remnant",
+        "pos": {
+          "x": 21,
+          "y": 8
+        },
+        "radius": 3,
+        "holdSeconds": 20,
+        "required": true,
+        "reward": {
+          "scrap": 40,
+          "nerve": 3,
+          "standing": 5,
+          "salvageRolls": 1
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_anvil_guard_north",
+        "name": "Compact Well Guard",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_railgun",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 12,
+          "y": 2
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 12,
+            "y": 2
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_anvil_patrol_south",
+        "name": "Compact Well Patrol",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_missile_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_lance",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 12,
+          "y": 13
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 12,
+              "y": 13
+            },
+            {
+              "x": 6,
+              "y": 13
+            },
+            {
+              "x": 6,
+              "y": 3
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 12,
+            "y": 13
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_anvil_hunt",
+        "name": "Compact Shipyard Hunters",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 21,
+          "y": 3
+        },
+        "ai": {
+          "behavior": "hunt",
+          "aggroRadius": 7,
+          "homePos": {
+            "x": 21,
+            "y": 3
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_anvil_intercept",
+        "name": "Compact Yard Interceptors",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponB": null,
+            "system": "sys_cmp_barrier",
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 21,
+          "y": 13
+        },
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 21,
+            "y": 13
+          }
+        },
+        "spawnAt": 0
+      }
+    ],
+    "timeLimit": 0,
+    "description": "A derelict shipyard hangs in a gravity well, its structure hulls turned into chokepoints.",
+    "briefing": "Gravity well and Compact steel. Hold the relay, hold the station."
+  },
+  {
+    "id": "map_surface_saltflats",
+    "name": "Saltflats",
+    "kind": "surface",
+    "rows": [
+      "........................",
+      "...###..................",
+      "...###..................",
+      "........................",
+      "..........w...w.........",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................",
+      "........................"
+    ],
+    "weather": "dust",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 7
+      },
+      "radius": 2
+    },
+    "carrierOnMap": false,
+    "objectives": [
+      {
+        "id": "obj_saltflats_station",
+        "kind": "evac_station",
+        "name": "Saltflats Waystation",
+        "pos": {
+          "x": 12,
+          "y": 7
+        },
+        "radius": 2,
+        "holdSeconds": 20,
+        "required": true,
+        "reward": {
+          "scrap": 40,
+          "nerve": 3,
+          "standing": 5,
+          "salvageRolls": 1
+        }
+      },
+      {
+        "id": "obj_saltflats_derelict",
+        "kind": "derelict",
+        "name": "Downed Frame Wreckage",
+        "pos": {
+          "x": 19,
+          "y": 3
+        },
+        "radius": 2,
+        "required": false,
+        "reward": {
+          "scrap": 30,
+          "nerve": 0,
+          "standing": 0,
+          "salvageRolls": 3
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_saltflats_guard",
+        "name": "Compact Flats Garrison",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_assault_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 8,
+          "y": 2
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 8,
+            "y": 2
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_saltflats_patrol",
+        "name": "Compact Dust Patrol",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_missile_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 8,
+          "y": 11
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 8,
+              "y": 11
+            },
+            {
+              "x": 16,
+              "y": 11
+            },
+            {
+              "x": 16,
+              "y": 6
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 8,
+            "y": 11
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_saltflats_hunt",
+        "name": "Compact Wreck Watch",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_railgun",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 18,
+          "y": 10
+        },
+        "ai": {
+          "behavior": "hunt",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 18,
+            "y": 10
+          }
+        },
+        "spawnAt": 0
+      }
+    ],
+    "timeLimit": 0,
+    "description": "A dust storm rolls across open salt flats littered with downed frames worth salvaging.",
+    "briefing": "Open ground, dust storm inbound. Grab what's salvageable and get out."
+  },
+  {
+    "id": "map_space_gate_boss",
+    "name": "The Gate",
+    "kind": "space",
+    "rows": [
+      "............................",
+      "............................",
+      "......ddd...................",
+      "......ddd...................",
+      "......ddd...................",
+      "...............s............",
+      "............ssss............",
+      "............ssss............",
+      "............ssss............",
+      "............ssss............",
+      "............ssss............",
+      "......ddd...................",
+      "......ddd...................",
+      "......ddd...................",
+      "............................",
+      "............................"
+    ],
+    "weather": "none",
+    "deployZone": {
+      "pos": {
+        "x": 2,
+        "y": 8
+      },
+      "radius": 2
+    },
+    "carrierOnMap": true,
+    "objectives": [
+      {
+        "id": "obj_gate_boss",
+        "kind": "destroy_target",
+        "name": "Duskfang Wing",
+        "pos": {
+          "x": 22,
+          "y": 8
+        },
+        "radius": 3,
+        "required": true,
+        "targetSquadId": "sq_gate_boss",
+        "reward": {
+          "scrap": 100,
+          "nerve": 5,
+          "standing": 15,
+          "salvageRolls": 3
+        }
+      },
+      {
+        "id": "obj_gate_station",
+        "kind": "evac_station",
+        "name": "Gatewatch Station",
+        "pos": {
+          "x": 18,
+          "y": 8
+        },
+        "radius": 2,
+        "holdSeconds": 20,
+        "required": false,
+        "reward": {
+          "scrap": 40,
+          "nerve": 3,
+          "standing": 5,
+          "salvageRolls": 1
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_gate_boss",
+        "name": "Duskfang Wing",
+        "composition": [
+          {
+            "frameId": "frame_compact_ace",
+            "weaponA": "wpn_cmp_ace_blade",
+            "weaponB": "wpn_cmp_needle_rifle",
+            "system": "sys_cmp_barrier",
+            "pilotDefId": "pilot_rival",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 1
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 4
+          }
+        ],
+        "pos": {
+          "x": 22,
+          "y": 8
+        },
+        "ai": {
+          "behavior": "boss",
+          "aggroRadius": 8,
+          "homePos": {
+            "x": 22,
+            "y": 8
+          }
+        },
+        "spawnAt": 0,
+        "isBoss": true,
+        "isRival": true
+      },
+      {
+        "id": "sq_gate_guard1",
+        "name": "Gate Chokepoint Guard",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_railgun",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 13,
+          "y": 3
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 13,
+            "y": 3
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_gate_guard2",
+        "name": "Gate Chokepoint Guard South",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_missile_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 13,
+          "y": 13
+        },
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 13,
+            "y": 13
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_gate_patrol",
+        "name": "Gate Outer Patrol",
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_vulcans",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_lance",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ],
+        "pos": {
+          "x": 9,
+          "y": 8
+        },
+        "ai": {
+          "behavior": "patrol",
+          "patrolPoints": [
+            {
+              "x": 9,
+              "y": 8
+            },
+            {
+              "x": 9,
+              "y": 3
+            },
+            {
+              "x": 9,
+              "y": 13
+            }
+          ],
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 9,
+            "y": 8
+          }
+        },
+        "spawnAt": 0
+      },
+      {
+        "id": "sq_gate_reinforcement",
+        "name": "Gate Reinforcement Wave",
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 1
+          }
+        ],
+        "pos": {
+          "x": 25,
+          "y": 8
+        },
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 25,
+            "y": 8
+          }
+        },
+        "spawnAt": 300
+      }
+    ],
+    "timeLimit": 720,
+    "description": "The final checkpoint before the inner colonies — and the rival's personal hunting ground.",
+    "briefing": "This is the gate. Hit the target hard — I want everyone back on the Lantern."
+  }
+]

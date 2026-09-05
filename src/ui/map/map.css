@@ -1,0 +1,172 @@
+/* CORDON — MapScreen styles. Layout is mostly inline (absolute HUD panels);
+   this covers repeated small pieces shared across map/ components. */
+
+.chip {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.squad-row {
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.squad-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.portrait-slot {
+  width: 26px;
+  height: 26px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+.portrait-slot.empty {
+  border: 1px dashed var(--border);
+}
+
+.formation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: 6px;
+}
+
+.formation-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-height: 54px;
+}
+.formation-cell.empty {
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+}
+
+.mini-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  background: var(--ok);
+}
+
+.objective-row,
+.contact-row {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.contact-row {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.contact-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.event-log-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 640px;
+  pointer-events: none;
+}
+
+.deploy-hint {
+  position: absolute;
+  left: 330px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1px solid var(--amber);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  animation: cordon-pulse 1.8s ease-in-out infinite;
+  z-index: 15;
+}
+.deploy-hint-arrow {
+  font-size: 20px;
+  color: var(--amber);
+}
+
+.forecast-columns {
+  display: grid;
+  grid-template-columns: 1fr 260px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.forecast-card {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.forecast-center {
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0 12px;
+}
+
+.prob-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+.prob-seg {
+  height: 100%;
+}
+
+.battle-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 500;
+}
+.battle-canvas {
+  position: absolute;
+  inset: 0;
+}
+.battle-subtitle-strip {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 70%;
+  color: var(--fg);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  font-size: 13px;
+}
+.battle-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+}

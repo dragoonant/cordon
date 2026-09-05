@@ -1,0 +1,66 @@
+[
+  {
+    "id": "cert_light",
+    "name": "Light Frame Certification",
+    "description": "Cleared to fly Light-class frames — fast, fragile, and forgiving to learn on.",
+    "requires": {},
+    "requiresCerts": [],
+    "grantsCallouts": []
+  },
+  {
+    "id": "cert_medium",
+    "name": "Medium Frame Certification",
+    "description": "Cleared to fly Medium-class frames once footwork holds up under sustained fire.",
+    "requires": { "evasion": 20 },
+    "requiresCerts": ["cert_light"],
+    "grantsCallouts": []
+  },
+  {
+    "id": "cert_heavy",
+    "name": "Heavy Frame Certification",
+    "description": "Cleared to fly Heavy-class frames — you can take a hit now, so start taking them.",
+    "requires": { "melee": 45 },
+    "requiresCerts": ["cert_medium"],
+    "grantsCallouts": []
+  },
+  {
+    "id": "cert_vanguard",
+    "name": "Vanguard Specialization",
+    "description": "Front-row melee doctrine: hit first, hit hardest, and dare the enemy to focus you down.",
+    "requires": { "melee": 40 },
+    "requiresCerts": [],
+    "grantsCallouts": ["co_first_ones_mine", "co_we_hold"]
+  },
+  {
+    "id": "cert_marksman",
+    "name": "Marksman Specialization",
+    "description": "Back-row precision doctrine: read the field, take the shot the enemy didn't see coming.",
+    "requires": { "gunnery": 40 },
+    "requiresCerts": [],
+    "grantsCallouts": ["co_eyes_on", "co_chain_it"]
+  },
+  {
+    "id": "cert_field_tech",
+    "name": "Field Tech Specialization",
+    "description": "Certified to keep a squad's frames running mid-battle instead of just after it.",
+    "requires": { "systems": 35 },
+    "requiresCerts": [],
+    "grantsCallouts": ["co_punch_out"]
+  },
+  {
+    "id": "cert_recon",
+    "name": "Recon Specialization",
+    "description": "Certified for forward scouting — reading the map before the map reads you.",
+    "requires": { "systems": 30, "evasion": 30 },
+    "requiresCerts": [],
+    "grantsCallouts": ["co_ping_sector", "co_burn_hard"]
+  },
+  {
+    "id": "cert_wing_lead",
+    "name": "Wing Lead Specialization",
+    "description": "Certified to lead a squad as more than a formation slot — morale, tempo, and the hard calls.",
+    "requires": { "command": 45 },
+    "requiresCerts": [],
+    "grantsCallouts": ["co_rally_channel", "co_sell_it"]
+  }
+]

@@ -1,0 +1,112 @@
+[
+  {
+    "id": "sys_shield",
+    "name": "Barrier Capacitor",
+    "faction": "relay",
+    "effect": "shield",
+    "value": 60,
+    "weight": 8,
+    "power": 16,
+    "description": "Soaks the first hits of a battle so the pilot lives long enough to earn the rest.",
+    "unlockedByDefault": true
+  },
+  {
+    "id": "sys_booster",
+    "name": "Thruster Pack",
+    "faction": "relay",
+    "effect": "booster",
+    "value": 10,
+    "weight": 6,
+    "power": 12,
+    "description": "Extra burn for both the battlefield and the map — the difference between dodging and not.",
+    "unlockedByDefault": true
+  },
+  {
+    "id": "sys_ecm",
+    "name": "Static Veil",
+    "faction": "relay",
+    "effect": "ecm",
+    "value": 15,
+    "weight": 7,
+    "power": 14,
+    "description": "Fuzzes enemy targeting solutions just enough to matter.",
+    "unlockedByDefault": false
+  },
+  {
+    "id": "sys_repair_drone",
+    "name": "Tender Drone",
+    "faction": "relay",
+    "effect": "repair_drone",
+    "value": 12,
+    "weight": 9,
+    "power": 15,
+    "description": "A palm-sized drone that stitches armor plate back together mid-fight, badly but quickly.",
+    "unlockedByDefault": true
+  },
+  {
+    "id": "sys_recon_array",
+    "name": "Long Ear Array",
+    "faction": "relay",
+    "effect": "recon",
+    "value": 25,
+    "weight": 6,
+    "power": 13,
+    "description": "Wide-band sensors that turn a guess of a forecast into something close to certainty.",
+    "unlockedByDefault": false
+  },
+  {
+    "id": "sys_eject_assist",
+    "name": "Cradle Seat",
+    "faction": "relay",
+    "effect": "eject",
+    "value": 35,
+    "weight": 5,
+    "power": 8,
+    "description": "A reinforced cockpit shell built around one promise: the pilot gets out even if the frame doesn't.",
+    "unlockedByDefault": true
+  },
+  {
+    "id": "sys_armor_plate",
+    "name": "Reactive Plating",
+    "faction": "relay",
+    "effect": "armor_plate",
+    "value": 6,
+    "weight": 18,
+    "power": 10,
+    "description": "Bolt-on hull plating — heavy, ugly, and exactly what you want between you and a railgun.",
+    "unlockedByDefault": false
+  },
+  {
+    "id": "sys_targeting",
+    "name": "Sightline Suite",
+    "faction": "relay",
+    "effect": "targeting",
+    "value": 10,
+    "weight": 6,
+    "power": 11,
+    "description": "Overlay optics that shave the guesswork off every shot.",
+    "unlockedByDefault": true
+  },
+  {
+    "id": "sys_fuel_cell",
+    "name": "Deep Tank",
+    "faction": "relay",
+    "effect": "fuel_cell",
+    "value": 30,
+    "weight": 7,
+    "power": 9,
+    "description": "An extra reservoir that keeps a squad in the field long after the rest are limping home.",
+    "unlockedByDefault": false
+  },
+  {
+    "id": "sys_cmp_barrier",
+    "name": "Compact Aegis Shell",
+    "faction": "compact",
+    "effect": "shield",
+    "value": 110,
+    "weight": 10,
+    "power": 20,
+    "description": "Compact shield tech, generations ahead of anything Relay salvage can match.",
+    "unlockedByDefault": false
+  }
+]

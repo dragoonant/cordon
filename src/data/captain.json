@@ -1,0 +1,72 @@
+{
+  "briefing": [
+    "Listen up. Here's what we're walking into.",
+    "Command deck to squads — mission parameters incoming.",
+    "Short version: get in, get them out, get home.",
+    "Everyone knows their objective. Let's not improvise.",
+    "This one's tight. Watch your fuel and watch each other."
+  ],
+  "victory": [
+    "Objective's clear. Good work out there.",
+    "That's a win. Bring it home.",
+    "Solid work. Everyone's coming back today.",
+    "Sector's ours for now. Stand down.",
+    "Good flying. Let's not get comfortable."
+  ],
+  "defeat": [
+    "Pull everyone out. We're done here.",
+    "That's a loss. We regroup and we come back smarter.",
+    "Withdraw. No point spending more than we already have.",
+    "This one didn't go our way. Nobody's fault but the Compact's.",
+    "Fall back to the Lantern. We'll try again."
+  ],
+  "pilotLost": [
+    "We lost one. Note it and keep moving — that's the only way through.",
+    "Damn it. Get the others out.",
+    "Their name goes on the wall when we get home. Fight on.",
+    "That's a debt. We'll collect on it eventually.",
+    "No time to grieve yet. Stay in the fight."
+  ],
+  "objectiveFailed": [
+    "Objective's gone. That's on me, not you.",
+    "We lost that one. Focus on what's still in play.",
+    "Can't save everyone. Keep them all in mind anyway.",
+    "That objective's failed. Reassess and move on.",
+    "We were too slow. Won't happen twice if I can help it."
+  ],
+  "objectiveComplete": [
+    "Objective secure. Nicely done.",
+    "That's one more colony that gets to keep existing.",
+    "Good. Keep that momentum.",
+    "Confirmed complete. On to the next.",
+    "That's a win we'll actually remember."
+  ],
+  "rivalAppears": [
+    "Contact — it's him. Everyone stay sharp.",
+    "Compact ace on approach. This is the real fight.",
+    "Here he comes. Don't get cocky.",
+    "Rival contact confirmed. Watch your six.",
+    "He's early today. Must want this one badly."
+  ],
+  "runStart": [
+    "New run, new route through the blockade. Let's move.",
+    "Lantern's underway. Command deck is green across the board.",
+    "Here we go again. Same mission, new odds.",
+    "Crew's aboard, engines hot. Let's cut a path through.",
+    "This is Vantry. Set course for the Cordon line."
+  ],
+  "runWon": [
+    "We made it through. Every colony on this route gets to breathe again.",
+    "That's the blockade, cracked. Well earned, all of you.",
+    "We did it. Let the record show — Relay held the line.",
+    "Run's complete. Rest up, you've earned it.",
+    "The cordon just got a little smaller. Good work, everyone."
+  ],
+  "runLost": [
+    "We didn't make it. That's on me, not the crew.",
+    "Lantern's down. Get to the pods — this run's over.",
+    "We gave it everything. Wasn't enough this time.",
+    "Run's over. We'll carry what we learned into the next one.",
+    "Rest now. We go again when we're ready."
+  ]
+}

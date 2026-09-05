@@ -1,0 +1,186 @@
+[
+  {
+    "id": "evt_stranded_miners",
+    "title": "Stranded Crew",
+    "text": "A mining crew is broadcasting an open distress loop from a dead rock nobody else is coming for. Captain wants a call before we're in range to help.",
+    "choices": [
+      {
+        "id": "evt_stranded_miners_take",
+        "text": "Take them aboard the Lantern.",
+        "outcome": {
+          "standing": 5,
+          "recruitPilotId": "pilot_salvager",
+          "text": "They come aboard rattled and grateful. One of them, it turns out, can still fly."
+        }
+      },
+      {
+        "id": "evt_stranded_miners_fuel",
+        "text": "Give them fuel and coordinates, keep moving.",
+        "outcome": {
+          "scrap": -10,
+          "standing": 2,
+          "text": "We hand off what we can spare. They'll make it to a depot on their own."
+        }
+      },
+      {
+        "id": "evt_stranded_miners_leave",
+        "text": "We can't spare the detour. Leave them.",
+        "outcome": {
+          "standing": -5,
+          "text": "The Captain logs the coordinates and says nothing else about it."
+        }
+      }
+    ]
+  },
+  {
+    "id": "evt_compact_deserter",
+    "title": "A Compact Deserter",
+    "text": "A Compact pilot is hailing us on an unencrypted channel, offering hardware in exchange for passage out of the cordon. Could be real. Could be a trap.",
+    "choices": [
+      {
+        "id": "evt_compact_deserter_take",
+        "text": "Take the weapon, let them go.",
+        "outcome": {
+          "weapon": "wpn_cmp_needle_rifle",
+          "standing": 3,
+          "text": "The hardware checks out clean. Whoever they were, they're someone else's problem now."
+        }
+      },
+      {
+        "id": "evt_compact_deserter_turn_in",
+        "text": "Turn them over to the nearest Relay outpost.",
+        "outcome": {
+          "scrap": 10,
+          "standing": -3,
+          "text": "The outpost pays a finder's fee. The Captain doesn't look happy about it."
+        }
+      },
+      {
+        "id": "evt_compact_deserter_ignore",
+        "text": "Too risky. Keep moving.",
+        "outcome": {
+          "text": "We never find out if it was real."
+        }
+      }
+    ]
+  },
+  {
+    "id": "evt_colony_supplies",
+    "title": "A Colony Asks for Supplies",
+    "text": "A colony still holding out is asking us to leave what supplies we can spare instead of taking them aboard. It'll cost us, and it won't save them for long.",
+    "choices": [
+      {
+        "id": "evt_colony_supplies_give",
+        "text": "Leave the supplies.",
+        "outcome": {
+          "scrap": -30,
+          "standing": 8,
+          "text": "It buys them weeks, maybe months. The Captain says it was worth it. He always says that."
+        }
+      },
+      {
+        "id": "evt_colony_supplies_keep",
+        "text": "We need everything we're carrying. Keep moving.",
+        "outcome": {
+          "standing": -4,
+          "text": "The channel goes quiet before anyone says goodbye."
+        }
+      }
+    ]
+  },
+  {
+    "id": "evt_derelict_reactor",
+    "title": "A Live Reactor",
+    "text": "A derelict frame is still hot — reactor core intact, and worth salvaging if we're careful. If we're not, it's someone's hull full of shrapnel.",
+    "choices": [
+      {
+        "id": "evt_derelict_reactor_salvage",
+        "text": "Pull the reactor core.",
+        "outcome": {
+          "frame": "frame_compact_line",
+          "damageRandomMech": 20,
+          "text": "The core comes free, along with the rest of the frame. Not without cost — something took damage getting it out."
+        }
+      },
+      {
+        "id": "evt_derelict_reactor_safe",
+        "text": "Strip what's easy and leave the core.",
+        "outcome": {
+          "scrap": 20,
+          "text": "Safer, smaller haul. Nobody gets hurt getting it."
+        }
+      },
+      {
+        "id": "evt_derelict_reactor_detonate",
+        "text": "Detonate it before it cooks off on someone else.",
+        "outcome": {
+          "standing": 2,
+          "text": "It goes up clean, away from any traffic lane. One less hazard in the belt."
+        }
+      }
+    ]
+  },
+  {
+    "id": "evt_jammed_transmission",
+    "title": "A Jammed Transmission",
+    "text": "Something's broadcasting under heavy jamming nearby — could be a colony, could be Compact bait. Pushing the signal through will take a nerve everyone's short on.",
+    "choices": [
+      {
+        "id": "evt_jammed_transmission_push",
+        "text": "Boost the signal, force it through.",
+        "outcome": {
+          "nerve": 6,
+          "text": "It clears just enough to confirm survivors. The squads feel it — that's worth something."
+        }
+      },
+      {
+        "id": "evt_jammed_transmission_trace",
+        "text": "Trace the source instead of decoding it.",
+        "outcome": {
+          "standing": 3,
+          "text": "We can't make out the message, but we know exactly where it's coming from now."
+        }
+      },
+      {
+        "id": "evt_jammed_transmission_drop",
+        "text": "Let it drop. Not worth the risk.",
+        "outcome": {
+          "nerve": 1,
+          "text": "The signal fades on its own a few minutes later. Maybe it was nothing."
+        }
+      }
+    ]
+  },
+  {
+    "id": "evt_refugee_ship",
+    "title": "A Refugee Ship, Out of Fuel",
+    "text": "A civilian transport is dead in the water, packed well past capacity and drifting toward a patrol lane. They're asking for fuel, not rescue.",
+    "choices": [
+      {
+        "id": "evt_refugee_ship_fuel",
+        "text": "Give them fuel from our reserves.",
+        "outcome": {
+          "scrap": -20,
+          "standing": 10,
+          "text": "It's enough to get them clear of the lane. Word of it travels faster than the ship does."
+        }
+      },
+      {
+        "id": "evt_refugee_ship_depot",
+        "text": "Point them to the nearest depot and move on.",
+        "outcome": {
+          "standing": 2,
+          "text": "It's a longer route than they wanted to hear, but it's something."
+        }
+      },
+      {
+        "id": "evt_refugee_ship_refuse",
+        "text": "We can't spare it. Wish them luck.",
+        "outcome": {
+          "standing": -6,
+          "text": "The Captain stays on the bridge a long time after that channel closes."
+        }
+      }
+    ]
+  }
+]
