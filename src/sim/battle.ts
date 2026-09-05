@@ -577,7 +577,9 @@ function handleDestruction(
 
     const def = pilotDefFor(data, defenderPilotId);
     const ltDef = def ? data.callouts[def.lastTransmissionId] : null;
-    if (def && ltDef) {
+    // Last Transmissions belong to the named cast (and the rival). Grunts die quietly.
+    const hasVoice = !!def && (def.faction === 'relay' || def.archetype === 'rival');
+    if (def && ltDef && hasVoice) {
       events.push({ t: 'last_transmission', side: defenderSide.key, pilotId: defenderPilotId, calloutId: ltDef.id, line: ltDef.line, effect: ltDef.effect });
       events.push({ t: 'cutin', side: defenderSide.key, pilotId: defenderPilotId, kind: 'last', line: ltDef.line });
       if (ltDef.effect === 'lt_take_the_frame') recoverable = true;
