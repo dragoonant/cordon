@@ -588,7 +588,13 @@ function buildEnemySquad(
     state: 'idle',
     engageCooldown: 0,
     effects: [],
-    ai: spawn.ai,
+    // Deep-copy: world.ts mutates ai (behavior flips, patrol index) and the
+    // spawn object is static GameData shared by every run in the process.
+    ai: {
+      ...spawn.ai,
+      homePos: { ...spawn.ai.homePos },
+      patrolPoints: spawn.ai.patrolPoints?.map((p) => ({ ...p })),
+    },
     escortingObjectiveId: null,
   };
 }
@@ -874,6 +880,9 @@ export function finishMap(run: RunState, world: WorldState, map: MapDef, data: G
 
   if (node.kind === 'boss' && world.outcome === 'victory') {
     run.status = 'won';
+  } else if (node.kind === 'boss') {
+    // The boss node is terminal; failing or withdrawing from it ends the run.
+    run.status = 'lost';
   } else if (livingPilots.length === 0 || !flyableMechExists) {
     run.status = 'lost';
   } else {

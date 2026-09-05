@@ -327,9 +327,11 @@ export function stepWorld(world: WorldState, map: MapDef, dtReal: number, data: 
 
   while (remaining > 1e-9) {
     const dt = Math.min(FIXED_STEP, remaining);
-    substep(world, map, data, dt);
+    // Advance the clock first so the win/lose check inside substep sees the
+    // post-step time (otherwise the time-limit test lags one step behind).
     world.tick++;
     world.time += dt;
+    substep(world, map, data, dt);
     remaining -= dt;
     if (world.phase !== 'running') break;
   }

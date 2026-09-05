@@ -85,10 +85,10 @@ describe('findPath', () => {
     expect(last.y).toBeCloseTo(1.5);
   });
 
-  it('returns [] when already in the destination tile', () => {
+  it('returns a single waypoint (the tile center) when already in the destination tile', () => {
     const map = makeMap(['.....', '.....', '.....']);
     const path = findPath(map, { x: 1.2, y: 1.8 }, { x: 1.9, y: 1.1 }, 'ground');
-    expect(path).toEqual([]);
+    expect(path).toEqual([{ x: 1.5, y: 1.5 }]);
   });
 
   it('returns [] when the destination is out of map bounds', () => {

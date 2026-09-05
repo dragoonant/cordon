@@ -78,6 +78,6 @@ public/               Static assets — sprites, audio, portraits
 - **One sector per run.** Full roguelite route choice across three sectors is coming.
 - **Mid-map progress isn't saved.** Quitting during a map restarts that map. Full save on node completion works.
 - **Placeholder procedural sprites.** Until the art pipeline publishes generated frames and portraits, the game uses simple shapes. `npm run art -- --only frames --publish` to install them.
-- **Balance is a first pass.** Use the balance script to tune frame/weapon/system loadouts as the cast and item pool expand.
+- **balance is a first pass — the boss wing is deliberately brutal (a fresh squad loses to it ~100%); bring grown pilots, salvaged Compact gear, and Callouts. `npx tsx tools/balance/playthrough.ts 20 1` runs 20 full simulated runs with a scripted commander.** Use the balance script to tune frame/weapon/system loadouts as the cast and item pool expand.
 
 See **GDD.md** for the full design document and feature roadmap. See **docs/PLAYING.md** for a player-friendly systems guide.

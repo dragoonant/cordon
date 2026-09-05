@@ -86,7 +86,9 @@ export function findPath(map: MapDef, from: Vec2, to: Vec2, mobility: Mobility):
   const ty = Math.floor(to.y);
   if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) return [];
   if (!isPassable(map.tiles[ty][tx], mobility, map.kind)) return [];
-  if (sx === tx && sy === ty) return [];
+  // Already on the target tile: a one-waypoint path, so callers can tell
+  // "arrived" apart from "unreachable" (both used to be []).
+  if (sx === tx && sy === ty) return [{ x: tx + 0.5, y: ty + 0.5 }];
 
   const width = map.width;
   const key = (x: number, y: number) => y * width + x;
