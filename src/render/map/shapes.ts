@@ -5,6 +5,7 @@
  */
 import { Graphics } from 'pixi.js';
 import type { Vec2 } from '@sim/types';
+import { TILE_H, TILE_W } from './constants';
 
 export interface DashOpts {
   dash?: number;
@@ -115,6 +116,27 @@ export function regularPolygonPoints(cx: number, cy: number, r: number, sides: n
 
 export function diamondPoints(cx: number, cy: number, r: number): number[] {
   return [cx, cy - r, cx + r, cy, cx, cy + r, cx - r, cy];
+}
+
+/** Radii for the soft ground shadow drawn under every squad icon / objective sprite — see `drawGroundShadow`. */
+const SHADOW_RX = TILE_W * 0.22;
+const SHADOW_RY = TILE_H * 0.22;
+
+/**
+ * Soft dark ellipse "under" a squad/objective sprite, at its ground point
+ * (local (0,0) — this is drawn as the FIRST child of the caller's
+ * container, so it sits beneath the icon/sprite). Faked blur via a few
+ * concentric ellipses of falling alpha (same cheap trick `weather.ts` uses
+ * for its nebula/vignette) rather than an actual BlurFilter, since this
+ * runs once per entity and a real filter per squad would add up. Static —
+ * callers draw it once at construction, it never needs to be redrawn.
+ */
+export function drawGroundShadow(g: Graphics, rx = SHADOW_RX, ry = SHADOW_RY): void {
+  const steps = 3;
+  for (let i = steps; i >= 1; i--) {
+    const f = i / steps;
+    g.ellipse(0, 0, rx * f, ry * f).fill({ color: 0x000000, alpha: 0.18 + 0.12 * (steps - i) });
+  }
 }
 
 /** Four corner-bracket strokes around a square of half-size `s` centered at `(cx, cy)` — the "marked" reticle. */

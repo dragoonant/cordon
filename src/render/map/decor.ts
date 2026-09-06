@@ -47,25 +47,34 @@ interface TerrainDecorConfig {
   pool: DecorRule[];
 }
 
-/** Per GDD-style terrain flavor: which decor keys can appear on which terrain, and how often. Terrain kinds not listed here (water, blocked, and any future addition) never get decor. */
+/**
+ * Per GDD-style terrain flavor: which decor keys can appear on which
+ * terrain, and how often. Terrain kinds not listed here never get decor —
+ * that's `water` (never had decor) AND, as of the SRW-style ground pass
+ * (see tiles.ts), `urban` too: the urban ground plate/tint already carries
+ * the "city" read on its own, and doubling that up with rooftop-clutter
+ * decor sprites fought the calm/clean SRW look the terrain rework was
+ * chasing. Every remaining density is roughly half what it was before that
+ * pass, for the same reason (less visual noise competing with the new
+ * ground).
+ */
 const TERRAIN_DECOR: Partial<Record<Terrain, TerrainDecorConfig>> = {
-  open: { density: 0.12, maxCount: 1, pool: [{ key: 'rock_a', weight: 2 }, { key: 'rock_b', weight: 2 }, { key: 'crater', weight: 1 }] },
-  forest: { density: 0.55, maxCount: 2, pool: [{ key: 'tree_clump', weight: 1 }] },
-  urban: { density: 0.3, maxCount: 1, pool: [{ key: 'ruin_wall', weight: 2 }, { key: 'antenna_small', weight: 1 }] },
+  open: { density: 0.06, maxCount: 1, pool: [{ key: 'rock_a', weight: 2 }, { key: 'rock_b', weight: 2 }, { key: 'crater', weight: 1 }] },
+  forest: { density: 0.28, maxCount: 2, pool: [{ key: 'tree_clump', weight: 1 }] },
   mountain: {
-    density: 0.45,
+    density: 0.22,
     maxCount: 2,
     pool: [{ key: 'rock_a', weight: 3 }, { key: 'rock_b', weight: 3 }, { key: 'crystal_shard', weight: 1 }],
   },
-  void: { density: 0.03, maxCount: 1, pool: [{ key: 'asteroid_a', weight: 1 }, { key: 'asteroid_b', weight: 1 }] },
+  void: { density: 0.015, maxCount: 1, pool: [{ key: 'asteroid_a', weight: 1 }, { key: 'asteroid_b', weight: 1 }] },
   debris: {
-    density: 0.5,
+    density: 0.25,
     maxCount: 2,
     pool: [{ key: 'wreck_small', weight: 2 }, { key: 'asteroid_a', weight: 1 }, { key: 'asteroid_b', weight: 1 }],
   },
-  radiation: { density: 0.15, maxCount: 1, pool: [{ key: 'crystal_shard', weight: 1 }] },
-  gravity: { density: 0.1, maxCount: 1, pool: [{ key: 'asteroid_a', weight: 1 }, { key: 'asteroid_b', weight: 1 }] },
-  structure: { density: 0.25, maxCount: 1, pool: [{ key: 'antenna_small', weight: 1 }, { key: 'ruin_wall', weight: 1 }] },
+  radiation: { density: 0.08, maxCount: 1, pool: [{ key: 'crystal_shard', weight: 1 }] },
+  gravity: { density: 0.05, maxCount: 1, pool: [{ key: 'asteroid_a', weight: 1 }, { key: 'asteroid_b', weight: 1 }] },
+  structure: { density: 0.13, maxCount: 1, pool: [{ key: 'antenna_small', weight: 1 }, { key: 'ruin_wall', weight: 1 }] },
 };
 
 const MIN_HEIGHT_PX = 18;

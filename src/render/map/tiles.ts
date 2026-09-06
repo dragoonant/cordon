@@ -1,138 +1,163 @@
 /**
- * Bakes the static terrain layer once per `load()`.
+ * Bakes the static terrain layer once per `load()` — SRW-style ground.
  *
- * Unlike a naive "one rotated sprite per tile diamond" renderer (which always
- * shows a faint diamond seam at every tile boundary, textured or not), this
- * bakes ONE continuous fill per terrain KIND present on the map:
+ * Replaces the old "per-terrain-kind masked TilingSprite of a tileable
+ * texture" technique (skewed rotated rectangles that read as "long
+ * rectangle" patches, per user feedback) with the look of Super Robot Wars'
+ * overworld: ONE calm painted ground image per map, projected flat onto the
+ * map's iso diamond, a crisp thin grid of tile diamonds over the whole
+ * field, and translucent per-tile diamond TINTS (not textures) wherever a
+ * tile's terrain differs from the map's dominant terrain. Impassable
+ * ('blocked') and space-station ('structure') tiles are NOT baked here at
+ * all — they're rendered as simple raised cube/block sprites by
+ * `cubes.ts`, added as live entities so squads depth-sort against them.
  *
- *   1. For each kind, build a single Graphics union of every one of that
- *      kind's tile diamonds (each inflated ~1.5px so same-kind neighbours
- *      fuse into one shape with no internal seam), blur it, and render it to
- *      a texture — that's the kind's mask (see `buildKindMask`).
- *   2. Fill that mask with either a per-kind *atlas* texture repeated as one
- *      continuous `TilingSprite` (rotated 45° so its grid lines up with the
- *      iso diamond grid, scaled to a ~2-tile repeat, and given a per-map/
- *      per-kind random offset so the art's own imperfections don't read as
- *      an obvious repeat) or, when no art at all is published for that kind,
- *      a flat `baseColor` fill — same fallback contract as before.
- *
- *      The atlas (`buildTerrainAtlas`) is what breaks up an otherwise very
- *      visible same-kind repeat (most noticeably urban's rooftop grid): each
- *      terrain kind can have several textures published (`terrain_<kind>.png`
- *      plus `terrain_<kind>_<n>.png` variants — see tools/art/plan.ts's
- *      `terrainVariants` category), so instead of tiling ONE texture, this
- *      composites a GxG grid of them (G=2 for <=3 textures, else 3) — cells
- *      deterministically shuffled and flipped per (map.id, kind) — into one
- *      combined texture, and *that* combined texture is what gets tiled.
- *      Since the tile scale is still calibrated to a single cell's size, the
- *      combined image's own repeat period becomes G times more tiles than
- *      before: a viewer has to cross G tiles' worth of ground before the
- *      pattern repeats, instead of one texture's width. A kind with only its
- *      base texture published still gets a (smaller) atlas of flipped copies
- *      of that one texture, which is a free win against its own repeat too.
- *   3. Layer every kind (fixed order, `blocked` last) into one container.
- *      Because each layer is a blurred *alpha* mask, adjacent kinds
- *      cross-fade at their true boundary instead of hard-cutting — that's
- *      the whole "soften the boundary" effect — while two tiles of the SAME
- *      kind show no seam at all, because they're one continuous fill under
- *      one continuous (fused) mask.
- *
- * The result is flattened via `renderer.generateTexture` into a single
- * Sprite exactly as before, so per-frame rendering never re-touches terrain
- * geometry. The per-kind mask RenderTextures are intermediate GPU resources
- * created fresh every bake — they are NOT the shared/cached terrain PNGs, so
- * this module destroys them itself once the final bake is done (see the
- * `maskTexturesToFree` cleanup at the end of `bakeTiles`). The per-(map,kind)
- * *atlas* textures are a different lifetime again — see `buildTerrainAtlas`'s
- * doc comment.
- *
- * The returned Sprite wraps a `RenderTexture`, a GPU resource tied to this
- * app's renderer — `MapScene` is responsible for destroying it (texture:
- * true) when the map is torn down or swapped, unlike the shared canvas-baked
- * textures in `src/render/sprites`.
+ * Pipeline, in `bakeTiles`:
+ *   1. `buildPlateLayer` — picks one published `plate_<key>.png` (see
+ *      `choosePlateKey`) deterministically from the map (space maps hash to
+ *      one of two space plates; surface maps use the DOMINANT non-blocked
+ *      terrain to pick plains/forest/city/ocean/shore), and draws it as a
+ *      square Sprite rotated 45° with `scale.y` halved so it exactly covers
+ *      the map's projected diamond (a square rotated 45° and squashed to
+ *      half height on Y is precisely a 2:1 iso diamond — this game's
+ *      TILE_W:TILE_H ratio), masked (hard edge, no blur — the plate's own
+ *      outline IS the map's outline) to the map's outer diamond polygon.
+ *      Missing art falls back to a flat two-tone radial-ish blend (a few
+ *      concentric ellipses, same trick `weather.ts` uses for its nebula)
+ *      in colors keyed off the same plate choice.
+ *   2. `buildTintLayers` — for every terrain kind that (a) actually appears
+ *      on the map, (b) isn't the map's dominant terrain, and (c) isn't
+ *      'blocked'/'structure' (those are cubes, never tinted), builds ONE
+ *      blurred union mask of that kind's tile diamonds (same
+ *      inflate-then-blur trick the old per-kind TilingSprite fill used —
+ *      see `buildKindMask`) and fills it with a flat translucent color.
+ *      Because the mask is one blurred union (not per-tile fills stacked on
+ *      each other), same-kind neighbours show no internal seam and
+ *      different-kind boundaries cross-fade softly instead of a hard cut.
+ *   3. `drawGrid` — one Graphics holding every tile-diamond boundary line as
+ *      a single non-overlapping line per grid index (not a per-tile
+ *      diamond stroke, which would double-stroke every shared edge), thin
+ *      and pale, with every 4th line brighter — the SRW "major gridline"
+ *      look.
+ *   4. Bake plate + tints + grid into one `RenderTexture` via
+ *      `renderer.generateTexture`, exactly like the old bake — so
+ *      `MapScene` keeps destroying/replacing this sprite's texture on
+ *      switch precisely as before. The cubes (`cubes.ts`) are a *separate*
+ *      live object MapScene adds to `entitiesLayer`, not part of this bake.
  */
-import {
-  Assets,
-  BlurFilter,
-  ColorMatrixFilter,
-  Container,
-  Graphics,
-  Rectangle,
-  Sprite,
-  Texture,
-  TilingSprite,
-  type Application,
-} from 'pixi.js';
-import type { MapDef, MapKind, Terrain } from '@sim/types';
+import { Application, Assets, BlurFilter, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
+import type { MapDef, Terrain } from '@sim/types';
 import { probeFirstExisting } from '@render/sprites/assetProbe';
-import { TILE_H, TILE_W } from './constants';
-import { hash01, stringHash } from './hash';
-import { mapIsoBounds, tileDiamondPoints, toIso } from './iso';
+import { TILE_W, TILE_H } from './constants';
+import { stringHash, hash01 } from './hash';
+import { mapIsoBounds, toIso } from './iso';
 
-const SURFACE_COLORS: Partial<Record<Terrain, number>> = {
-  open: 0x3f4a35,
-  forest: 0x2c4a2e,
-  urban: 0x4b4b52,
-  mountain: 0x5c5347,
-  water: 0x2a4a63,
-  blocked: 0x15161a,
+// ---------------------------------------------------------------------------
+// Terrain -> flat translucent tint (everything EXCEPT the map's dominant
+// terrain gets tinted; 'open'/'void' are the common "this IS the plate"
+// base kinds so they're deliberately absent here; 'blocked'/'structure' are
+// raised cubes, never a flat tint — see cubes.ts).
+// ---------------------------------------------------------------------------
+const FLAT_TINTS: Partial<Record<Terrain, { color: number; alpha: number }>> = {
+  forest: { color: 0x3f7a3a, alpha: 0.28 },
+  urban: { color: 0x6c7a8c, alpha: 0.3 },
+  mountain: { color: 0x8a7a66, alpha: 0.32 },
+  water: { color: 0x2a5a8c, alpha: 0.35 },
+  debris: { color: 0x7a7a7a, alpha: 0.22 },
+  radiation: { color: 0xb04a7a, alpha: 0.28 },
+  gravity: { color: 0x4a5ab0, alpha: 0.25 },
 };
 
-const SPACE_COLORS: Partial<Record<Terrain, number>> = {
-  void: 0x0a0c14,
-  debris: 0x2b2e38,
-  radiation: 0x3a1f2a,
-  gravity: 0x1c2438,
-  structure: 0x333a46,
-  blocked: 0x05060a,
+export function terrainOf(map: MapDef, tx: number, ty: number): Terrain {
+  return map.tiles[ty]?.[tx] ?? (map.kind === 'surface' ? 'open' : 'void');
+}
+
+/** Every terrain kind actually present on the map (excluding 'blocked' — cubes, never a ground kind for dominance purposes). */
+function countTerrain(map: MapDef): Map<Terrain, number> {
+  const counts = new Map<Terrain, number>();
+  for (let ty = 0; ty < map.height; ty++) {
+    for (let tx = 0; tx < map.width; tx++) {
+      const t = terrainOf(map, tx, ty);
+      if (t === 'blocked') continue;
+      counts.set(t, (counts.get(t) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+/** The most common non-blocked terrain on the map — used both to pick the ground plate and to decide which kind is left untinted. Exported for tests. */
+export function dominantTerrain(map: MapDef): Terrain {
+  const counts = countTerrain(map);
+  let best: Terrain = map.kind === 'surface' ? 'open' : 'void';
+  let bestCount = -1;
+  for (const [t, c] of counts) {
+    if (c > bestCount) {
+      best = t;
+      bestCount = c;
+    }
+  }
+  return best;
+}
+
+// ---------------------------------------------------------------------------
+// Ground plate selection + art
+// ---------------------------------------------------------------------------
+
+const PLATE_KEYS = [
+  'plate_space_a',
+  'plate_space_b',
+  'plate_ocean',
+  'plate_shore',
+  'plate_plains',
+  'plate_forest',
+  'plate_city',
+  'plate_ice',
+] as const;
+export type PlateKey = (typeof PLATE_KEYS)[number];
+
+/** [outer, inner] two-tone fallback colors per plate, used only while `plate_<key>.png` isn't published yet — see `buildPlateLayer`. */
+const PLATE_FALLBACK: Record<PlateKey, [number, number]> = {
+  plate_space_a: [0x05060c, 0x141c30],
+  plate_space_b: [0x07060c, 0x1d1030],
+  plate_ocean: [0x0a2436, 0x1c4a63],
+  plate_shore: [0x123246, 0x2f6f7f],
+  plate_plains: [0x362f22, 0x54502f],
+  plate_forest: [0x142a1c, 0x223a26],
+  plate_city: [0x22262c, 0x363c46],
+  plate_ice: [0x93aab8, 0xdcf0f7],
 };
 
-function baseColor(terrain: Terrain, kind: MapKind): number {
-  const table = kind === 'surface' ? SURFACE_COLORS : SPACE_COLORS;
-  const fallback = kind === 'surface' ? SURFACE_COLORS.open! : SPACE_COLORS.void!;
-  return table[terrain] ?? fallback;
+/**
+ * Deterministic per-map plate choice. Space maps alternate between the two
+ * space plates by `hash(map.id)`; surface maps use the map's dominant
+ * terrain (mountain has no plate of its own — it reads close enough to
+ * plains at this zoom — per spec). Maps whose id names ice/frost/glacier
+ * get the ice plate regardless of terrain (no 'ice' Terrain kind exists to
+ * derive this from otherwise).
+ */
+export function choosePlateKey(map: MapDef): PlateKey {
+  if (/ice|frost|glacier/i.test(map.id)) return 'plate_ice';
+  if (map.kind === 'space') {
+    return hash01(stringHash(map.id), 1, 97) < 0.5 ? 'plate_space_a' : 'plate_space_b';
+  }
+  const dominant = dominantTerrain(map);
+  if (dominant === 'forest') return 'plate_forest';
+  if (dominant === 'urban') return 'plate_city';
+  if (dominant === 'water') {
+    const counts = countTerrain(map);
+    const total = map.width * map.height;
+    const waterCount = counts.get('water') ?? 0;
+    return waterCount / Math.max(1, total) > 0.85 ? 'plate_ocean' : 'plate_shore';
+  }
+  return 'plate_plains'; // open, mountain, and any other surface fallback
 }
 
-/** Fixed draw order (surface kinds, then space kinds, `blocked` always last so its mask/outline wins at any boundary). Matches the `Terrain` union order in src/sim/types.ts. */
-const TERRAIN_DRAW_ORDER: Terrain[] = [
-  'open',
-  'forest',
-  'urban',
-  'mountain',
-  'water',
-  'void',
-  'debris',
-  'radiation',
-  'gravity',
-  'structure',
-  'blocked',
-];
-
-/** Absolute px each tile diamond is inflated by before union-fill, so same-kind neighbours fuse with no seam (their overlapping anti-aliased edges land on solid interior, not on each other). Padded proportionally (TILE_H/TILE_W) so the inflate reads as isotropic on the iso ground plane, not stretched. */
-const MASK_DIAMOND_PAD_X = 1.5;
-const MASK_DIAMOND_PAD_Y = MASK_DIAMOND_PAD_X * (TILE_H / TILE_W);
-
-/** Gaussian blur strength (px) applied to each kind's union mask — this is what turns a hard kind-vs-kind boundary into a soft cross-fade. */
-const MASK_BLUR_PX = 3;
-
-/** How many tiles wide one repeat of the terrain texture should read as, once rotated onto the iso grid — bigger than 1 so the art's own non-seamless edges are far apart and less noticeable. */
-const TERRAIN_REPEAT_TILES = 2;
-
-const OUTLINE_ALPHA = 0.05;
-
-function inflatedDiamondPoints(cx: number, cy: number): number[] {
-  const hw = TILE_W / 2 + MASK_DIAMOND_PAD_X;
-  const hh = TILE_H / 2 + MASK_DIAMOND_PAD_Y;
-  return [cx, cy - hh, cx + hw, cy, cx, cy + hh, cx - hw, cy];
-}
-
-/** Per-terrain hand-authored art, probed once and cached for the process lifetime (another agent publishes these to `public/sprites/map/`). */
-const terrainTextureCache = new Map<string, Promise<Texture | null>>();
-function loadTerrainTexture(terrain: Terrain): Promise<Texture | null> {
-  let cached = terrainTextureCache.get(terrain);
+const plateTextureCache = new Map<string, Promise<Texture | null>>();
+function loadPlateTexture(key: PlateKey): Promise<Texture | null> {
+  let cached = plateTextureCache.get(key);
   if (cached) return cached;
   cached = (async () => {
-    const url = await probeFirstExisting(`/sprites/map/terrain_${terrain}`, ['png', 'jpg']);
+    const url = await probeFirstExisting(`/sprites/map/${key}`, ['png', 'jpg']);
     if (!url) return null;
     try {
       return await Assets.load<Texture>(url);
@@ -140,329 +165,138 @@ function loadTerrainTexture(terrain: Terrain): Promise<Texture | null> {
       return null;
     }
   })();
-  terrainTextureCache.set(terrain, cached);
+  plateTextureCache.set(key, cached);
   return cached;
 }
 
+/** The map's outer diamond corners (grid corners, not tile centers), in bake-local space (offset already applied). */
+function mapDiamondCornerPoints(map: MapDef, offsetX: number, offsetY: number): { x: number; y: number }[] {
+  return [
+    toIso({ x: 0, y: 0 }),
+    toIso({ x: map.width, y: 0 }),
+    toIso({ x: map.width, y: map.height }),
+    toIso({ x: 0, y: map.height }),
+  ].map((p) => ({ x: p.x + offsetX, y: p.y + offsetY }));
+}
+
+/**
+ * Renders `points` (a closed polygon) to a `boundsW`x`boundsH` RenderTexture
+ * and wraps it in a non-renderable Sprite for use as a `.mask` — the same
+ * technique `buildKindMask` (below) uses for the per-terrain tint masks,
+ * just without the blur (the plate's own diamond edge should be crisp, not
+ * soft). A plain `Graphics` object set directly as `.mask` looked right at
+ * a glance but rendered as an effective no-op in testing: Pixi v8's stencil
+ * masking needs the mask object to actually take part in a render pass, and
+ * `renderable = false` (needed so the mask shape itself doesn't also draw
+ * as ordinary content) skips that — a RenderTexture-backed Sprite mask
+ * doesn't have that problem (the render happened already, at bake time,
+ * producing a plain alpha texture the mask filter just samples), which is
+ * exactly what every other mask in this file already relies on.
+ */
+function buildHardMask(
+  app: Application,
+  points: number[],
+  boundsW: number,
+  boundsH: number
+): { maskSprite: Sprite; maskTexture: Texture } {
+  const gfx = new Graphics();
+  gfx.poly(points, true).fill({ color: 0xffffff });
+  const maskTexture = app.renderer.generateTexture({ target: gfx, frame: new Rectangle(0, 0, boundsW, boundsH) });
+  gfx.destroy({ children: true, texture: false });
+  const maskSprite = new Sprite(maskTexture);
+  maskSprite.renderable = false;
+  return { maskSprite, maskTexture };
+}
+
+/**
+ * Builds the ground-plate layer: one painted image (or fallback gradient)
+ * projected onto the map's iso diamond. See this file's header for the
+ * rotate-45°-then-halve-Y trick. Returned container's children are already
+ * final content, ready to sit at the bottom of the bake; `maskTexture` is
+ * the caller's to free once the whole scene is baked (see `bakeTiles`).
+ */
+async function buildPlateLayer(
+  app: Application,
+  map: MapDef,
+  offsetX: number,
+  offsetY: number,
+  boundsW: number,
+  boundsH: number
+): Promise<{ container: Container; maskTexture: Texture; maskedObject: Container | Graphics }> {
+  const key = choosePlateKey(map);
+  const corners = mapDiamondCornerPoints(map, offsetX, offsetY);
+  const cx = (corners[0].x + corners[2].x) / 2;
+  const cy = (corners[0].y + corners[2].y) / 2;
+
+  const { maskSprite: maskG, maskTexture } = buildHardMask(app, corners.flatMap((p) => [p.x, p.y]), boundsW, boundsH);
+
+  const container = new Container();
+  const tex = await loadPlateTexture(key);
+  let maskedObject: Container | Graphics;
+
+  if (tex) {
+    // A square rotated 45° has a diamond bounding box of side*SQRT2 on each
+    // axis; squashing Y by 0.5 turns that square diamond into our 2:1 iso
+    // diamond exactly (TILE_W === 2*TILE_H), so sizing off the map diamond's
+    // WIDTH alone is enough — the height falls out correctly for free.
+    //
+    // Order matters here: Pixi composes one object's own transform as
+    // scale-THEN-rotate (never rotate-then-scale), so a non-uniform
+    // scale.set(s, s*0.5) followed by rotation=45° on the SAME sprite
+    // rotates an already-squashed RECTANGLE — a lopsided parallelogram, not
+    // a symmetric diamond. To get rotate-then-squash, the two steps have to
+    // live on two different objects: an inner sprite that's scaled
+    // UNIFORMLY (a true square) and rotated 45° (producing a proper
+    // symmetric diamond), wrapped in an outer container whose OWN
+    // scale.y = 0.5 squashes that already-rotated diamond afterward.
+    const mapDiamondW = (map.width + map.height) * (TILE_W / 2);
+    const side = mapDiamondW / Math.SQRT2;
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5);
+    const scale = side / tex.width; // plates are published square (1024x1024)
+    sprite.scale.set(scale, scale);
+    sprite.rotation = Math.PI / 4;
+    const diamond = new Container();
+    diamond.addChild(sprite);
+    diamond.scale.set(1, 0.5);
+    diamond.x = cx;
+    diamond.y = cy;
+    diamond.mask = maskG;
+    maskedObject = diamond;
+    container.addChild(diamond, maskG);
+  } else {
+    const [outer, inner] = PLATE_FALLBACK[key];
+    const fill = new Graphics();
+    fill.poly(corners.flatMap((p) => [p.x, p.y]), true).fill({ color: outer });
+    const blend = new Graphics();
+    const mapDiamondW = (map.width + map.height) * (TILE_W / 2);
+    const maxR = mapDiamondW * 0.55;
+    const steps = 6;
+    for (let i = steps; i >= 1; i--) {
+      const f = i / steps;
+      blend.ellipse(cx, cy, maxR * f, maxR * f * 0.5).fill({ color: inner, alpha: 0.1 });
+    }
+    blend.mask = maskG;
+    maskedObject = blend;
+    container.addChild(fill, blend, maskG);
+  }
+  return { container, maskTexture, maskedObject };
+}
+
 // ---------------------------------------------------------------------------
-// Terrain variants + per-(map, kind) atlas
-//
-// tools/art's `terrainVariants` category (see tools/art/plan.ts) publishes
-// extra same-kind textures — `terrain_<kind>_<n>.png`, 1-indexed — alongside
-// the base `terrain_<kind>.png`. This section discovers whatever variants
-// exist for a kind, then composites the base + all its variants into one
-// shuffled/flipped atlas per (map.id, kind) — see `buildTerrainAtlas`.
+// Per-kind tint masks — same inflate+blur union-mask trick the old
+// TilingSprite-atlas bake used to soften kind-vs-kind boundaries, just
+// filling a flat translucent color instead of a tiled texture.
 // ---------------------------------------------------------------------------
 
-interface MapManifestImage {
-  key: string;
-  kind: string;
-  path: string;
-  variant?: number;
-}
+const MASK_DIAMOND_PAD_X = 1.5;
+const MASK_DIAMOND_PAD_Y = MASK_DIAMOND_PAD_X * (TILE_H / TILE_W);
+const MASK_BLUR_PX = 3;
 
-/**
- * `public/sprites/map/manifest.json` is rebuilt from disk by
- * `tools/art/generate.ts` every time terrain/terrain-variants/objects/decor
- * art is published (see `buildMapManifestFromDisk`) — fetched once and cached
- * for the process lifetime, same rationale as `terrainTextureCache`. Resolves
- * to null (never rejects) if the manifest can't be fetched/parsed, so callers
- * fall back to probing filenames directly instead.
- */
-let mapManifestPromise: Promise<MapManifestImage[] | null> | null = null;
-function loadMapManifest(): Promise<MapManifestImage[] | null> {
-  mapManifestPromise ??= (async () => {
-    try {
-      if (typeof fetch !== 'function') return null;
-      const res = await fetch('/sprites/map/manifest.json');
-      if (!res.ok) return null;
-      const data = (await res.json()) as { images?: MapManifestImage[] };
-      return Array.isArray(data.images) ? data.images : null;
-    } catch {
-      return null;
-    }
-  })();
-  return mapManifestPromise;
-}
-
-/** No terrain kind is planned to ever have more variants than this — bounds the filename-probing fallback below. */
-const MAX_VARIANT_PROBE = 12;
-
-/** `terrain_<kind>_<n>` keys for `terrain`, in `n` order, discovered via the manifest (preferred) or by probing sequential filenames until one is missing (fallback — e.g. a dev server with a stale/no manifest). */
-async function terrainVariantKeys(terrain: Terrain): Promise<string[]> {
-  const manifest = await loadMapManifest();
-  if (manifest) {
-    return manifest
-      .filter(
-        (img): img is MapManifestImage & { variant: number } =>
-          img.kind === 'terrain' && typeof img.variant === 'number' && img.key === `terrain_${terrain}_${img.variant}`
-      )
-      .sort((a, b) => a.variant - b.variant)
-      .map((img) => img.key);
-  }
-  const keys: string[] = [];
-  for (let n = 1; n <= MAX_VARIANT_PROBE; n++) {
-    const key = `terrain_${terrain}_${n}`;
-    const url = await probeFirstExisting(`/sprites/map/${key}`, ['png']);
-    if (!url) break;
-    keys.push(key);
-  }
-  return keys;
-}
-
-/** Base texture (if any) plus every published variant texture for `terrain`, in stable order (base first, then variants by `n`). Cached per terrain for the process lifetime — texture *assets* are shared across maps; only their per-map atlas arrangement (below) differs. */
-const terrainTextureSetCache = new Map<Terrain, Promise<Texture[]>>();
-function loadTerrainTextureSet(terrain: Terrain): Promise<Texture[]> {
-  let cached = terrainTextureSetCache.get(terrain);
-  if (cached) return cached;
-  cached = (async () => {
-    const [base, variantKeys] = await Promise.all([loadTerrainTexture(terrain), terrainVariantKeys(terrain)]);
-    const variantTextures = await Promise.all(
-      variantKeys.map(async (key) => {
-        try {
-          return await Assets.load<Texture>(`/sprites/map/${key}.png`);
-        } catch {
-          return null;
-        }
-      })
-    );
-    return [base, ...variantTextures].filter((t): t is Texture => t !== null);
-  })();
-  terrainTextureSetCache.set(terrain, cached);
-  return cached;
-}
-
-/** Every terrain texture (base + variants) is published at this size (tools/art/plan.ts's `buildTerrainPrompt`/`buildTerrainVariantPrompt` both request 512x512) — used as the atlas cell size and as the `TilingSprite` scale calibration, not measured off any individual texture, so the math below stays correct regardless of how many cells an atlas has. */
-const ATLAS_CELL_PX = 512;
-/** Each atlas cell's source image is drawn this many px oversized on every edge (bleeding into the next cell) so a soft mask (below) can blend the two textures at their shared boundary instead of a hard cut. */
-const ATLAS_CELL_FEATHER_PX = 48; // wide cross-fade so cells melt into each other
-/** Blur strength for a cell's mask — small enough that the fade lands within the ~8px oversize band instead of eating into the cell's own interior. */
-const ATLAS_CELL_MASK_BLUR_PX = 24;
-
-/**
- * Mean luminance (0..255) of a texture's source image, sampled at 16x16.
- * Variants of one terrain can differ a lot in brightness (salt crust vs.
- * cracked earth); matching each cell to the base texture keeps the atlas
- * reading as one ground instead of a light/dark patchwork.
- */
-function meanLuminance(tex: Texture): number | null {
-  try {
-    if (typeof document === 'undefined') return null;
-    const res = (tex.source as unknown as { resource?: CanvasImageSource }).resource;
-    if (!res) return null;
-    const c = document.createElement('canvas');
-    c.width = 16;
-    c.height = 16;
-    const ctx = c.getContext('2d');
-    if (!ctx) return null;
-    ctx.drawImage(res, 0, 0, 16, 16);
-    const d = ctx.getImageData(0, 0, 16, 16).data;
-    let sum = 0;
-    for (let i = 0; i < d.length; i += 4) sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
-    return sum / (d.length / 4);
-  } catch {
-    return null;
-  }
-}
-
-/** `<=3` textures atlas as 2x2 (repeating one), more than that as 3x3 (repeating none up to 9). */
-function atlasGridSize(textureCount: number): number {
-  return textureCount <= 3 ? 2 : 3;
-}
-
-/** Deterministic Fisher-Yates shuffle of `[0, count)`, seeded so the same (map, kind) always produces the same order. */
-function shuffledIndices(count: number, seed: number, salt: number): number[] {
-  const arr = Array.from({ length: count }, (_, i) => i);
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(hash01(seed, salt + i, 701) * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-/**
- * Deterministically assigns a texture index to each of `cellCount` grid
- * cells, repeating textures if there are fewer than `cellCount`, then does a
- * best-effort local swap pass so the same texture doesn't land in two
- * orthogonally-adjacent cells when some other cell's assignment can be
- * swapped in without creating its own new collision at the swap site.
- */
-function assignCellTextures(textureCount: number, cellCount: number, gridSize: number, seed: number): number[] {
-  const cells: number[] = [];
-  let batch = 0;
-  while (cells.length < cellCount) {
-    for (const idx of shuffledIndices(textureCount, seed, batch * textureCount)) {
-      cells.push(idx);
-      if (cells.length >= cellCount) break;
-    }
-    batch++;
-  }
-  if (textureCount > 1) {
-    for (let i = 0; i < cellCount; i++) {
-      const row = Math.floor(i / gridSize);
-      const col = i % gridSize;
-      const neighbors = [
-        col > 0 ? i - 1 : -1,
-        col < gridSize - 1 ? i + 1 : -1,
-        row > 0 ? i - gridSize : -1,
-        row < gridSize - 1 ? i + gridSize : -1,
-      ].filter((n) => n >= 0);
-      if (neighbors.some((n) => cells[n] === cells[i])) {
-        const swapWith = cells.findIndex((v, j) => j > i && v !== cells[i] && !neighbors.includes(j));
-        if (swapWith >= 0) {
-          [cells[i], cells[swapWith]] = [cells[swapWith], cells[i]];
-        }
-      }
-    }
-  }
-  return cells;
-}
-
-/** Deterministic per-cell horizontal/vertical flip, seeded so the same (map, kind) always flips the same way. */
-function cellFlip(seed: number, cellIndex: number): { flipX: boolean; flipY: boolean } {
-  return {
-    flipX: hash01(seed, cellIndex, 811) < 0.5,
-    flipY: hash01(seed, cellIndex, 822) < 0.5,
-  };
-}
-
-/** key -> atlas texture, so re-baking the SAME map (e.g. re-entering it) reuses the atlas instead of rebuilding it. Cleared per-map by `purgeAtlasesForOtherMaps` and entirely by `destroyTerrainAtlases`. */
-const atlasCache = new Map<string, Promise<Texture | null>>();
-/** The map.id the cache above currently holds entries for — any entry for a *different* map is stale (that map isn't showing) and gets freed the next time `bakeTiles` runs for a new map. */
-let atlasCacheMapId: string | null = null;
-
-function atlasCacheKey(mapId: string, kind: Terrain): string {
-  return `${mapId}::${kind}`;
-}
-
-/**
- * Frees every cached atlas that doesn't belong to `mapId` — called at the top
- * of `bakeTiles`. A no-op while re-baking the same map (the common case: the
- * player re-entering a map they've already visited), so that case never
- * rebuilds atlases it already has. Switching to a genuinely different map
- * frees the outgoing map's atlases immediately rather than letting them pile
- * up — same "destroy on switch" contract as the tile layer's own RenderTexture
- * (see `MapScene.disposeTileSprite`).
- */
-function purgeAtlasesForOtherMaps(app: Application, mapId: string): void {
-  if (atlasCacheMapId === mapId) return;
-  const prefix = `${mapId}::`;
-  for (const [key, texturePromise] of atlasCache) {
-    if (key.startsWith(prefix)) continue;
-    atlasCache.delete(key);
-    // Same "destroy on the next real render tick" rationale as `freeMaskTextures` above — an
-    // atlas may still be bound as a TilingSprite's texture from the bake that's finishing right
-    // now (the outgoing map's last frame), so destroying it synchronously here would race that.
-    texturePromise.then((tex) => tex && app.ticker.addOnce(() => tex.destroy(true))).catch(() => {});
-  }
-  atlasCacheMapId = mapId;
-}
-
-/** Frees every cached atlas unconditionally — call from `MapScene.destroy()` so the last map's atlases don't outlive the scene. Safe to call even if no atlas was ever built. */
-export function destroyTerrainAtlases(app: Application): void {
-  for (const texturePromise of atlasCache.values()) {
-    texturePromise.then((tex) => tex && app.ticker.addOnce(() => tex.destroy(true))).catch(() => {});
-  }
-  atlasCache.clear();
-  atlasCacheMapId = null;
-}
-
-/**
- * Composites `textures` (a terrain kind's base + variant art) into one GxG
- * grid atlas texture — G=2 for <=3 textures, else 3 (up to 9 cells) — so
- * `bakeTiles` can tile ONE combined image per kind instead of one bare
- * texture, breaking up that kind's own visible repeat (see this file's top
- * doc comment). Cell-to-cell assignment and flip are deterministic per
- * (map.id, kind) via `assignCellTextures`/`cellFlip`, and results are cached
- * under that key (see `atlasCache`) — a second call for the same (map, kind)
- * returns the same texture without re-rendering.
- *
- * Each cell's source image is drawn `ATLAS_CELL_FEATHER_PX` oversized on
- * every edge and masked with a *blurred* (not hard-edged) rect the size of
- * just its own cell — same masking technique as `buildKindMask` above, at
- * cell scale — so the oversized bleed fades out across that blur instead of
- * abutting the neighbouring cell's image with a hard seam.
- *
- * Returns null (no atlas, caller falls back to `baseColor`) when `textures`
- * is empty. The returned texture is a cached/shared resource, same
- * ownership contract as `terrainTextureCache`'s textures — callers must NOT
- * destroy it themselves (see `purgeAtlasesForOtherMaps`/`destroyTerrainAtlases`).
- */
-function buildTerrainAtlas(app: Application, mapId: string, kind: Terrain, textures: Texture[]): Promise<Texture | null> {
-  if (textures.length === 0) return Promise.resolve(null);
-  const cacheKey = atlasCacheKey(mapId, kind);
-  const cached = atlasCache.get(cacheKey);
-  if (cached) return cached;
-
-  const built = (async () => {
-    const gridSize = atlasGridSize(textures.length);
-    const cellCount = gridSize * gridSize;
-    const atlasPx = gridSize * ATLAS_CELL_PX;
-    const seed = stringHash(`${mapId}:${kind}`);
-    const cellTexIdx = assignCellTextures(textures.length, cellCount, gridSize, seed);
-
-    const container = new Container();
-    const maskTexturesToFree: Texture[] = [];
-    const frame = new Rectangle(0, 0, atlasPx, atlasPx);
-
-    const baseLum = meanLuminance(textures[0]);
-    for (let cell = 0; cell < cellCount; cell++) {
-      const row = Math.floor(cell / gridSize);
-      const col = cell % gridSize;
-      const cellX = col * ATLAS_CELL_PX;
-      const cellY = row * ATLAS_CELL_PX;
-      const tex = textures[cellTexIdx[cell]];
-      const { flipX, flipY } = cellFlip(seed, cell);
-
-      const size = ATLAS_CELL_PX + ATLAS_CELL_FEATHER_PX * 2;
-      const img = new Sprite(tex);
-      img.anchor.set(0.5);
-      img.width = size;
-      img.height = size;
-      if (flipX) img.scale.x *= -1;
-      if (flipY) img.scale.y *= -1;
-      img.x = cellX + ATLAS_CELL_PX / 2;
-      img.y = cellY + ATLAS_CELL_PX / 2;
-      // Brightness-match this variant to the base texture (see meanLuminance).
-      const lum = baseLum !== null ? meanLuminance(tex) : null;
-      if (baseLum !== null && lum !== null && lum > 1) {
-        const factor = Math.max(0.55, Math.min(1.8, baseLum / lum));
-        if (Math.abs(factor - 1) > 0.05) {
-          const cm = new ColorMatrixFilter();
-          cm.brightness(factor, false);
-          img.filters = [cm];
-        }
-      }
-
-      const maskGfx = new Graphics();
-      maskGfx.rect(cellX, cellY, ATLAS_CELL_PX, ATLAS_CELL_PX).fill({ color: 0xffffff });
-      maskGfx.filters = [new BlurFilter({ strength: ATLAS_CELL_MASK_BLUR_PX, quality: 3 })];
-      const maskTexture = app.renderer.generateTexture({ target: maskGfx, frame });
-      maskGfx.destroy({ children: true, texture: false });
-      maskTexturesToFree.push(maskTexture);
-
-      const maskSprite = new Sprite(maskTexture);
-      maskSprite.renderable = false;
-      img.mask = maskSprite;
-
-      container.addChild(maskSprite, img);
-    }
-
-    const atlasTexture = app.renderer.generateTexture({ target: container, frame });
-    for (const child of container.children) {
-      if (child instanceof Sprite) child.mask = null;
-    }
-    container.destroy({ children: true, texture: false });
-    freeMaskTextures(app, maskTexturesToFree);
-    return atlasTexture;
-  })();
-
-  atlasCache.set(cacheKey, built);
-  return built;
-}
-
-function terrainOf(map: MapDef, tx: number, ty: number): Terrain {
-  return map.tiles[ty]?.[tx] ?? (map.kind === 'surface' ? 'open' : 'void');
+function inflatedDiamondPoints(cx: number, cy: number): number[] {
+  const hw = TILE_W / 2 + MASK_DIAMOND_PAD_X;
+  const hh = TILE_H / 2 + MASK_DIAMOND_PAD_Y;
+  return [cx, cy - hh, cx + hw, cy, cx, cy + hh, cx - hw, cy];
 }
 
 interface TileCoord {
@@ -470,13 +304,6 @@ interface TileCoord {
   ty: number;
 }
 
-/**
- * Renders `tiles`' inflated, blurred diamond union to a texture the size of
- * the whole map (so it lines up 1:1, at local (0,0), with everything else
- * baked in `bakeTiles`) and wraps it in a non-rendering Sprite for use as an
- * alpha mask. Caller owns the returned texture and must destroy it (it's a
- * fresh RenderTexture, not a shared asset).
- */
 function buildKindMask(
   app: Application,
   tiles: TileCoord[],
@@ -495,28 +322,115 @@ function buildKindMask(
   gfx.destroy({ children: true, texture: false });
 
   const maskSprite = new Sprite(maskTexture);
-  // Used purely as a mask, never drawn as ordinary content.
   maskSprite.renderable = false;
   return { maskSprite, maskTexture };
 }
 
-/**
- * Destroying a RenderTexture that was just used as a mask within the same
- * synchronous `generateTexture()` call races the renderer's internal
- * bind-group bookkeeping (observed as a harmless-but-noisy PixiJS console
- * warning: "'textureSource'/'textureSampler' was destroyed while still bound
- * to a shader") — that bookkeeping isn't cleared until the renderer actually
- * renders another frame, so a plain `requestAnimationFrame` (which can fire
- * before Pixi's own ticker gets to render) isn't reliably late enough.
- * `app.ticker.addOnce` runs during that next real render tick instead, which
- * is.
- */
+/** See `freeMaskTextures` in the old tiles.ts (destroying a mask RenderTexture synchronously right after `generateTexture` races the renderer's bind-group bookkeeping) — same fix, `ticker.addOnce`. */
 function freeMaskTextures(app: Application, textures: Texture[]): void {
   if (textures.length === 0) return;
   app.ticker.addOnce(() => {
     for (const t of textures) t.destroy(true);
   });
 }
+
+function buildTintLayers(
+  app: Application,
+  map: MapDef,
+  offsetX: number,
+  offsetY: number,
+  boundsW: number,
+  boundsH: number
+): { container: Container; maskedFills: Graphics[]; maskTexturesToFree: Texture[] } {
+  const dominant = dominantTerrain(map);
+  const tilesByTerrain = new Map<Terrain, TileCoord[]>();
+  for (let ty = 0; ty < map.height; ty++) {
+    for (let tx = 0; tx < map.width; tx++) {
+      const terrain = terrainOf(map, tx, ty);
+      if (terrain === dominant || terrain === 'blocked' || terrain === 'structure') continue;
+      const tint = FLAT_TINTS[terrain];
+      if (!tint) continue;
+      let list = tilesByTerrain.get(terrain);
+      if (!list) tilesByTerrain.set(terrain, (list = []));
+      list.push({ tx, ty });
+    }
+  }
+
+  const container = new Container();
+  const maskedFills: Graphics[] = [];
+  const maskTexturesToFree: Texture[] = [];
+
+  for (const [terrain, tiles] of tilesByTerrain) {
+    const tint = FLAT_TINTS[terrain]!;
+    const { maskSprite, maskTexture } = buildKindMask(app, tiles, offsetX, offsetY, boundsW, boundsH);
+    maskTexturesToFree.push(maskTexture);
+    const fill = new Graphics();
+    fill.rect(0, 0, boundsW, boundsH).fill({ color: tint.color, alpha: tint.alpha });
+    fill.mask = maskSprite;
+    maskedFills.push(fill);
+    container.addChild(maskSprite, fill);
+  }
+
+  return { container, maskedFills, maskTexturesToFree };
+}
+
+// ---------------------------------------------------------------------------
+// Grid — one line per grid index (not one stroke per tile diamond, which
+// would double-stroke every internal shared edge), every 4th line brighter.
+// ---------------------------------------------------------------------------
+
+const GRID_COLOR = 0xd8f0ff;
+const GRID_MINOR_ALPHA_SPACE = 0.22;
+const GRID_MINOR_ALPHA_SURFACE = 0.18;
+const GRID_MAJOR_ALPHA = 0.34;
+const GRID_MAJOR_EVERY = 4;
+
+function drawGrid(map: MapDef, offsetX: number, offsetY: number): Graphics {
+  const g = new Graphics();
+  const minorAlpha = map.kind === 'space' ? GRID_MINOR_ALPHA_SPACE : GRID_MINOR_ALPHA_SURFACE;
+
+  const colLine = (i: number): [{ x: number; y: number }, { x: number; y: number }] => {
+    const a = toIso({ x: i, y: 0 });
+    const b = toIso({ x: i, y: map.height });
+    return [
+      { x: a.x + offsetX, y: a.y + offsetY },
+      { x: b.x + offsetX, y: b.y + offsetY },
+    ];
+  };
+  const rowLine = (j: number): [{ x: number; y: number }, { x: number; y: number }] => {
+    const a = toIso({ x: 0, y: j });
+    const b = toIso({ x: map.width, y: j });
+    return [
+      { x: a.x + offsetX, y: a.y + offsetY },
+      { x: b.x + offsetX, y: b.y + offsetY },
+    ];
+  };
+
+  // Minor lines first, majors drawn after (and brighter) so they read on top.
+  for (let i = 0; i <= map.width; i++) {
+    if (i % GRID_MAJOR_EVERY === 0) continue;
+    const [a, b] = colLine(i);
+    g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: GRID_COLOR, alpha: minorAlpha });
+  }
+  for (let j = 0; j <= map.height; j++) {
+    if (j % GRID_MAJOR_EVERY === 0) continue;
+    const [a, b] = rowLine(j);
+    g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: GRID_COLOR, alpha: minorAlpha });
+  }
+  for (let i = 0; i <= map.width; i += GRID_MAJOR_EVERY) {
+    const [a, b] = colLine(i);
+    g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: GRID_COLOR, alpha: GRID_MAJOR_ALPHA });
+  }
+  for (let j = 0; j <= map.height; j += GRID_MAJOR_EVERY) {
+    const [a, b] = rowLine(j);
+    g.moveTo(a.x, a.y).lineTo(b.x, b.y).stroke({ width: 1, color: GRID_COLOR, alpha: GRID_MAJOR_ALPHA });
+  }
+  return g;
+}
+
+// ---------------------------------------------------------------------------
+// Bake
+// ---------------------------------------------------------------------------
 
 export async function bakeTiles(app: Application, map: MapDef): Promise<Sprite> {
   const bounds = mapIsoBounds(map);
@@ -525,99 +439,21 @@ export async function bakeTiles(app: Application, map: MapDef): Promise<Sprite> 
   const boundsW = bounds.maxX - bounds.minX;
   const boundsH = bounds.maxY - bounds.minY;
 
-  const tilesByTerrain = new Map<Terrain, TileCoord[]>();
-  for (let ty = 0; ty < map.height; ty++) {
-    for (let tx = 0; tx < map.width; tx++) {
-      const terrain = terrainOf(map, tx, ty);
-      let list = tilesByTerrain.get(terrain);
-      if (!list) tilesByTerrain.set(terrain, (list = []));
-      list.push({ tx, ty });
-    }
-  }
-
-  // Free any OTHER map's cached atlases before building this map's — a no-op when re-baking the
-  // same map.id (see purgeAtlasesForOtherMaps's doc comment).
-  purgeAtlasesForOtherMaps(app, map.id);
-
-  const textures = new Map<Terrain, Texture | null>();
-  await Promise.all(
-    [...tilesByTerrain.keys()].map(async (t) => {
-      const textureSet = await loadTerrainTextureSet(t);
-      textures.set(t, await buildTerrainAtlas(app, map.id, t, textureSet));
-    })
-  );
+  const [plateResult, tintResult] = await Promise.all([
+    buildPlateLayer(app, map, offsetX, offsetY, boundsW, boundsH),
+    Promise.resolve(buildTintLayers(app, map, offsetX, offsetY, boundsW, boundsH)),
+  ]);
 
   const container = new Container();
-  const maskTexturesToFree: Texture[] = [];
-  const maskedFills: (TilingSprite | Graphics)[] = [];
-  const mapSeed = stringHash(map.id);
-
-  for (const terrain of TERRAIN_DRAW_ORDER) {
-    const tiles = tilesByTerrain.get(terrain);
-    if (!tiles || tiles.length === 0) continue;
-
-    const { maskSprite, maskTexture } = buildKindMask(app, tiles, offsetX, offsetY, boundsW, boundsH);
-    maskTexturesToFree.push(maskTexture);
-
-    const tex = textures.get(terrain) ?? null;
-    let fill: TilingSprite | Graphics;
-    if (tex) {
-      const ts = new TilingSprite({ texture: tex, width: boundsW, height: boundsH });
-      // Calibrated to ATLAS_CELL_PX (one cell/one bare texture's size), NOT tex.width (the whole
-      // atlas) — so a GxG atlas naturally repeats every G times more tiles than a single texture
-      // would, instead of squeezing the whole grid into the same footprint. See this file's top
-      // doc comment ("the combined image's own repeat period becomes G times more tiles").
-      const k = (TILE_W * TERRAIN_REPEAT_TILES) / (ATLAS_CELL_PX * Math.SQRT2);
-      ts.tileScale.set(k, k * 0.5);
-      ts.tileRotation = Math.PI / 4;
-      // Deterministic per-map/per-kind offset so the texture's own repeat (it isn't perfectly
-      // seamless) lands somewhere different on every map instead of always the same spot.
-      const seed = stringHash(terrain);
-      ts.tilePosition.set(
-        (hash01(mapSeed, seed, 11) - 0.5) * tex.width,
-        (hash01(mapSeed, seed, 22) - 0.5) * tex.width
-      );
-      fill = ts;
-    } else {
-      const g = new Graphics();
-      g.rect(0, 0, boundsW, boundsH).fill({ color: baseColor(terrain, map.kind) });
-      fill = g;
-    }
-    fill.mask = maskSprite;
-    maskedFills.push(fill);
-
-    const layer = new Container();
-    layer.addChild(maskSprite, fill);
-    container.addChild(layer);
-  }
-
-  // Impassable tiles get a faint outline (the only per-tile edge drawn anywhere in this bake) —
-  // every other terrain boundary is communicated purely by the soft mask cross-fade above.
-  const blockedTiles = tilesByTerrain.get('blocked');
-  if (blockedTiles && blockedTiles.length > 0) {
-    const outline = new Graphics();
-    for (const { tx, ty } of blockedTiles) {
-      const center = toIso({ x: tx + 0.5, y: ty + 0.5 });
-      outline
-        .poly(tileDiamondPoints(center.x + offsetX, center.y + offsetY), true)
-        .stroke({ width: 1, color: 0xffffff, alpha: OUTLINE_ALPHA });
-    }
-    container.addChild(outline);
-  }
+  container.addChild(plateResult.container, tintResult.container, drawGrid(map, offsetX, offsetY));
 
   const texture = app.renderer.generateTexture(container);
-  // Clear each fill's `.mask` through the normal runtime setter (not just by
-  // destroying the mask Sprite) before tearing anything down — destroying a
-  // masked object's mask sprite out from under it, in child-index order,
-  // left a stale GPU bind-group entry for the mask's texture (harmless, but
-  // noisy: "'textureSource' was destroyed while still bound to a shader").
-  for (const fill of maskedFills) fill.mask = null;
-  // texture:false — these are the shared/cached terrain PNGs and per-frame
-  // Graphics, not the RenderTexture we just baked; that one's owned by the
-  // returned Sprite and is MapScene's responsibility to destroy. The
-  // intermediate per-kind mask RenderTextures are ours to free, below.
+  // Clear masks via the runtime setter before destroying anything, same
+  // "avoid stale GPU bind-group" reasoning as the old bake.
+  plateResult.maskedObject.mask = null;
+  for (const fill of tintResult.maskedFills) fill.mask = null;
   container.destroy({ children: true, texture: false });
-  freeMaskTextures(app, maskTexturesToFree);
+  freeMaskTextures(app, [plateResult.maskTexture, ...tintResult.maskTexturesToFree]);
 
   const sprite = new Sprite(texture);
   sprite.label = 'tile-layer';

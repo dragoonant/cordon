@@ -2,158 +2,60 @@
   "version": 1,
   "images": [
     {
-      "key": "terrain_open_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, dry cracked earth seen directly from above, deep mud-crack fissure patterns across parched hardpan, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_1.png",
-      "generatedAt": "2026-09-05T21:49:25.533Z"
+      "key": "plate_space_a",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, deep teal-black space with faint star specks and a dark nebula",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_space_a.png",
+      "generatedAt": "2026-09-06T08:40:31.504Z"
     },
     {
-      "key": "terrain_open_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, sparse dry scrubland seen directly from above, scattered low bushes and tufts on bare dirt, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_2.png",
-      "generatedAt": "2026-09-05T21:49:25.537Z"
+      "key": "plate_space_b",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, near-black space with a faint violet nebula along one edge",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_space_b.png",
+      "generatedAt": "2026-09-06T08:40:31.508Z"
     },
     {
-      "key": "terrain_open_3",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, wind-rippled sand dunes seen directly from above, soft undulating dune ridges and shadowed troughs, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_3.png",
-      "generatedAt": "2026-09-05T21:49:25.537Z"
+      "key": "plate_ocean",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, dark blue-teal open sea with faint wave texture",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_ocean.png",
+      "generatedAt": "2026-09-06T08:40:31.509Z"
     },
     {
-      "key": "terrain_open_4",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, a flat white salt crust seen directly from above, hexagonal salt-pan cracking patterns, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_open_4.png",
-      "generatedAt": "2026-09-05T21:49:25.538Z"
+      "key": "plate_shore",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, muted dark teal sea meeting pale desaturated sand along one soft diagonal shoreline edge, overcast flat lighting",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_shore.png",
+      "generatedAt": "2026-09-06T08:40:31.509Z"
     },
     {
-      "key": "terrain_forest_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, dense unbroken forest canopy seen directly from above, tight overlapping treetops, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_forest_1.png",
-      "generatedAt": "2026-09-05T21:49:25.539Z"
+      "key": "plate_plains",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, aerial drone photo of open dry grassland and packed dirt terrain, sparse pale dry grass tufts, subtle natural earthy color variation, even overcast lighting",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_plains.png",
+      "generatedAt": "2026-09-06T08:40:31.510Z"
     },
     {
-      "key": "terrain_forest_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, a forest clearing seen directly from above, fallen tree logs scattered across bare ground ringed by canopy, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_forest_2.png",
-      "generatedAt": "2026-09-05T21:49:25.539Z"
+      "key": "plate_forest",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, dark green forest canopy from above, soft and painterly",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_forest.png",
+      "generatedAt": "2026-09-06T08:40:31.510Z"
     },
     {
-      "key": "terrain_forest_3",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, mixed autumn forest canopy seen directly from above, a blend of orange, red, and green treetops, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_forest_3.png",
-      "generatedAt": "2026-09-05T21:49:25.540Z"
+      "key": "plate_city",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, dense grey-blue rooftops from above, painted flat and subtle",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_city.png",
+      "generatedAt": "2026-09-06T08:40:31.511Z"
     },
     {
-      "key": "terrain_urban_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, densely packed rooftops seen directly from above, small tightly clustered buildings, many rooftop vents and AC units, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_1.png",
-      "generatedAt": "2026-09-05T21:49:25.541Z"
-    },
-    {
-      "key": "terrain_urban_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, a broad empty asphalt road with painted white and yellow lane-divider lines, viewed straight down from directly overhead, low rooftops visible along both edges, no cars, no pedestrians, no text, no numbers, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_2.png",
-      "generatedAt": "2026-09-05T21:49:25.541Z"
-    },
-    {
-      "key": "terrain_urban_3",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, a large expanse of flat cracked concrete pavement viewed straight down from directly overhead, network of thin fracture cracks and scattered broken rubble chunks across the bare surface, empty industrial courtyard, no people, no flags, no signage, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_3.png",
-      "generatedAt": "2026-09-05T21:49:25.542Z"
-    },
-    {
-      "key": "terrain_urban_4",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, industrial factory rooftops seen directly from above, large cylindrical storage tanks and clustered pipework, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_4.png",
-      "generatedAt": "2026-09-05T21:49:25.542Z"
-    },
-    {
-      "key": "terrain_urban_5",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, bombed-out city blocks seen directly from above, collapsed roofs, scorch marks, exposed building interiors, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_5.png",
-      "generatedAt": "2026-09-05T21:49:25.543Z"
-    },
-    {
-      "key": "terrain_urban_6",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, a rail yard seen directly from above, parallel train tracks, boxcars, gravel ballast between the rails, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_urban_6.png",
-      "generatedAt": "2026-09-05T21:49:25.544Z"
-    },
-    {
-      "key": "terrain_mountain_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, a grey rocky scree slope seen directly from above, loose broken stone fragments, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_mountain_1.png",
-      "generatedAt": "2026-09-05T21:49:25.544Z"
-    },
-    {
-      "key": "terrain_mountain_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, snow-dusted rocky mountain terrain seen directly from above, patches of snow over dark stone, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_mountain_2.png",
-      "generatedAt": "2026-09-05T21:49:25.545Z"
-    },
-    {
-      "key": "terrain_void_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, deep space, near-black background with a dense field of countless bright distant stars, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_void_1.png",
-      "generatedAt": "2026-09-05T21:49:25.546Z"
-    },
-    {
-      "key": "terrain_void_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, deep space, near-black background with faint scattered stars and a faint dark drifting dust cloud, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_void_2.png",
-      "generatedAt": "2026-09-05T21:49:25.546Z"
-    },
-    {
-      "key": "terrain_debris_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, flat lay overhead view of very fine scattered metal wreckage shards and dust, sparse tiny fragments on a plain black background, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_debris_1.png",
-      "generatedAt": "2026-09-05T21:49:25.547Z"
-    },
-    {
-      "key": "terrain_debris_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, flat lay overhead view of large broken curved hull plate fragments and torn metal panels scattered sparsely on a plain black background, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_debris_2.png",
-      "generatedAt": "2026-09-05T21:49:25.547Z"
-    },
-    {
-      "key": "terrain_radiation_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, deep space with a dense pulsing violet-red radioactive haze and drifting glowing particulate, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_radiation_1.png",
-      "generatedAt": "2026-09-05T21:49:25.548Z"
-    },
-    {
-      "key": "terrain_structure_1",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, steel space station hull plating, riveted panels with rows of small vents and grilles, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_structure_1.png",
-      "generatedAt": "2026-09-05T21:49:25.549Z"
-    },
-    {
-      "key": "terrain_structure_2",
-      "kind": "terrainVariant",
-      "prompt": "seamless tileable texture, top-down, steel space station exterior, an exposed lattice of crossing structural girders and beams, painted anime cel-shaded style, muted desaturated industrial palette, flat colors, no text, no characters, no logo",
-      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/terrain_structure_2.png",
-      "generatedAt": "2026-09-05T21:49:25.549Z"
+      "key": "plate_ice",
+      "kind": "plate",
+      "prompt": "top-down painted background, seen straight from above, seamless, soft painterly, muted, dark enough for light grid lines to read, no objects, no text, no characters, pale blue-white ice field",
+      "rawPath": "C:\\Users\\antho\\OneDrive\\Documents\\OB64\\public\\sprites\\raw/plate_ice.png",
+      "generatedAt": "2026-09-06T08:40:31.512Z"
     }
   ]
 }

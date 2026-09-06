@@ -18,7 +18,8 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Texture, type FederatedPointerEvent } from 'pixi.js';
 import type { GameData, Id, MapDef, ObjectiveDef, Squad, Vec2, WorldState } from '@sim/types';
 import { Camera } from './camera';
-import { bakeTiles, destroyTerrainAtlases } from './tiles';
+import { bakeTiles } from './tiles';
+import { buildBlockedCubes } from './cubes';
 import { buildDecorLayer } from './decor';
 import { DeployZoneView } from './deployZone';
 import { fromIso, mapIsoBounds, toIso } from './iso';
@@ -67,6 +68,7 @@ export class MapScene {
   private readonly weatherOverlayLayer = new Container();
 
   private tileSprite: Sprite | null = null;
+  private blockedCubes: Container[] = [];
   private decorSprites: Sprite[] = [];
   private decorBaked: Sprite | null = null;
   private weather: WeatherLayer | null = null;
@@ -182,6 +184,7 @@ export class MapScene {
     this.objectiveDefs = new Map(map.objectives.map((d) => [d.id, d]));
 
     this.disposeTileSprite();
+    this.disposeCubes();
     this.disposeDecor();
     this.disposeWeather();
     this.deployZoneView?.destroy();
@@ -200,6 +203,11 @@ export class MapScene {
     this.entitiesLayer.addChild(this.deployZoneView.container);
     // Static position: set its depth-sort key once instead of every tick.
     this.deployZoneView.container.zIndex = this.deployZoneView.container.y;
+
+    // Blocked/structure tiles render as raised SRW-style cube obstacles, not baked terrain — live
+    // entities (see cubes.ts) so squads depth-sort against them via entitiesLayer's zIndex sort.
+    this.blockedCubes = buildBlockedCubes(map);
+    this.entitiesLayer.addChild(...this.blockedCubes);
 
     const bounds = mapIsoBounds(map);
     this.camera = new Camera(bounds);
@@ -251,6 +259,15 @@ export class MapScene {
       this.deferredDestroyTexture(texture);
     }
     this.tilesLayer.removeChildren();
+  }
+
+  /** Cubes are plain Graphics-based Containers (no shared/cached textures involved) — a straight destroy is safe, unlike the tile RenderTexture. */
+  private disposeCubes(): void {
+    for (const c of this.blockedCubes) {
+      this.entitiesLayer.removeChild(c);
+      c.destroy({ children: true });
+    }
+    this.blockedCubes = [];
   }
 
   private disposeDecor(): void {
@@ -375,11 +392,7 @@ export class MapScene {
     // so it needs an explicit destroy — app.destroy(texture:false) below
     // deliberately skips it to protect that shared cache.
     this.disposeTileSprite();
-    // The tile layer's per-(map, kind) atlas textures (src/render/map/tiles.ts) are a separate
-    // cache from the baked tile RenderTexture above — normally freed when a NEW map is baked
-    // (purgeAtlasesForOtherMaps), but that never happens if the scene is torn down instead of
-    // switching maps, so free them explicitly here too.
-    destroyTerrainAtlases(this.app);
+    this.disposeCubes();
     this.disposeDecor();
     this.disposeWeather();
     this.objectiveViews.clear();

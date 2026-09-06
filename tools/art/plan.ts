@@ -22,15 +22,43 @@ const EXPRESSION_PROMPT: Record<PortraitExpression, string> = {
   grin: 'grinning, confident',
 };
 
-/** Fixed per GDD §10 — one backdrop per terrain family, not derived from map data. */
-export const BACKDROP_SCENES: { key: string; scene: string }[] = [
-  { key: 'space_debris_field', scene: 'space debris field' },
-  { key: 'space_station_interior', scene: 'space station interior' },
-  { key: 'forest', scene: 'forest' },
-  { key: 'urban_ruins', scene: 'urban ruins' },
-  { key: 'mountain_ridge', scene: 'mountain ridge' },
-  { key: 'salt_flats_dust', scene: 'salt flats/dust' },
+/**
+ * Battle backdrops: two painted-scene variants per Terrain a battle can
+ * actually be fought on (every Terrain kind except 'blocked', which battles
+ * never resolve onto — see src/sim/types.ts). Keyed `bg_<terrain>_<n>`
+ * (1-indexed) so the runtime loader (src/render/battle/backdrop.ts) can pick
+ * a variant deterministically from the battle seed. Order matches
+ * TERRAIN_KINDS below, minus 'blocked'.
+ */
+export const BACKDROP_TERRAINS: Exclude<Terrain, 'blocked'>[] = [
+  'open',
+  'forest',
+  'urban',
+  'mountain',
+  'water',
+  'void',
+  'debris',
+  'radiation',
+  'gravity',
+  'structure',
 ];
+
+/** Two scene descriptions per terrain, index 0 -> bg_<terrain>_1, index 1 -> bg_<terrain>_2. */
+const BACKDROP_SCENE_DESCRIPTIONS: Record<Exclude<Terrain, 'blocked'>, [string, string]> = {
+  urban: ['ruined city street with rubble', 'rooftop skyline at dusk with smoke'],
+  open: ['cracked salt flats under a huge sky', 'dusty plain with distant storm'],
+  forest: ['dense conifer forest edge', 'clearing with fallen trunks'],
+  mountain: ['rocky ridge with snow', 'scree slope under low clouds'],
+  water: ['shoreline shallows', 'flooded ruins'],
+  void: ['open space with distant planet', 'starfield with nebula'],
+  debris: ['drifting hull wreckage field', 'broken station ring'],
+  radiation: ['red-violet irradiated nebula with warning beacons', 'glowing debris haze'],
+  gravity: ['space near a gas giant with distortion rings', 'planet limb with aurora'],
+  structure: ['station hangar interior with girders', 'hull surface with docking arms'],
+};
+
+const NEGATIVE_PROMPT_BACKDROP =
+  'characters, mecha, robot, people, person, text, lettering, watermark, blurry, photo, realistic, logo, signature';
 
 const SILHOUETTE_DESCRIPTIONS: Record<FrameDef['silhouette'], string> = {
   skirmish: 'lightweight scout mech silhouette, slim limbs, angular thruster fins',
@@ -48,7 +76,7 @@ const FACTION_PALETTES: Record<Faction, string> = {
   neutral: 'muted grey and rust with salvage-tech violet accents',
 };
 
-export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'terrainVariant' | 'object' | 'decor';
+export type ImageKind = 'frame' | 'portrait' | 'backdrop' | 'pose' | 'terrain' | 'terrainVariant' | 'object' | 'decor' | 'plate';
 
 export interface ImageJob {
   /** Unique per job: frame id, `${pilotId}_${expression}`, or a backdrop key. */
@@ -133,10 +161,35 @@ export function buildPortraitPrompt(pilot: PilotDef, expression: PortraitExpress
   return { key: `${pilot.id}_${expression}`, kind: 'portrait', prompt, width: 512, height: 512 };
 }
 
-/** One 1280x720-target (generated at 1024x576) backdrop for a terrain family. */
-export function buildBackdropPrompt(entry: { key: string; scene: string }): ImageJob {
-  const prompt = `painted anime background, ${entry.scene}, wide shot, no characters, dramatic lighting`;
-  return { key: entry.key, kind: 'backdrop', prompt, width: 1024, height: 576 };
+/**
+ * One 1280x720-target (generated at 1024x576) painted battle backdrop:
+ * variant `n` (1 or 2) of `terrain`, keyed `bg_<terrain>_<n>` — the runtime
+ * loader (src/render/battle/backdrop.ts) probes exactly this basename.
+ */
+export function buildBackdropPrompt(terrain: Exclude<Terrain, 'blocked'>, n: 1 | 2, scene: string): ImageJob {
+  const prompt =
+    `painted anime background, wide cinematic shot, ${scene}, horizon around the lower third, ` +
+    `empty foreground ground plane for characters to stand on, no characters, no mechs, no text, ` +
+    `cel-shaded, muted desaturated palette with one warm accent, dramatic sky/lighting`;
+  return {
+    key: `bg_${terrain}_${n}`,
+    kind: 'backdrop',
+    prompt,
+    negativePrompt: NEGATIVE_PROMPT_BACKDROP,
+    width: 1024,
+    height: 576,
+  };
+}
+
+/** All 20 backdrop jobs (10 terrains x 2 variants), in BACKDROP_TERRAINS order. */
+export function buildBackdropJobs(): ImageJob[] {
+  const jobs: ImageJob[] = [];
+  for (const terrain of BACKDROP_TERRAINS) {
+    const [a, b] = BACKDROP_SCENE_DESCRIPTIONS[terrain];
+    jobs.push(buildBackdropPrompt(terrain, 1, a));
+    jobs.push(buildBackdropPrompt(terrain, 2, b));
+  }
+  return jobs;
 }
 
 // ---------------------------------------------------------------------------
@@ -413,17 +466,89 @@ export function buildDecorPrompt(key: DecorKey): ImageJob {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Ground plates — SRW-style overworld terrain rework.
+//
+// The isometric map renderer (src/render/map/tiles.ts) replaced its old
+// "per-terrain masked TilingSprite" ground with ONE painted, atmospheric
+// background per map — projected flat onto the map's iso diamond with a
+// crisp grid drawn over it, per Super Robot Wars' overworld look (see the
+// user-facing feedback tiles.ts's header quotes). These 8 plates are that
+// art: unlike `terrain_<kind>`, they're not tileable textures — each is one
+// large scene meant to be seen as a whole, so no seamless/tiling language in
+// the prompt, and no `#00ff00` key (opaque, like `terrain`/`backdrop`).
+// ---------------------------------------------------------------------------
+
+export const PLATE_KEYS = [
+  'plate_space_a',
+  'plate_space_b',
+  'plate_ocean',
+  'plate_shore',
+  'plate_plains',
+  'plate_forest',
+  'plate_city',
+  'plate_ice',
+] as const;
+export type PlateKey = (typeof PLATE_KEYS)[number];
+
+const PLATE_DESCRIPTIONS: Record<PlateKey, string> = {
+  plate_space_a: 'deep teal-black space with faint star specks and a dark nebula',
+  plate_space_b: 'near-black space with a faint violet nebula along one edge',
+  plate_ocean: 'dark blue-teal open sea with faint wave texture',
+  plate_shore: 'muted dark teal sea meeting pale desaturated sand along one soft diagonal shoreline edge, overcast flat lighting',
+  plate_plains: 'aerial drone photo of open dry grassland and packed dirt terrain, sparse pale dry grass tufts, subtle natural earthy color variation, even overcast lighting',
+  plate_forest: 'dark green forest canopy from above, soft and painterly',
+  plate_city: 'dense grey-blue rooftops from above, painted flat and subtle',
+  plate_ice: 'pale blue-white ice field',
+};
+
+/**
+ * `plate_plains`'s "flat ground seen from directly above" framing kept reading to FLUX as a tiled
+ * floor/paver material swatch (a visible tile grid baked into the art itself — exactly the seamed,
+ * un-SRW-like look this whole rework exists to get away from) across two regeneration attempts, so
+ * it alone gets an extra push away from that specific failure mode.
+ */
+const PLATE_NEGATIVE_EXTRA: Partial<Record<PlateKey, string>> = {
+  plate_plains: 'tile, tiles, tiled floor, floor tile, pavers, paving, ceramic, grout lines, brick pattern, checkerboard, flooring',
+};
+
+/** One large painted ground-plate scene for `key`, 1024x1024, opaque (no green key — same convention as `terrain`/`backdrop`). See src/render/map/tiles.ts for how it's projected onto the map diamond. */
+export function buildPlatePrompt(key: PlateKey): ImageJob {
+  const prompt =
+    `top-down painted background, seen straight from above, seamless, soft painterly, muted, ` +
+    `dark enough for light grid lines to read, no objects, no text, no characters, ${PLATE_DESCRIPTIONS[key]}`;
+  const extra = PLATE_NEGATIVE_EXTRA[key];
+  return {
+    key,
+    kind: 'plate',
+    prompt,
+    negativePrompt: extra ? `${NEGATIVE_PROMPT_MAP_ART}, ${extra}` : NEGATIVE_PROMPT_MAP_ART,
+    width: 1024,
+    height: 1024,
+  };
+}
+
 export interface ArtData {
   frames: Record<Id, FrameDef>;
   pilots: Record<Id, PilotDef>;
 }
 
 export interface ArtPlanOptions {
-  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/terrain-variants/objects/decor are opt-in only — see buildArtPlan). */
+  /** Restrict to these categories; default frames/portraits/backdrops (poses/terrain/terrain-variants/objects/decor/plates are opt-in only — see buildArtPlan). */
   only?:
     | ImageKind[]
-    | ('frames' | 'portraits' | 'backdrops' | 'poses' | 'terrain' | 'terrain-variants' | 'objects' | 'decor')[];
-  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> terrain-variants -> objects -> decor order). */
+    | (
+        | 'frames'
+        | 'portraits'
+        | 'backdrops'
+        | 'poses'
+        | 'terrain'
+        | 'terrain-variants'
+        | 'objects'
+        | 'decor'
+        | 'plates'
+      )[];
+  /** Cap the total job count after building the full list (in frames -> portraits -> backdrops -> poses -> terrain -> terrain-variants -> objects -> decor -> plates order). */
   limit?: number;
 }
 
@@ -436,6 +561,7 @@ export interface ArtPlanCounts {
   terrainVariants: number;
   objects: number;
   decor: number;
+  plates: number;
   total: number;
 }
 
@@ -453,17 +579,17 @@ const CATEGORY_TO_KIND: Record<string, ImageKind> = {
   'terrain-variants': 'terrainVariant',
   objects: 'object',
   decor: 'decor',
+  plates: 'plate',
 };
 
 /**
- * Poses, terrain, terrain-variants, objects, and decor are deliberately
- * excluded from the "no --only given" default: each is an add-on pass
- * unrelated to the base frames/portraits/backdrops set (terrain,
- * terrain-variants, objects, and decor don't even key off
- * frames.json/pilots.json), so a plain `buildArtPlan(data)` stays exactly
- * what it was before they existed. Ask for them explicitly with
- * `--only poses` / `--only terrain` / `--only terrain-variants` /
- * `--only objects` / `--only decor`.
+ * Poses, terrain, terrain-variants, objects, decor, and plates are
+ * deliberately excluded from the "no --only given" default: each is an
+ * add-on pass unrelated to the base frames/portraits/backdrops set (none of
+ * them even key off frames.json/pilots.json), so a plain `buildArtPlan(data)`
+ * stays exactly what it was before they existed. Ask for them explicitly
+ * with `--only poses` / `--only terrain` / `--only terrain-variants` /
+ * `--only objects` / `--only decor` / `--only plates`.
  */
 export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPlan {
   const wantedKinds = new Set<ImageKind>(
@@ -487,9 +613,7 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
     }
   }
   if (wantedKinds.has('backdrop')) {
-    for (const entry of BACKDROP_SCENES) {
-      jobs.push(buildBackdropPrompt(entry));
-    }
+    jobs.push(...buildBackdropJobs());
   }
   if (wantedKinds.has('pose')) {
     for (const frame of Object.values(data.frames)) {
@@ -514,6 +638,11 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
       jobs.push(buildDecorPrompt(key));
     }
   }
+  if (wantedKinds.has('plate')) {
+    for (const key of PLATE_KEYS) {
+      jobs.push(buildPlatePrompt(key));
+    }
+  }
 
   const limited = typeof options.limit === 'number' ? jobs.slice(0, Math.max(0, options.limit)) : jobs;
 
@@ -526,6 +655,7 @@ export function buildArtPlan(data: ArtData, options: ArtPlanOptions = {}): ArtPl
     terrainVariants: limited.filter((j) => j.kind === 'terrainVariant').length,
     objects: limited.filter((j) => j.kind === 'object').length,
     decor: limited.filter((j) => j.kind === 'decor').length,
+    plates: limited.filter((j) => j.kind === 'plate').length,
     total: limited.length,
   };
 

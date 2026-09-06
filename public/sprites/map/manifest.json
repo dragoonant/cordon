@@ -92,6 +92,46 @@
       "path": "sprites/map/obj_station.png"
     },
     {
+      "key": "plate_city",
+      "kind": "plate",
+      "path": "sprites/map/plate_city.png"
+    },
+    {
+      "key": "plate_forest",
+      "kind": "plate",
+      "path": "sprites/map/plate_forest.png"
+    },
+    {
+      "key": "plate_ice",
+      "kind": "plate",
+      "path": "sprites/map/plate_ice.png"
+    },
+    {
+      "key": "plate_ocean",
+      "kind": "plate",
+      "path": "sprites/map/plate_ocean.png"
+    },
+    {
+      "key": "plate_plains",
+      "kind": "plate",
+      "path": "sprites/map/plate_plains.png"
+    },
+    {
+      "key": "plate_shore",
+      "kind": "plate",
+      "path": "sprites/map/plate_shore.png"
+    },
+    {
+      "key": "plate_space_a",
+      "kind": "plate",
+      "path": "sprites/map/plate_space_a.png"
+    },
+    {
+      "key": "plate_space_b",
+      "kind": "plate",
+      "path": "sprites/map/plate_space_b.png"
+    },
+    {
       "key": "terrain_blocked",
       "kind": "terrain",
       "path": "sprites/map/terrain_blocked.png"

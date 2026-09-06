@@ -4,13 +4,15 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FrameDef, PilotDef } from '../../src/sim/types';
 import {
-  BACKDROP_SCENES,
+  BACKDROP_TERRAINS,
   buildArtManifest,
   buildArtPlan,
+  buildBackdropJobs,
   buildBackdropPrompt,
   buildDecorPrompt,
   buildFramePrompt,
   buildObjectPrompt,
+  buildPlatePrompt,
   buildPortraitPrompt,
   buildPosePrompt,
   buildTerrainPrompt,
@@ -18,6 +20,7 @@ import {
   DECOR_KEYS,
   eligiblePortraitPilots,
   OBJECT_KEYS,
+  PLATE_KEYS,
   TERRAIN_KINDS,
   TERRAIN_VARIANT_COUNTS,
 } from './plan';
@@ -161,22 +164,50 @@ describe('buildPortraitPrompt', () => {
 });
 
 describe('buildBackdropPrompt', () => {
-  it('builds a fixed-size painted background prompt for a scene', () => {
-    const job = buildBackdropPrompt({ key: 'forest', scene: 'forest' });
-    expect(job.prompt).toBe('painted anime background, forest, wide shot, no characters, dramatic lighting');
+  it('builds a fixed-size painted background prompt for a terrain variant', () => {
+    const job = buildBackdropPrompt('forest', 1, 'dense conifer forest edge');
+    expect(job.key).toBe('bg_forest_1');
+    expect(job.kind).toBe('backdrop');
+    expect(job.prompt).toBe(
+      'painted anime background, wide cinematic shot, dense conifer forest edge, horizon around the lower third, ' +
+        'empty foreground ground plane for characters to stand on, no characters, no mechs, no text, ' +
+        'cel-shaded, muted desaturated palette with one warm accent, dramatic sky/lighting'
+    );
     expect(job.width).toBe(1024);
     expect(job.height).toBe(576);
   });
 
-  it('has exactly the six terrain families from GDD §3/§10', () => {
-    expect(BACKDROP_SCENES.map((s) => s.key)).toEqual([
-      'space_debris_field',
-      'space_station_interior',
+  it('is a pure function of its args (calling twice gives identical output)', () => {
+    expect(buildBackdropPrompt('urban', 2, 'rooftop skyline at dusk with smoke')).toEqual(
+      buildBackdropPrompt('urban', 2, 'rooftop skyline at dusk with smoke')
+    );
+  });
+});
+
+describe('buildBackdropJobs', () => {
+  it('has exactly the 10 battle-eligible terrain families from src/sim/types.ts (all Terrain kinds except blocked)', () => {
+    expect(BACKDROP_TERRAINS).toEqual([
+      'open',
       'forest',
-      'urban_ruins',
-      'mountain_ridge',
-      'salt_flats_dust',
+      'urban',
+      'mountain',
+      'water',
+      'void',
+      'debris',
+      'radiation',
+      'gravity',
+      'structure',
     ]);
+  });
+
+  it('builds 2 variants per terrain, keyed bg_<terrain>_<n>, 20 jobs total', () => {
+    const jobs = buildBackdropJobs();
+    expect(jobs).toHaveLength(20);
+    expect(jobs.every((j) => j.kind === 'backdrop')).toBe(true);
+    for (const terrain of BACKDROP_TERRAINS) {
+      expect(jobs.map((j) => j.key)).toContain(`bg_${terrain}_1`);
+      expect(jobs.map((j) => j.key)).toContain(`bg_${terrain}_2`);
+    }
   });
 });
 
@@ -201,25 +232,25 @@ describe('eligiblePortraitPilots', () => {
 });
 
 describe('buildArtPlan', () => {
-  it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 6 backdrops = 54 total (poses/terrain/objects/decor excluded by default)', () => {
+  it('counts 12 frames, 9 pilots x 4 expressions = 36 portraits, 20 backdrops = 68 total (poses/terrain/objects/decor excluded by default)', () => {
     const plan = buildArtPlan(data);
-    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 6, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 54 });
-    expect(plan.jobs).toHaveLength(54);
+    expect(plan.counts).toEqual({ frames: 12, portraits: 36, backdrops: 20, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, plates: 0, total: 68 });
+    expect(plan.jobs).toHaveLength(68);
   });
 
   it('--only frames restricts to just frame jobs', () => {
     const plan = buildArtPlan(data, { only: ['frames'] });
-    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 12, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, plates: 0, total: 12 });
   });
 
   it('--only portraits restricts to just portrait jobs', () => {
     const plan = buildArtPlan(data, { only: ['portraits'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 36 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 36, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, plates: 0, total: 36 });
   });
 
   it('--only poses restricts to just the 12 combat-pose jobs, one per frame', () => {
     const plan = buildArtPlan(data, { only: ['poses'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, total: 12 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 12, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, plates: 0, total: 12 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(
       Object.keys(frames)
         .map((id) => `${frames[id].spriteKey}_attack`)
@@ -229,7 +260,7 @@ describe('buildArtPlan', () => {
 
   it('--only terrain restricts to just the 11 terrain jobs, one per Terrain kind', () => {
     const plan = buildArtPlan(data, { only: ['terrain'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 11, terrainVariants: 0, objects: 0, decor: 0, total: 11 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 11, terrainVariants: 0, objects: 0, decor: 0, plates: 0, total: 11 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(TERRAIN_KINDS.map((k) => `terrain_${k}`).sort());
   });
 
@@ -244,6 +275,7 @@ describe('buildArtPlan', () => {
       terrainVariants: 22,
       objects: 0,
       decor: 0,
+      plates: 0,
       total: 22,
     });
     expect(plan.jobs.every((j) => j.kind === 'terrainVariant')).toBe(true);
@@ -251,14 +283,21 @@ describe('buildArtPlan', () => {
 
   it('--only objects restricts to just the 8 map object jobs', () => {
     const plan = buildArtPlan(data, { only: ['objects'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 8, decor: 0, total: 8 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 8, decor: 0, plates: 0, total: 8 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(OBJECT_KEYS.map((k) => `obj_${k}`).sort());
   });
 
   it('--only decor restricts to just the 10 decoration/scenery jobs', () => {
     const plan = buildArtPlan(data, { only: ['decor'] });
-    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 10, total: 10 });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 10, plates: 0, total: 10 });
     expect(plan.jobs.map((j) => j.key).sort()).toEqual(DECOR_KEYS.map((k) => `deco_${k}`).sort());
+  });
+
+  it('--only plates restricts to just the 8 ground-plate jobs', () => {
+    const plan = buildArtPlan(data, { only: ['plates'] });
+    expect(plan.counts).toEqual({ frames: 0, portraits: 0, backdrops: 0, poses: 0, terrain: 0, terrainVariants: 0, objects: 0, decor: 0, plates: 8, total: 8 });
+    expect(plan.jobs.map((j) => j.key).sort()).toEqual([...PLATE_KEYS].sort());
+    expect(plan.jobs.every((j) => j.kind === 'plate')).toBe(true);
   });
 
   it('--limit caps the total job count', () => {
@@ -410,6 +449,37 @@ describe('buildDecorPrompt', () => {
   });
 });
 
+describe('buildPlatePrompt', () => {
+  it('has exactly the 8 documented ground-plate keys', () => {
+    expect(PLATE_KEYS).toEqual([
+      'plate_space_a',
+      'plate_space_b',
+      'plate_ocean',
+      'plate_shore',
+      'plate_plains',
+      'plate_forest',
+      'plate_city',
+      'plate_ice',
+    ]);
+  });
+
+  it('keys the job by the plate key itself and describes a large painted top-down scene, no green key', () => {
+    const job = buildPlatePrompt('plate_forest');
+    expect(job.key).toBe('plate_forest');
+    expect(job.kind).toBe('plate');
+    expect(job.prompt).toContain('top-down painted background, seen straight from above');
+    expect(job.prompt).toContain('dark green forest canopy');
+    expect(job.prompt).not.toContain('#00ff00');
+    expect(job.prompt).not.toContain('seamless tileable');
+    expect(job.width).toBe(1024);
+    expect(job.height).toBe(1024);
+  });
+
+  it('is a pure function of the key (calling twice gives identical output)', () => {
+    expect(buildPlatePrompt('plate_ice')).toEqual(buildPlatePrompt('plate_ice'));
+  });
+});
+
 describe('buildPosePrompt', () => {
   it('keys the job "<spriteKey>_attack" and describes a ranged aiming pose for non-melee silhouettes', () => {
     const job = buildPosePrompt(frames.frame_line_a);
@@ -444,20 +514,20 @@ describe('buildArtManifest', () => {
 
   it('only includes jobs whose raw file exists, with prompt and timestamp', () => {
     const plan = buildArtPlan(data, { only: ['backdrops'] });
-    writeFileSync(path.join(dir, 'forest.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    writeFileSync(path.join(dir, 'bg_forest_1.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
 
     const manifest = buildArtManifest(plan, {
       rawDir: dir,
-      fileExtension: (job) => (job.key === 'forest' ? 'png' : null),
+      fileExtension: (job) => (job.key === 'bg_forest_1' ? 'png' : null),
       now: () => '2026-01-01T00:00:00.000Z',
     });
 
     expect(manifest.version).toBe(1);
     expect(manifest.images).toHaveLength(1);
     expect(manifest.images[0]).toMatchObject({
-      key: 'forest',
+      key: 'bg_forest_1',
       kind: 'backdrop',
-      rawPath: `${dir}/forest.png`,
+      rawPath: `${dir}/bg_forest_1.png`,
       generatedAt: '2026-01-01T00:00:00.000Z',
     });
   });

@@ -18,7 +18,7 @@ import { STATUS_COLOR } from './constants';
 import { isoRadii, toIso } from './iso';
 import { lerpTowards } from './interpolate';
 import { DESTROY_TARGET_COLOR, drawObjectiveIcon } from './objectiveIcons';
-import { dashedEllipse, drawBar, progressEllipseArc } from './shapes';
+import { dashedEllipse, drawBar, drawGroundShadow, progressEllipseArc } from './shapes';
 
 /** Hitbox / hit-test reference size for objectives with a very small radius. */
 const MIN_HIT_RADIUS = 28;
@@ -65,6 +65,9 @@ export class ObjectiveView {
     const radiusRing = new Graphics();
     dashedEllipse(radiusRing, 0, 0, this.radii.rx, this.radii.ry, { color: 0xffffff, alpha: 0.25, dash: 6, gap: 5, width: 1 });
 
+    const shadowGfx = new Graphics();
+    drawGroundShadow(shadowGfx);
+
     this.label = new Text({
       text: def.name,
       style: { fontSize: 11, fill: 0xe8e8ec, align: 'center', fontFamily: 'sans-serif' },
@@ -72,7 +75,7 @@ export class ObjectiveView {
     this.label.anchor.set(0.5, 0);
     this.label.y = this.radii.ry + 10;
 
-    this.container.addChild(radiusRing, this.progressRing, this.iconGfx, this.statusMarkGfx, this.hpBarGfx, this.label);
+    this.container.addChild(shadowGfx, radiusRing, this.progressRing, this.iconGfx, this.statusMarkGfx, this.hpBarGfx, this.label);
     const iso = toIso(this.pos);
     this.container.x = iso.x;
     this.container.y = iso.y;

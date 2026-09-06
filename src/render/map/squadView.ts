@@ -15,8 +15,8 @@
 import { Circle, Container, Graphics, Sprite, Text, Texture, type FederatedPointerEvent } from 'pixi.js';
 import type { Id, Squad, Vec2 } from '@sim/types';
 import { VISIBILITY_FADE_SECONDS } from './constants';
-import { dashedLine, diamondPoints, drawBar, drawCornerBrackets } from './shapes';
-import { isoRadii, toIso } from './iso';
+import { dashedLine, diamondPoints, drawBar, drawCornerBrackets, drawGroundShadow } from './shapes';
+import { isoRadii, tileDiamondPoints, toIso } from './iso';
 import { lerpTowards, stepTowards } from './interpolate';
 
 export interface SquadVisualInfo {
@@ -49,6 +49,7 @@ export class SquadView {
   onTap: ((e: FederatedPointerEvent) => void) | null = null;
 
   private readonly iconSprite: Sprite;
+  private readonly shadowGfx = new Graphics();
   private readonly selectionRing = new Graphics();
   private readonly hoverRing = new Graphics();
   private readonly bars = new Graphics();
@@ -74,7 +75,18 @@ export class SquadView {
     this.chip.anchor.set(0.5, 0);
     this.chip.y = CHIP_Y;
 
-    this.container.addChild(this.pathGfx, this.selectionRing, this.effectsGfx, this.iconSprite, this.hoverRing, this.bars, this.chip);
+    drawGroundShadow(this.shadowGfx);
+
+    this.container.addChild(
+      this.pathGfx,
+      this.shadowGfx,
+      this.selectionRing,
+      this.effectsGfx,
+      this.iconSprite,
+      this.hoverRing,
+      this.bars,
+      this.chip
+    );
     this.container.eventMode = 'static';
     this.container.cursor = 'pointer';
     this.container.hitArea = new Circle(0, -ICON_HEIGHT * 0.5, HIT_RADIUS);
@@ -136,7 +148,7 @@ export class SquadView {
 
     this.drawBars(squad, info);
     this.drawChip(squad);
-    this.drawSelectionAndHover(info);
+    this.drawSelectionAndHover(squad, info);
     this.drawEffects(squad);
     this.drawPath(squad, info.selected);
   }
@@ -163,12 +175,22 @@ export class SquadView {
     }
   }
 
-  private drawSelectionAndHover(info: SquadVisualInfo): void {
+  private drawSelectionAndHover(squad: Squad, info: SquadVisualInfo): void {
     this.selectionRing.clear();
     if (info.selected) {
       const pulse = 0.5 + 0.5 * Math.sin(this.clock * 4);
       const r = isoRadii(0.45 + pulse * 0.04);
       this.selectionRing.ellipse(0, 0, r.rx, r.ry).stroke({ width: 2, color: 0xffffff, alpha: 0.6 + 0.4 * pulse });
+
+      // SRW cursor feel: a crisp light diamond outline on the squad's actual tile, in addition to
+      // the pulsing ellipse above. Snapped to the tile grid (not the interpolated sub-tile
+      // position) and offset from `this.pos` (what the container is actually positioned at right
+      // now) via toIso's linearity, so it reads correctly mid-move too.
+      const tileCenter: Vec2 = { x: Math.floor(squad.pos.x) + 0.5, y: Math.floor(squad.pos.y) + 0.5 };
+      const localOffset = toIso({ x: tileCenter.x - this.pos.x, y: tileCenter.y - this.pos.y });
+      this.selectionRing
+        .poly(tileDiamondPoints(localOffset.x, localOffset.y), true)
+        .stroke({ width: 1.5, color: 0xd8f0ff, alpha: 0.9 });
     }
     this.hoverRing.clear();
     if (this.hoveredInternal && !info.selected) {
