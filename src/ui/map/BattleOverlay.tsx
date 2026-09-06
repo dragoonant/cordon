@@ -5,6 +5,7 @@ import { playBattleSfx, playVoice } from '@audio/index';
 import { Button } from '@ui/components';
 import { useStore } from '@ui/store';
 import { battleEventText } from './battleText';
+import { SpeechStack, speechFromEvent, type SpeechEntry } from './SpeechStack';
 
 /** Full-viewport SRW-style battle playback. Renders only while store.battle is set. */
 export function BattleOverlay() {
@@ -16,6 +17,8 @@ export function BattleOverlay() {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<BattleStage | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [speech, setSpeech] = useState<SpeechEntry[]>([]);
+  const expireSpeech = React.useCallback((ids: number[]) => setSpeech((prev) => prev.filter((e) => !ids.includes(e.id))), []);
   const [fast, setFast] = useState(false);
 
   useEffect(() => {
@@ -23,6 +26,7 @@ export function BattleOverlay() {
     const stage = new BattleStage(containerRef.current, data);
     stageRef.current = stage;
     setLog([]);
+    setSpeech([]);
     setFast(false);
 
     const initialSpeed = save?.settings.battleSpeed ?? 'full';
@@ -41,6 +45,8 @@ export function BattleOverlay() {
         }
         const text = battleEventText(e, data);
         if (text) setLog((prev) => [...prev, text].slice(-3));
+        const said = speechFromEvent(e, data);
+        if (said) setSpeech((prev) => [...prev, said].slice(-4)); // newest stacks beneath; cap keeps it readable
       },
       onComplete: () => battleFinished(),
     });
@@ -64,6 +70,7 @@ export function BattleOverlay() {
           </div>
         ))}
       </div>
+      <SpeechStack entries={speech} onExpire={expireSpeech} />
       <div className="battle-controls">
         <Button
           small
