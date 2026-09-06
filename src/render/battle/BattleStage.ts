@@ -261,10 +261,13 @@ export class BattleStage {
     const startEvt = result.events.find((e): e is Extract<BattleEvent, { t: 'start' }> => e.t === 'start');
     const mapKind: MapKind = startEvt?.mapKind ?? 'surface';
     const terrain: Terrain = startEvt?.terrain ?? 'open';
-    this.layers.backdrop.addChild(buildBackdrop(mapKind, terrain, DESIGN_W, DESIGN_H));
-
-    await Promise.all([this.buildSquad('A', sides.sideA), this.buildSquad('B', sides.sideB)]);
-    if (this.destroyed) return; // unmounted while textures were loading
+    const [backdrop] = await Promise.all([
+      buildBackdrop(mapKind, terrain, result.seed, DESIGN_W, DESIGN_H),
+      this.buildSquad('A', sides.sideA),
+      this.buildSquad('B', sides.sideB),
+    ]);
+    if (this.destroyed) return; // unmounted while the backdrop/squads were loading
+    this.layers.backdrop.addChild(backdrop);
     this.startStanceLoop();
 
     if (opts.speed === 'results_only') {

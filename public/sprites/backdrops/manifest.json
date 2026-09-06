@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "terrains": {
+    "debris": [
+      "sprites/backdrops/bg_debris_1.png",
+      "sprites/backdrops/bg_debris_2.png"
+    ],
+    "forest": [
+      "sprites/backdrops/bg_forest_1.png",
+      "sprites/backdrops/bg_forest_2.png"
+    ],
+    "gravity": [
+      "sprites/backdrops/bg_gravity_1.png",
+      "sprites/backdrops/bg_gravity_2.png"
+    ],
+    "mountain": [
+      "sprites/backdrops/bg_mountain_1.png",
+      "sprites/backdrops/bg_mountain_2.png"
+    ],
+    "open": [
+      "sprites/backdrops/bg_open_1.png",
+      "sprites/backdrops/bg_open_2.png"
+    ],
+    "radiation": [
+      "sprites/backdrops/bg_radiation_1.png",
+      "sprites/backdrops/bg_radiation_2.png"
+    ],
+    "structure": [
+      "sprites/backdrops/bg_structure_1.png",
+      "sprites/backdrops/bg_structure_2.png"
+    ],
+    "urban": [
+      "sprites/backdrops/bg_urban_1.png",
+      "sprites/backdrops/bg_urban_2.png"
+    ],
+    "void": [
+      "sprites/backdrops/bg_void_1.png",
+      "sprites/backdrops/bg_void_2.png"
+    ],
+    "water": [
+      "sprites/backdrops/bg_water_1.png",
+      "sprites/backdrops/bg_water_2.png"
+    ]
+  }
+}

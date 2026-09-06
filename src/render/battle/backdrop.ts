@@ -1,12 +1,119 @@
 /**
  * Battle stage backdrop — biome dressing driven by the 'start' event's
  * mapKind + terrain (GDD §8: "background matching the map biome").
+ *
+ * Two layers, tried in order:
+ *  1. Painted art published by tools/art (public/sprites/backdrops/bg_<terrain>_<n>.png,
+ *     see public/sprites/backdrops/manifest.json) — a cover-scaled photo-backdrop with a
+ *     subtle bottom-third darkening gradient so mechs/labels read clearly on top of it.
+ *  2. The original procedural biome dressing below, used whenever no painted art exists for
+ *     a terrain (or the manifest/image fails to load) — this never regresses to a blank stage.
  */
-import { Container, FillGradient, Graphics } from 'pixi.js';
+import { Assets, Container, FillGradient, Graphics, Sprite, type Texture } from 'pixi.js';
 import type { MapKind, Terrain } from '@sim/types';
 
 const SPACE_BASE = 0x05060c;
 const SPACE_FAR = 0x11142a;
+
+// ---------------------------------------------------------------------------
+// Painted backdrop art (tools/art `backdrops` category)
+// ---------------------------------------------------------------------------
+
+interface BackdropManifest {
+  version: 1;
+  /** terrain -> ordered list of "sprites/backdrops/bg_<terrain>_<n>.png" paths, n ascending. */
+  terrains: Record<string, string[]>;
+}
+
+/** Fetched once per page load and cached; a missing/malformed manifest resolves to null (no painted art). */
+let manifestPromise: Promise<BackdropManifest | null> | null = null;
+
+function loadManifest(): Promise<BackdropManifest | null> {
+  manifestPromise ??= (async () => {
+    try {
+      if (typeof fetch !== 'function') return null;
+      const res = await fetch('/sprites/backdrops/manifest.json');
+      if (!res.ok) return null;
+      const data = (await res.json()) as Partial<BackdropManifest>;
+      if (data?.version !== 1 || typeof data.terrains !== 'object' || data.terrains === null) return null;
+      return data as BackdropManifest;
+    } catch {
+      return null;
+    }
+  })();
+  return manifestPromise;
+}
+
+/** One Pixi Texture load per url, cached for the process lifetime (same convention as assetProbe's existsCache). */
+const textureCache = new Map<string, Promise<Texture | null>>();
+
+function loadBackdropTexture(url: string): Promise<Texture | null> {
+  let p = textureCache.get(url);
+  if (!p) {
+    p = Assets.load<Texture>(url).catch(() => null);
+    textureCache.set(url, p);
+  }
+  return p;
+}
+
+/** Deterministic (same seed -> same pick every time) variant index into an ordered path list. */
+function pickVariant<T>(items: readonly T[], seed: number): T {
+  const i = Math.abs(Math.trunc(seed)) % items.length;
+  return items[i];
+}
+
+/**
+ * A Graphics rect filled with a top-to-bottom alpha ramp (transparent -> `maxAlpha` black),
+ * covering the bottom `1 - startFrac` of the given height — keeps mech sprites/HP bars/labels
+ * readable against a busy painted sky/horizon without flattening the whole image.
+ */
+function buildBottomGradient(w: number, h: number, startFrac: number, maxAlpha: number): Graphics {
+  const g = new Graphics();
+  const grad = new FillGradient({
+    type: 'linear',
+    start: { x: 0, y: h * startFrac },
+    end: { x: 0, y: h },
+    colorStops: [
+      { offset: 0, color: `rgba(0,0,0,0)` },
+      { offset: 1, color: `rgba(0,0,0,${maxAlpha})` },
+    ],
+  });
+  g.rect(0, h * startFrac, w, h * (1 - startFrac)).fill(grad);
+  return g;
+}
+
+/**
+ * Loads the painted backdrop for `terrain` (if any exists in the manifest), cover-scaled and
+ * centered to exactly `w`x`h` (aspect preserved, overflow cropped via a mask — the source art is
+ * 1024x576 same aspect as the design canvas, so in practice this is a straight scale-to-fit, but
+ * the mask keeps it correct if that ever changes), with a bottom-third darkening gradient layered
+ * on top. Returns null if there's no manifest entry for this terrain or the image fails to load —
+ * callers fall back to the procedural backdrop in that case.
+ */
+async function buildPaintedBackdrop(terrain: Terrain, seed: number, w: number, h: number): Promise<Container | null> {
+  const manifest = await loadManifest();
+  const paths = manifest?.terrains[terrain];
+  if (!paths || paths.length === 0) return null;
+  const path = pickVariant(paths, seed);
+  const texture = await loadBackdropTexture(`/${path}`);
+  if (!texture || texture.width <= 0 || texture.height <= 0) return null;
+
+  const root = new Container();
+  const sprite = new Sprite(texture);
+  sprite.anchor.set(0.5);
+  const scale = Math.max(w / texture.width, h / texture.height);
+  sprite.scale.set(scale);
+  sprite.x = w / 2;
+  sprite.y = h / 2;
+  root.addChild(sprite);
+
+  const mask = new Graphics().rect(0, 0, w, h).fill(0xffffff);
+  root.addChild(mask);
+  root.mask = mask;
+
+  root.addChild(buildBottomGradient(w, h, 0.62, 0.6));
+  return root;
+}
 
 function seededRandom(seed: number): () => number {
   let s = seed >>> 0 || 1;
@@ -182,6 +289,24 @@ function buildSurfaceBackdrop(terrain: Terrain, w: number, h: number): Container
   return root;
 }
 
-export function buildBackdrop(mapKind: MapKind, terrain: Terrain, w: number, h: number): Container {
+/** The original procedural biome dressing — exported for tests and as the guaranteed fallback. */
+export function buildProceduralBackdrop(mapKind: MapKind, terrain: Terrain, w: number, h: number): Container {
   return mapKind === 'space' ? buildSpaceBackdrop(terrain, w, h) : buildSurfaceBackdrop(terrain, w, h);
+}
+
+/**
+ * Resolves the battle backdrop for (mapKind, terrain): painted art when tools/art has published a
+ * variant for this terrain, otherwise the procedural biome dressing. `seed` picks which painted
+ * variant deterministically (callers pass the battle's own seed — see BattleStage.play — so the
+ * same battle always renders the same backdrop, and different battles vary). Never rejects: any
+ * failure loading the manifest or the image resolves to the procedural fallback.
+ */
+export async function buildBackdrop(mapKind: MapKind, terrain: Terrain, seed: number, w: number, h: number): Promise<Container> {
+  try {
+    const painted = await buildPaintedBackdrop(terrain, seed, w, h);
+    if (painted) return painted;
+  } catch {
+    // fall through to procedural
+  }
+  return buildProceduralBackdrop(mapKind, terrain, w, h);
 }

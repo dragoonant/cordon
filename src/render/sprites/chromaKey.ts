@@ -96,6 +96,48 @@ function distanceKeyAlpha(r: number, g: number, b: number, key: [number, number,
 }
 
 /**
+ * Alpha for a pixel that's a same-hue, darker multiple of the sampled key color — a shadow cast
+ * onto the green screen (seen in practice as a dim green smudge under a mech's feet), rather than
+ * a lighter/darker *body* color that happens to be somewhat green. `distanceKeyAlpha` alone misses
+ * these: Euclidean distance to the key grows fast as a color darkens even though the hue hasn't
+ * moved at all, so a strongly-shadowed key pixel can land past `hi` and get treated as opaque body
+ * paint — exactly the leftover green patch this fixes.
+ *
+ * Gate: r/g and b/g ratios within +-0.12 of the key's (same hue), and luminance >= 25% of the
+ * key's (still "a shadow", not just an unrelated dark color). Returns null when the pixel doesn't
+ * clear that gate at all, so the caller falls through to the normal distance-based alpha. Within
+ * the gate, alpha feathers from 0 (comfortably inside both tolerances -> fully keyed) up toward 1
+ * only in the outer slice of either tolerance (hue ratio near +-0.12, or luminance near the 25%
+ * floor) so real anti-aliased edge pixels that just barely clear the gate don't get clipped fully
+ * transparent.
+ */
+function shadowKeyAlpha(r: number, g: number, b: number, key: [number, number, number]): number | null {
+  const [kr, kg, kb] = key;
+  if (g <= 0 || kg <= 0) return null;
+  const rRatio = r / g;
+  const bRatio = b / g;
+  const keyRRatio = kr / kg;
+  const keyBRatio = kb / kg;
+  const rDiff = Math.abs(rRatio - keyRRatio);
+  const bDiff = Math.abs(bRatio - keyBRatio);
+  const hueTolerance = 0.12;
+  if (rDiff > hueTolerance || bDiff > hueTolerance) return null;
+
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+  const keyLum = 0.299 * kr + 0.587 * kg + 0.114 * kb;
+  if (keyLum <= 0) return null;
+  const lumRatio = lum / keyLum;
+  if (lumRatio < 0.25) return null;
+
+  // Feather only the outer quarter of the hue tolerance...
+  const hueDist = Math.max(rDiff, bDiff) / hueTolerance; // 0 = exact hue match, 1 = at the gate edge
+  const hueAlpha = hueDist <= 0.75 ? 0 : (hueDist - 0.75) / 0.25;
+  // ...and the band right above the 25% luminance floor (fully accepted by 40% brightness).
+  const lumAlpha = lumRatio >= 0.4 ? 0 : 1 - (lumRatio - 0.25) / 0.15;
+  return Math.max(hueAlpha, lumAlpha);
+}
+
+/**
  * Draws `img` to a scratch canvas, zeroes alpha on green-keyed pixels
  * (feathered), trims to the bounding box of any non-fully-transparent pixel,
  * then scales (preserving aspect ratio) so the result is `targetHeight` tall.
@@ -124,9 +166,16 @@ function chromaKeyTrimAndScale(img: HTMLImageElement, targetHeight: number): HTM
   for (let y = 0; y < srcH; y++) {
     for (let x = 0; x < srcW; x++) {
       const i = (y * srcW + x) * 4;
-      const alpha = keyColor
-        ? distanceKeyAlpha(data[i], data[i + 1], data[i + 2], keyColor)
-        : greenKeyAlpha(data[i], data[i + 1], data[i + 2]);
+      let alpha: number;
+      if (keyColor) {
+        alpha = distanceKeyAlpha(data[i], data[i + 1], data[i + 2], keyColor);
+        // Catches shadowed key pixels the plain distance test misses (see shadowKeyAlpha) —
+        // never makes a pixel *more* opaque, only ever more transparent.
+        const shadow = shadowKeyAlpha(data[i], data[i + 1], data[i + 2], keyColor);
+        if (shadow !== null) alpha = Math.min(alpha, shadow);
+      } else {
+        alpha = greenKeyAlpha(data[i], data[i + 1], data[i + 2]);
+      }
       const outAlpha = Math.round(data[i + 3] * alpha);
       data[i + 3] = outAlpha;
       if (outAlpha > 0) {
