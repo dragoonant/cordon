@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { ActiveCallout, GameData, Id, Squad, WorldState } from '@sim/types';
 import { availableTandems } from '@sim/pilots';
-import { Button } from '@ui/components';
+import { Button, ItemTooltip } from '@ui/components';
 import { getPilotDef } from './mapHelpers';
 
 interface Props {
@@ -29,7 +29,7 @@ export function ForecastCallouts({ squad, world, data, pendingCallouts, onToggle
         return (
           <div key={pilotId}>
             <div className="mono muted" style={{ fontSize: 10 }}>
-              {def.callsign}
+              {def.callsign} · NERVE {Math.round(pilot.nerve)}/{pilot.maxNerve}
             </div>
             <div className="row gap-s" style={{ flexWrap: 'wrap' }}>
               {known.map((cid) => {
@@ -37,26 +37,33 @@ export function ForecastCallouts({ squad, world, data, pendingCallouts, onToggle
                 const active = isActive(cid, pilotId);
                 const affordable = pilot.nerve >= cdef.nerveCost;
                 return (
-                  <Button
-                    key={cid}
-                    small
-                    variant={active ? 'primary' : 'ghost'}
-                    disabled={!active && !affordable}
-                    title={`${cdef.description}\nTradeoff: ${cdef.tradeoff}\n"${cdef.line}"`}
-                    onClick={() => {
-                      if (active) {
-                        onToggle({ calloutId: cid, pilotId });
-                        return;
-                      }
-                      if (cdef.needsAllyTarget) {
-                        setPickingFor({ pilotId, calloutId: cid });
-                      } else {
-                        onToggle({ calloutId: cid, pilotId });
-                      }
-                    }}
-                  >
-                    {cdef.label} ({cdef.nerveCost})
-                  </Button>
+                  <ItemTooltip key={cid} kind="callout" id={cid} data={data}>
+                    <div className="col gap-s" style={{ alignItems: 'flex-start' }}>
+                      <Button
+                        small
+                        variant={active ? 'primary' : 'ghost'}
+                        disabled={!active && !affordable}
+                        onClick={() => {
+                          if (active) {
+                            onToggle({ calloutId: cid, pilotId });
+                            return;
+                          }
+                          if (cdef.needsAllyTarget) {
+                            setPickingFor({ pilotId, calloutId: cid });
+                          } else {
+                            onToggle({ calloutId: cid, pilotId });
+                          }
+                        }}
+                      >
+                        {cdef.label} ({cdef.nerveCost})
+                      </Button>
+                      {!active && !affordable && (
+                        <span className="mono" style={{ fontSize: 9, color: 'var(--danger)' }}>
+                          need {Math.ceil(cdef.nerveCost - pilot.nerve)} more
+                        </span>
+                      )}
+                    </div>
+                  </ItemTooltip>
                 );
               })}
             </div>
@@ -121,16 +128,23 @@ function TandemRow({
         const active = pendingCallouts.some((c) => c.calloutId === cid && c.pilotId === a.id && c.partnerPilotId === b.id);
         const affordable = a.nerve >= cdef.nerveCost && b.nerve >= cdef.nerveCost;
         chips.push(
-          <Button
-            key={cid + a.id + b.id}
-            small
-            variant={active ? 'primary' : 'ghost'}
-            disabled={!active && !affordable}
-            title={`${cdef.description}\nTradeoff: ${cdef.tradeoff}\n"${cdef.line}"`}
-            onClick={() => onToggle({ calloutId: cid, pilotId: a.id, partnerPilotId: b.id })}
-          >
-            {cdef.label} ({getPilotDef(data, a.id)?.callsign}+{getPilotDef(data, b.id)?.callsign}, {cdef.nerveCost}x2)
-          </Button>
+          <ItemTooltip key={cid + a.id + b.id} kind="callout" id={cid} data={data}>
+            <div className="col gap-s" style={{ alignItems: 'flex-start' }}>
+              <Button
+                small
+                variant={active ? 'primary' : 'ghost'}
+                disabled={!active && !affordable}
+                onClick={() => onToggle({ calloutId: cid, pilotId: a.id, partnerPilotId: b.id })}
+              >
+                {cdef.label} ({getPilotDef(data, a.id)?.callsign}+{getPilotDef(data, b.id)?.callsign}, {cdef.nerveCost}x2)
+              </Button>
+              {!active && !affordable && (
+                <span className="mono" style={{ fontSize: 9, color: 'var(--danger)' }}>
+                  need {Math.ceil(cdef.nerveCost - Math.min(a.nerve, b.nerve))} more
+                </span>
+              )}
+            </div>
+          </ItemTooltip>
         );
       }
     }

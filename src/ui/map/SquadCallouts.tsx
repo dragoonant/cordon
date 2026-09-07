@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { GameData, Id, WorldState } from '@sim/types';
-import { Button } from '@ui/components';
+import { Button, ItemTooltip } from '@ui/components';
 import { useStore } from '@ui/store';
 import { getPilotDef } from './mapHelpers';
 
@@ -42,22 +42,24 @@ export function SquadCallouts({ world, data, squadId }: Props) {
             return (
               <div key={pilotId} className="row gap-s" style={{ flexWrap: 'wrap' }}>
                 <span className="mono muted" style={{ fontSize: 10, minWidth: 60 }}>
-                  {def.callsign}
+                  {def.callsign} · NERVE {Math.round(pilot.nerve)}/{pilot.maxNerve}
                 </span>
                 {known.map((cid) => {
                   const cdef = data.callouts[cid];
                   const affordable = pilot.nerve >= cdef.nerveCost;
                   return (
-                    <Button
-                      key={cid}
-                      small
-                      variant="ghost"
-                      disabled={docked || !affordable}
-                      title={`${cdef.description} (Tradeoff: ${cdef.tradeoff})`}
-                      onClick={() => callout(squadId, pilotId, cid)}
-                    >
-                      {cdef.label} ({cdef.nerveCost})
-                    </Button>
+                    <ItemTooltip key={cid} kind="callout" id={cid} data={data}>
+                      <div className="col gap-s" style={{ alignItems: 'flex-start' }}>
+                        <Button small variant="ghost" disabled={docked || !affordable} onClick={() => callout(squadId, pilotId, cid)}>
+                          {cdef.label} ({cdef.nerveCost})
+                        </Button>
+                        {!affordable && (
+                          <span className="mono" style={{ fontSize: 9, color: 'var(--danger)' }}>
+                            need {Math.ceil(cdef.nerveCost - pilot.nerve)} more
+                          </span>
+                        )}
+                      </div>
+                    </ItemTooltip>
                   );
                 })}
               </div>

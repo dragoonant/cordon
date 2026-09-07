@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ForecastPerMech, GameData, Mech, Pilot } from '@sim/types';
-import { Bar, Portrait } from '@ui/components';
+import { Bar, ItemTooltip, Portrait } from '@ui/components';
 import { getPilotDef } from './mapHelpers';
 
 interface Props {
@@ -14,10 +14,7 @@ interface Props {
 export function ForecastMechCard({ pilot, mech, data, risk }: Props) {
   const def = getPilotDef(data, pilot.id);
   const frame = data.frames[mech.frameId];
-  const weaponNames = [mech.weaponA, mech.weaponB]
-    .filter((id): id is string => !!id)
-    .map((id) => data.weapons[id]?.name)
-    .filter((n): n is string => !!n);
+  const weaponIds = [mech.weaponA, mech.weaponB].filter((id): id is string => !!id && !!data.weapons[id]);
   const deathRiskPct = risk ? Math.round(risk.pilotDeathRisk * 100) : null;
   const maxHp = Math.max(1, (frame?.hp ?? mech.hp) - mech.maxHpPenalty);
 
@@ -27,13 +24,23 @@ export function ForecastMechCard({ pilot, mech, data, risk }: Props) {
         <Portrait pilotDefId={pilot.id.split('#')[0]} size={40} faction={def?.faction} />
         <div className="col">
           <strong style={{ fontSize: 12 }}>{def?.callsign ?? pilot.id}</strong>
-          <span className="muted mono" style={{ fontSize: 10 }}>
-            {frame?.name ?? mech.frameId}
-          </span>
+          <ItemTooltip kind="frame" id={mech.frameId} data={data}>
+            <span className="muted mono" style={{ fontSize: 10 }}>
+              {frame?.name ?? mech.frameId}
+            </span>
+          </ItemTooltip>
         </div>
       </div>
       <div className="muted mono" style={{ fontSize: 10, margin: '4px 0' }}>
-        {weaponNames.join(' / ') || 'unarmed'}
+        {weaponIds.length === 0 && 'unarmed'}
+        {weaponIds.map((id, i) => (
+          <React.Fragment key={id}>
+            {i > 0 && ' / '}
+            <ItemTooltip kind="weapon" id={id} data={data}>
+              <span>{data.weapons[id]?.name}</span>
+            </ItemTooltip>
+          </React.Fragment>
+        ))}
       </div>
       <Bar value={mech.hp} max={maxHp} height={6} color="var(--ok)" />
       {risk && (

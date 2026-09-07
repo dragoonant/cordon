@@ -2,21 +2,23 @@ import React from 'react';
 import type { GameData, Id, Mech, RunState } from '@sim/types';
 import { equip, repairMech, scrapItem } from '@sim/hangar';
 import { mechLoad } from '@sim/rules';
-import { Bar, Button } from '@ui/components';
+import { Bar, Button, Dropdown, ItemTooltip } from '@ui/components';
+import type { DropdownOption } from '@ui/components';
 
 interface Props {
   run: RunState;
   data: GameData;
   mech: Mech;
-  selected: boolean;
-  onSelect: () => void;
   onBump: () => void;
   onToast: (msg: string) => void;
 }
 
+type EquipSlot = 'weaponA' | 'weaponB' | 'system' | 'system2';
+
 /** One mech in the HANGAR column: HP, load, slot dropdowns, repair/scrap. */
-export function MechCard({ run, data, mech, selected, onSelect, onBump, onToast }: Props) {
+export function MechCard({ run, data, mech, onBump, onToast }: Props) {
   const frame = data.frames[mech.frameId];
+  const [slotError, setSlotError] = React.useState<{ slot: EquipSlot; reason: string } | null>(null);
   if (!frame) return null;
 
   const load = mechLoad(mech, data);
@@ -24,9 +26,16 @@ export function MechCard({ run, data, mech, selected, onSelect, onBump, onToast 
   const missing = Math.max(0, maxHp - mech.hp);
   const repairCost = Math.ceil(missing * 0.5);
 
-  function doEquip(slot: 'weaponA' | 'weaponB' | 'system' | 'system2', itemId: Id | null) {
+  function doEquip(slot: EquipSlot, itemId: Id | null) {
     const r = equip(run, mech.id, slot, itemId, data);
-    if (!r.ok) onToast(r.reason ?? 'Cannot equip that item.');
+    if (!r.ok) {
+      const reason = r.reason ?? 'Cannot equip that item.';
+      onToast(reason);
+      setSlotError({ slot, reason });
+      window.setTimeout(() => setSlotError((cur) => (cur?.slot === slot && cur.reason === reason ? null : cur)), 3000);
+    } else {
+      setSlotError((cur) => (cur?.slot === slot ? null : cur));
+    }
     onBump();
   }
 
@@ -37,18 +46,13 @@ export function MechCard({ run, data, mech, selected, onSelect, onBump, onToast 
   }
 
   function doScrap() {
-    if (!window.confirm(`Scrap ${frame.name}${mech.nickname ? ` "${mech.nickname}"` : ''}? This cannot be undone.`)) return;
+    if (!window.confirm(`Scrap ${frame!.name}${mech.nickname ? ` "${mech.nickname}"` : ''}? This cannot be undone.`)) return;
     scrapItem(run, 'frame', mech.frameId, data);
     onBump();
   }
 
-  const weaponOptions = uniqueWithCurrent(mech.weaponA, run.weapons);
-  const weaponBOptions = uniqueWithCurrent(mech.weaponB, run.weapons);
-  const systemOptions = uniqueWithCurrent(mech.system, run.systems);
-  const system2Options = uniqueWithCurrent(mech.system2 ?? null, run.systems);
-
   return (
-    <div className="mech-card" onClick={onSelect} style={{ borderColor: selected ? 'var(--amber)' : undefined }}>
+    <div className="mech-card">
       <div className="row gap-s" style={{ justifyContent: 'space-between' }}>
         <strong>
           {frame.name}
@@ -64,16 +68,46 @@ export function MechCard({ run, data, mech, selected, onSelect, onBump, onToast 
         PWR {load.power}/{load.generator} {load.overPower ? '(OVER BUDGET)' : ''}
       </div>
       <div className="col gap-s" onClick={(e) => e.stopPropagation()}>
-        <SlotSelect label="WPN A" value={mech.weaponA} options={weaponOptions} items={data.weapons} onChange={(v) => doEquip('weaponA', v)} />
-        <SlotSelect label="WPN B" value={mech.weaponB} options={weaponBOptions} items={data.weapons} onChange={(v) => doEquip('weaponB', v)} />
-        <SlotSelect label="SYS" value={mech.system} options={systemOptions} items={data.systems} onChange={(v) => doEquip('system', v)} />
+        <EquipRow
+          label="WPN A"
+          kind="weapon"
+          slot="weaponA"
+          mech={mech}
+          run={run}
+          data={data}
+          onEquip={doEquip}
+          error={slotError?.slot === 'weaponA' ? slotError.reason : null}
+        />
+        <EquipRow
+          label="WPN B"
+          kind="weapon"
+          slot="weaponB"
+          mech={mech}
+          run={run}
+          data={data}
+          onEquip={doEquip}
+          error={slotError?.slot === 'weaponB' ? slotError.reason : null}
+        />
+        <EquipRow
+          label="SYS"
+          kind="system"
+          slot="system"
+          mech={mech}
+          run={run}
+          data={data}
+          onEquip={doEquip}
+          error={slotError?.slot === 'system' ? slotError.reason : null}
+        />
         {frame.bonusSystemSlot && (
-          <SlotSelect
+          <EquipRow
             label="SYS 2"
-            value={mech.system2 ?? null}
-            options={system2Options}
-            items={data.systems}
-            onChange={(v) => doEquip('system2', v)}
+            kind="system"
+            slot="system2"
+            mech={mech}
+            run={run}
+            data={data}
+            onEquip={doEquip}
+            error={slotError?.slot === 'system2' ? slotError.reason : null}
           />
         )}
       </div>
@@ -100,34 +134,67 @@ function uniqueWithCurrent(current: Id | null, inventory: Id[]): (Id | null)[] {
   return out;
 }
 
-function SlotSelect({
+/** One slot's label + custom dropdown, with per-option power cost and a 3s inline rejection reason. */
+function EquipRow({
   label,
-  value,
-  options,
-  items,
-  onChange,
+  kind,
+  slot,
+  mech,
+  run,
+  data,
+  onEquip,
+  error,
 }: {
   label: string;
-  value: Id | null;
-  options: (Id | null)[];
-  items: Record<string, { name: string }>;
-  onChange: (v: Id | null) => void;
+  kind: 'weapon' | 'system';
+  slot: EquipSlot;
+  mech: Mech;
+  run: RunState;
+  data: GameData;
+  onEquip: (slot: EquipSlot, itemId: Id | null) => void;
+  error: string | null;
 }) {
+  const inventory = kind === 'weapon' ? run.weapons : run.systems;
+  const pool = kind === 'weapon' ? data.weapons : data.systems;
+  const current = mech[slot] ?? null;
+  const frame = data.frames[mech.frameId];
+  const generator = frame?.generator ?? 0;
+  const candidates = uniqueWithCurrent(current, inventory).filter((id): id is Id => !!id);
+
+  const options: DropdownOption[] = [{ value: '', label: '— empty —' }];
+  for (const id of candidates) {
+    const item = pool[id];
+    if (!item) continue;
+    const prospective = mechLoad({ ...mech, [slot]: id }, data).power;
+    const overBudget = prospective > generator;
+    options.push({
+      value: id,
+      warn: overBudget,
+      label: (
+        <ItemTooltip kind={kind} id={id} data={data}>
+          <span>
+            {item.name} · {item.power} PWR{overBudget ? ' (over budget)' : ''}
+          </span>
+        </ItemTooltip>
+      ),
+    });
+  }
+
   return (
-    <label className="row gap-s" style={{ fontSize: 10 }}>
-      <span className="mono muted" style={{ width: 44 }}>
-        {label}
-      </span>
-      <select className="mono grow" value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}>
-        <option value="">— empty —</option>
-        {options
-          .filter((id): id is Id => !!id)
-          .map((id) => (
-            <option key={id} value={id}>
-              {items[id]?.name ?? id}
-            </option>
-          ))}
-      </select>
-    </label>
+    <div className="col gap-s">
+      <label className="row gap-s" style={{ fontSize: 10 }}>
+        <span className="mono muted" style={{ width: 44 }}>
+          {label}
+        </span>
+        <div className="grow">
+          <Dropdown value={current ?? ''} options={options} onChange={(v) => onEquip(slot, v || null)} />
+        </div>
+      </label>
+      {error && (
+        <div className="mono" style={{ fontSize: 10, color: 'var(--danger)', marginLeft: 50 }}>
+          {error}
+        </div>
+      )}
+    </div>
   );
 }

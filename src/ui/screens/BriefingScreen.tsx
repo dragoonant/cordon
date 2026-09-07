@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@ui/store';
-import { Button, Panel, Portrait, Ticker, useData } from '@ui/components';
+import { Button, ItemTooltip, Panel, Portrait, Ticker, useData } from '@ui/components';
 import type { Mobility, ObjectiveKind } from '@sim/types';
 import { failStateText, objectiveWinText } from './howToWin';
 
@@ -167,9 +167,11 @@ export function BriefingScreen() {
                             <div className="mono" style={{ fontSize: 11 }}>
                               {def?.callsign ?? slot.pilotId}
                             </div>
-                            <div className="muted mono" style={{ fontSize: 10 }}>
-                              {frame?.name ?? slot.mechId}
-                            </div>
+                            <ItemTooltip kind="frame" id={mech?.frameId} data={data}>
+                              <div className="muted mono" style={{ fontSize: 10 }}>
+                                {frame?.name ?? slot.mechId}
+                              </div>
+                            </ItemTooltip>
                           </div>
                           {warn && (
                             <span className="mono" style={{ fontSize: 9, color: 'var(--amber)' }} title="Poor mobility fit for this map">

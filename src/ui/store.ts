@@ -19,6 +19,7 @@ import type {
   MapDef,
   RunNode,
   RunState,
+  SalvageDrop,
   SaveData,
   Settings,
   Vec2,
@@ -102,6 +103,8 @@ interface State {
   /** Text shown after a distress/salvage resolution. */
   resultText: string | null;
   salvageText: string | null;
+  /** Structured form of the last salvage drop, so the UI can hover-tooltip each item. */
+  salvageDrop: SalvageDrop | null;
   depot: DepotOffer | null;
   mapHistoryEntryOutcome: string | null;
   /** Captain's most recent line for the HUD ticker. */
@@ -178,6 +181,7 @@ export const useStore = create<Store>((set, get) => ({
   battle: null,
   resultText: null,
   salvageText: null,
+  salvageDrop: null,
   depot: null,
   mapHistoryEntryOutcome: null,
   captainLine: null,
@@ -461,7 +465,7 @@ export const useStore = create<Store>((set, get) => ({
     if (!run) return;
     const node = currentNode(run);
     node.cleared = true;
-    set({ screen: 'node_map', resultText: null, salvageText: null, depot: null });
+    set({ screen: 'node_map', resultText: null, salvageText: null, salvageDrop: null, depot: null });
     await saveNow(get);
   },
 
@@ -509,7 +513,11 @@ function routeNode(node: RunNode, set: (p: Partial<State>) => void, get: () => S
         ...drop.systems.map((s) => data.systems[s]?.name ?? s),
         ...drop.frames.map((f) => data.frames[f]?.name ?? f),
       ];
-      set({ screen: 'salvage', salvageText: `Recovered: ${names.join(', ') || 'nothing usable'}. +${drop.scrap} scrap.` });
+      set({
+        screen: 'salvage',
+        salvageText: `Recovered: ${names.join(', ') || 'nothing usable'}. +${drop.scrap} scrap.`,
+        salvageDrop: drop,
+      });
       break;
     }
     default: {

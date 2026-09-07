@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@ui/store';
-import { Bar, Button, Panel, Portrait, Ticker, useData, useHud } from '@ui/components';
+import { Bar, Button, NerveBar, Panel, Portrait, Ticker, useData, useHud } from '@ui/components';
 import { NodeGraph } from '@ui/components/NodeGraph';
 import { NodeMapLegend } from './NodeMapLegend';
 import { reachableNodes } from '@sim/run';
@@ -89,7 +89,7 @@ export function NodeMapScreen() {
                           {state}
                         </span>
                       </div>
-                      <Bar value={pilot.nerve} max={pilot.maxNerve} height={5} showText={false} color="var(--violet)" />
+                      <NerveBar nerve={pilot.nerve} maxNerve={pilot.maxNerve} height={5} showText={false} />
                     </div>
                   </div>
                 );

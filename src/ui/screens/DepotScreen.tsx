@@ -1,8 +1,9 @@
 import React from 'react';
 import { useStore } from '@ui/store';
-import { Button, Panel, useData, useHud } from '@ui/components';
+import { Button, ItemTooltip, Panel, useData, useHud } from '@ui/components';
+import type { TooltipKind } from '@ui/components';
 import { repairAll } from '@sim/hangar';
-import type { FrameDef, SystemDef, WeaponDef } from '@sim/types';
+import type { FrameDef, GameData, SystemDef, WeaponDef } from '@sim/types';
 
 function weaponSummary(w: WeaponDef): string {
   return `${w.kind} · dmg ${w.damage}x${w.hits} · acc ${w.accuracy} · wt ${w.weight}`;
@@ -67,7 +68,17 @@ export function DepotScreen() {
             const def = data.weapons[o.id];
             if (!def) return null;
             return (
-              <OfferRow key={o.id} name={def.name} summary={weaponSummary(def)} cost={o.cost} disabled={run.scrap < o.cost} onBuy={() => buy('weapon', o.id, o.cost)} />
+              <OfferRow
+                key={o.id}
+                id={o.id}
+                kind="weapon"
+                data={data}
+                name={def.name}
+                summary={weaponSummary(def)}
+                cost={o.cost}
+                disabled={run.scrap < o.cost}
+                onBuy={() => buy('weapon', o.id, o.cost)}
+              />
             );
           })}
           {depot.weapons.length === 0 && <Empty />}
@@ -77,7 +88,17 @@ export function DepotScreen() {
             const def = data.systems[o.id];
             if (!def) return null;
             return (
-              <OfferRow key={o.id} name={def.name} summary={systemSummary(def)} cost={o.cost} disabled={run.scrap < o.cost} onBuy={() => buy('system', o.id, o.cost)} />
+              <OfferRow
+                key={o.id}
+                id={o.id}
+                kind="system"
+                data={data}
+                name={def.name}
+                summary={systemSummary(def)}
+                cost={o.cost}
+                disabled={run.scrap < o.cost}
+                onBuy={() => buy('system', o.id, o.cost)}
+              />
             );
           })}
           {depot.systems.length === 0 && <Empty />}
@@ -87,7 +108,17 @@ export function DepotScreen() {
             const def = data.frames[o.id];
             if (!def) return null;
             return (
-              <OfferRow key={o.id} name={def.name} summary={frameSummary(def)} cost={o.cost} disabled={run.scrap < o.cost} onBuy={() => buy('frame', o.id, o.cost)} />
+              <OfferRow
+                key={o.id}
+                id={o.id}
+                kind="frame"
+                data={data}
+                name={def.name}
+                summary={frameSummary(def)}
+                cost={o.cost}
+                disabled={run.scrap < o.cost}
+                onBuy={() => buy('frame', o.id, o.cost)}
+              />
             );
           })}
           {depot.frames.length === 0 && <Empty />}
@@ -131,12 +162,18 @@ function Column({ title, accent, children }: { title: string; accent: 'relay' | 
 }
 
 function OfferRow({
+  id,
+  kind,
+  data,
   name,
   summary,
   cost,
   disabled,
   onBuy,
 }: {
+  id: string;
+  kind: TooltipKind;
+  data: GameData;
   name: string;
   summary: string;
   cost: number;
@@ -145,9 +182,11 @@ function OfferRow({
 }) {
   return (
     <div className="col gap-s" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 8 }}>
-      <div className="mono" style={{ fontSize: 12 }}>
-        {name}
-      </div>
+      <ItemTooltip kind={kind} id={id} data={data}>
+        <div className="mono" style={{ fontSize: 12 }}>
+          {name}
+        </div>
+      </ItemTooltip>
       <div className="muted mono" style={{ fontSize: 10 }}>
         {summary}
       </div>

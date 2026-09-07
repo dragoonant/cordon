@@ -17,7 +17,7 @@ As aptitudes grow, pilots unlock **Certifications** — new specializations that
 
 ## Nerve and Callouts
 
-Every pilot has a **Nerve pool**. Callouts are powerful pre-battle and overworld abilities that cost Nerve to use. Nerve regenerates when you win battles, rescue colonies, or when things go wrong (taking losses, losing a squadmate) — the game's comeback engine. Strategic Nerve use is the core of CORDON: you never have enough to use everything.
+Every pilot has a **Nerve pool** (capped per pilot). Callouts are powerful pre-battle and overworld abilities that cost Nerve to use. Nerve regenerates: **+1 every 20 seconds deployed**, **+5 when an objective completes**, **+8 to survivors when a squadmate dies**, and **+3 to winners** — the game's comeback engine, since the worst moments pay out the most. Strategic Nerve use is the core of CORDON: you never have enough to use everything. Every Nerve bar in the UI (roster, squad panel, hangar) explains this on hover, and spending Nerve flashes the bar with a "-N NERVE" readout.
 
 ### Pre-Battle Callouts (on the Forecast screen)
 

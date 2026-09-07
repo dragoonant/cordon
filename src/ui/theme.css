@@ -201,3 +201,101 @@ h1, h2, h3, .cordon-display, .panel-title, .btn, button {
   letter-spacing: 0.06em;
 }
 .mono, .ticker, .kbd { font-family: var(--font-mono); }
+
+/* ---- Nerve bar: flash + floating "-N NERVE" on spend (NerveBar component) ---- */
+.nerve-bar-wrap {
+  position: relative;
+  width: 100%;
+}
+.nerve-flash {
+  animation: nerve-flash-pulse 0.9s ease-out;
+  border-radius: 3px;
+}
+@keyframes nerve-flash-pulse {
+  0% { filter: brightness(1); }
+  15% { filter: brightness(2.2); }
+  100% { filter: brightness(1); }
+}
+.nerve-float {
+  position: absolute;
+  right: 0;
+  top: -2px;
+  transform: translateY(0);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--danger);
+  pointer-events: none;
+  animation: nerve-float-up 0.9s ease-out forwards;
+}
+@keyframes nerve-float-up {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-16px); }
+}
+
+/* ---- Custom Dropdown (Dropdown component) — replaces native <select> where
+   Chromium's OS-rendered <option> popup ignores our dark theme. ---- */
+.cordon-dropdown {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.cordon-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cordon-dropdown-trigger:hover {
+  border-color: rgba(255, 165, 60, 0.5);
+}
+.cordon-dropdown-trigger-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cordon-dropdown-list {
+  position: absolute;
+  z-index: 500;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--panel-solid);
+  border: 1px solid rgba(255, 165, 60, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  padding: 4px;
+}
+.cordon-dropdown-option {
+  padding: 5px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cordon-dropdown-option:hover {
+  background: rgba(255, 165, 60, 0.14);
+}
+.cordon-dropdown-option.selected {
+  background: rgba(255, 165, 60, 0.22);
+  color: var(--amber);
+}
+.cordon-dropdown-option.warn {
+  color: var(--danger);
+}

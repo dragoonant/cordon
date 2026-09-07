@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GameData, Id, RunState } from '@sim/types';
+import type { GameData, RunState } from '@sim/types';
 import { Panel } from '@ui/components';
 import { InventoryPanel } from './InventoryPanel';
 import { MechCard } from './MechCard';
@@ -7,14 +7,12 @@ import { MechCard } from './MechCard';
 interface Props {
   run: RunState;
   data: GameData;
-  selectedMechId: Id | null;
-  onSelectMech: (id: Id) => void;
   onBump: () => void;
   onToast: (msg: string) => void;
 }
 
 /** Right column: built mechs (HP/load/slots/repair/scrap) + spare inventory. */
-export function HangarColumn({ run, data, selectedMechId, onSelectMech, onBump, onToast }: Props) {
+export function HangarColumn({ run, data, onBump, onToast }: Props) {
   const mechs = Object.values(run.mechs);
 
   return (
@@ -26,16 +24,7 @@ export function HangarColumn({ run, data, selectedMechId, onSelectMech, onBump, 
           </div>
         )}
         {mechs.map((mech) => (
-          <MechCard
-            key={mech.id}
-            run={run}
-            data={data}
-            mech={mech}
-            selected={selectedMechId === mech.id}
-            onSelect={() => onSelectMech(mech.id)}
-            onBump={onBump}
-            onToast={onToast}
-          />
+          <MechCard key={mech.id} run={run} data={data} mech={mech} onBump={onBump} onToast={onToast} />
         ))}
       </div>
       <InventoryPanel run={run} data={data} onBump={onBump} onToast={onToast} />

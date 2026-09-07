@@ -1,7 +1,7 @@
 import React from 'react';
 import type { GameData, Id, SlotIndex, WorldState } from '@sim/types';
 import { rowOf } from '@sim/types';
-import { Button, Panel } from '@ui/components';
+import { Button, ItemTooltip, NerveBar, Panel } from '@ui/components';
 import { useStore } from '@ui/store';
 import { getPilotDef } from './mapHelpers';
 import { SquadCallouts } from './SquadCallouts';
@@ -33,11 +33,17 @@ export function SquadDetail({ world, data, squadId }: Props) {
             );
           }
           const mech = world.mechs[slot.mechId];
+          const pilot = world.pilots[slot.pilotId];
           const pilotDef = getPilotDef(data, slot.pilotId);
           const frame = mech ? data.frames[mech.frameId] : undefined;
           return (
-            <div key={i} className="formation-cell" title={`${row.toUpperCase()} ROW — ${frame?.name ?? '—'}`}>
+            <div key={i} className="formation-cell">
               <strong style={{ fontSize: 11 }}>{pilotDef?.callsign ?? slot.pilotId}</strong>
+              <ItemTooltip kind="frame" id={mech?.frameId} data={data}>
+                <span className="muted" style={{ fontSize: 9 }}>
+                  {frame?.name ?? '—'}
+                </span>
+              </ItemTooltip>
               {mech && frame && (
                 <div className="mini-bar">
                   <div
@@ -46,6 +52,7 @@ export function SquadDetail({ world, data, squadId }: Props) {
                   />
                 </div>
               )}
+              {pilot && <NerveBar nerve={pilot.nerve} maxNerve={pilot.maxNerve} height={4} showText={false} />}
             </div>
           );
         })}

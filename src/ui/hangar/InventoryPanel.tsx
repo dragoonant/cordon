@@ -1,7 +1,7 @@
 import React from 'react';
 import type { GameData, Id, RunState } from '@sim/types';
 import { buildMech } from '@sim/hangar';
-import { Button } from '@ui/components';
+import { Button, ItemTooltip } from '@ui/components';
 
 interface Props {
   run: RunState;
@@ -23,8 +23,8 @@ export function InventoryPanel({ run, data, onBump, onToast }: Props) {
       <div className="mono muted" style={{ fontSize: 11 }}>
         INVENTORY
       </div>
-      <InventoryRow title="WEAPONS" ids={run.weapons} items={data.weapons} />
-      <InventoryRow title="SYSTEMS" ids={run.systems} items={data.systems} />
+      <InventoryRow title="WEAPONS" ids={run.weapons} items={data.weapons} kind="weapon" data={data} />
+      <InventoryRow title="SYSTEMS" ids={run.systems} items={data.systems} kind="system" data={data} />
       <div>
         <div className="mono muted" style={{ fontSize: 10 }}>
           FRAMES
@@ -37,9 +37,11 @@ export function InventoryPanel({ run, data, onBump, onToast }: Props) {
           )}
           {run.frames.map((id, i) => (
             <div key={`${id}-${i}`} className="row gap-s" style={{ justifyContent: 'space-between' }}>
-              <span className="mono" style={{ fontSize: 11 }}>
-                {data.frames[id]?.name ?? id}
-              </span>
+              <ItemTooltip kind="frame" id={id} data={data}>
+                <span className="mono" style={{ fontSize: 11 }}>
+                  {data.frames[id]?.name ?? id}
+                </span>
+              </ItemTooltip>
               <Button small variant="ghost" onClick={() => build(id)}>
                 BUILD
               </Button>
@@ -51,7 +53,19 @@ export function InventoryPanel({ run, data, onBump, onToast }: Props) {
   );
 }
 
-function InventoryRow({ title, ids, items }: { title: string; ids: Id[]; items: Record<string, { name: string }> }) {
+function InventoryRow({
+  title,
+  ids,
+  items,
+  kind,
+  data,
+}: {
+  title: string;
+  ids: Id[];
+  items: Record<string, { name: string }>;
+  kind: 'weapon' | 'system';
+  data: GameData;
+}) {
   return (
     <div>
       <div className="mono muted" style={{ fontSize: 10 }}>
@@ -64,9 +78,9 @@ function InventoryRow({ title, ids, items }: { title: string; ids: Id[]; items: 
           </span>
         )}
         {ids.map((id, i) => (
-          <span key={`${id}-${i}`} className="chip mono">
-            {items[id]?.name ?? id}
-          </span>
+          <ItemTooltip key={`${id}-${i}`} kind={kind} id={id} data={data}>
+            <span className="chip mono">{items[id]?.name ?? id}</span>
+          </ItemTooltip>
         ))}
       </div>
     </div>
