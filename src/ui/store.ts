@@ -123,7 +123,8 @@ interface Actions {
   go(screen: Screen): void;
   back(): void;
   // title
-  startNewRun(ascension?: number): Promise<void>;
+  /** seed is for QA/repro — omit it for a normal randomly-seeded run. */
+  startNewRun(ascension?: number, seed?: number): Promise<void>;
   continueRun(): void;
   abandonRun(): Promise<void>;
   updateSettings(partial: Partial<Settings>): Promise<void>;
@@ -221,12 +222,15 @@ export const useStore = create<Store>((set, get) => ({
     if (p) set({ screen: p, prevScreen: null });
   },
 
-  async startNewRun(ascension = 0) {
+  async startNewRun(ascension = 0, seed?: number) {
     const { data, save } = get();
     if (!data || !save) return;
-    const seed = hashString(`${Date.now()}:${Math.random()}`);
-    const run = newRun(data, save.unlocks, seed, ascension);
-    set({ run, world: null, map: null, screen: 'node_map', captainLine: pickLine(data.captainLines.runStart, seed) });
+    // A run is fully reproducible from its seed, so accepting one makes a
+    // specific sector layout repeatable — the only practical way to get at a
+    // rare node kind (territory, rival) for testing or a repro.
+    const runSeed = seed ?? hashString(`${Date.now()}:${Math.random()}`);
+    const run = newRun(data, save.unlocks, runSeed, ascension);
+    set({ run, world: null, map: null, screen: 'node_map', captainLine: pickLine(data.captainLines.runStart, runSeed) });
     playSfx('ui_confirm');
     await saveNow(get);
   },

@@ -12,6 +12,7 @@ export function TitleScreen() {
   const continueRun = useStore((s) => s.continueRun);
   const go = useStore((s) => s.go);
   const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [seedText, setSeedText] = React.useState('');
 
   if (!data || !save) {
     return (
@@ -37,9 +38,13 @@ export function TitleScreen() {
 
   const totalUnlocked = unlocks.pilots.length + unlocks.frames.length + unlocks.weapons.length + unlocks.systems.length;
 
+  // A typed seed reproduces an exact sector layout — the practical way to
+  // reach a rare node kind (territory, rival) without rerolling for it.
+  const seedValue = /^[0-9]+$/.test(seedText.trim()) ? Number(seedText.trim()) : undefined;
+
   function newRunClicked() {
-    if (ascensionMax > 0) setPickerOpen(true);
-    else void startNewRun(0);
+    if (ascensionMax > 0 && seedValue === undefined) setPickerOpen(true);
+    else void startNewRun(0, seedValue);
   }
 
   return (
@@ -72,8 +77,29 @@ export function TitleScreen() {
           ) : (
             <div className="col gap-m" style={{ width: '100%' }}>
               <Button variant="primary" onClick={newRunClicked} style={{ width: '100%' }}>
-                New Run
+                New Run{seedValue !== undefined ? ` — seed ${seedValue}` : ''}
               </Button>
+              <div className="row gap-s" style={{ alignItems: 'center' }}>
+                <input
+                  className="mono"
+                  value={seedText}
+                  onChange={(e) => setSeedText(e.target.value)}
+                  placeholder="seed (optional)"
+                  inputMode="numeric"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(0,0,0,0.35)',
+                    border: '1px solid var(--muted)',
+                    color: 'var(--fg)',
+                    padding: '6px 8px',
+                    fontSize: 12,
+                    borderRadius: 3,
+                  }}
+                />
+                <span className="muted mono" style={{ fontSize: 10, whiteSpace: 'nowrap' }}>
+                  same seed = same sector
+                </span>
+              </div>
               {canContinue && (
                 <Button variant="ghost" onClick={continueRun} style={{ width: '100%' }}>
                   Continue{progress ? ` — ${progress}` : ''}
