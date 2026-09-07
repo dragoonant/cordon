@@ -209,6 +209,46 @@ describe('prepareMap', () => {
     expect(again!.map.id).toBe(prepared!.map.id);
   });
 
+  it('sizes the rival wing to the player, not to node threat', () => {
+    const run = freshRun();
+    const node = run.sectors[0].nodes.find((n) => n.col === 1)!;
+    node.kind = 'rival';
+    node.mapId = undefined;
+    run.currentNodeId = node.id;
+
+    const prepared = prepareMap(run, FIXTURE_DATA)!;
+    const rival = prepared.enemies.squads.find((s) => s.id === 'spawn_rival')!;
+    const wing = rival.slots.filter((s) => s !== null);
+
+    // The wing matches the player's headcount (rival + one fewer grunt), so
+    // the encounter reads as a matched formation rather than a gank.
+    const playerBest = Math.max(
+      ...run.squads.map((sq) => sq.slots.filter((s) => s && run.pilots[s.pilotId]?.alive).length)
+    );
+    expect(wing.length).toBe(playerBest);
+
+    // The wing's effective HP tracks the player's rather than raw Compact
+    // tonnage — this is what keeps the duel from being an unwinnable wall
+    // (it was ~2% win for a starting squad when frames ran at full HP).
+    const effHp = wing.reduce((sum, slot) => {
+      const mech = prepared.enemies.mechs[slot!.mechId];
+      const frame = FIXTURE_DATA.frames[mech.frameId];
+      return sum + Math.max(1, frame.hp - mech.maxHpPenalty);
+    }, 0);
+    const playerHp = Math.max(
+      ...run.squads.map((sq) =>
+        sq.slots.reduce((sum, slot) => {
+          if (!slot || !run.pilots[slot.pilotId]?.alive) return sum;
+          const mech = run.mechs[slot.mechId];
+          const frame = mech && FIXTURE_DATA.frames[mech.frameId];
+          return frame ? sum + Math.max(1, frame.hp - mech.maxHpPenalty) : sum;
+        }, 0)
+      )
+    );
+    expect(effHp).toBeLessThan(playerHp * 1.35);
+    expect(effHp).toBeGreaterThan(playerHp * 0.9);
+  });
+
   it('scales ordinary enemy squads by threat: +6 aptitude per level and extra mechs', () => {
     const run = freshRun();
     const node = run.sectors[0].nodes.find((n) => n.col === 1)!;

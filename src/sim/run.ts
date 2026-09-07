@@ -600,22 +600,78 @@ function buildEnemySquad(
 }
 
 /**
+ * The rival wing's total effective HP as a multiple of the player's best
+ * squad. Above 1 the ace still outweighs them; the margin is what Callouts
+ * and loadout have to close.
+ */
+const RIVAL_HP_RATIO = 1.15;
+
+/**
+ * Measures the force the player can actually bring to one contact: the size
+ * and pilot quality of their strongest single squad. Only one player squad
+ * fights at a time (`world.pendingBattle` is 1v1), so squad *headcount* —
+ * not total roster — is what the rival has to be sized against.
+ */
+function playerBenchmark(
+  squads: Squad[],
+  pilots: Record<Id, Pilot>,
+  mechs: Record<Id, Mech>,
+  data: GameData
+): { size: number; bestApt: number; hp: number } {
+  let size = 0;
+  let hp = 0;
+  let bestApt = 0;
+  for (const squad of squads) {
+    let n = 0;
+    let squadHp = 0;
+    for (const slot of squad.slots) {
+      if (!slot) continue;
+      const pilot = pilots[slot.pilotId];
+      if (!pilot || !pilot.alive) continue;
+      n++;
+      const mech = mechs[slot.mechId];
+      const frame = mech ? data.frames[mech.frameId] : undefined;
+      if (frame && mech) squadHp += Math.max(1, frame.hp - mech.maxHpPenalty);
+      const apts = Object.values(pilot.aptitudes);
+      const avg = apts.reduce((a, b) => a + b, 0) / apts.length;
+      if (avg > bestApt) bestApt = avg;
+    }
+    // Benchmark against the strongest squad the player could actually commit —
+    // only one player squad is in any given contact.
+    if (n > size || (n === size && squadHp > hp)) {
+      size = n;
+      hp = squadHp;
+    }
+  }
+  return { size: Math.max(1, size), bestApt: bestApt || 30, hp: hp || 300 };
+}
+
+/**
  * Builds the rival encounter squad: the rival PilotDef in a compact_ace
- * frame plus up to 2 compact_grunt pilots, all in one squad, 'hunt' AI, far
- * from the deploy zone. `types.ts`'s Squad has no `isRival` flag, so callers
+ * frame plus compact_grunt wingmen, all in one squad, 'hunt' AI, far from
+ * the deploy zone. `types.ts`'s Squad has no `isRival` flag, so callers
  * should identify this squad by its fixed id `spawn_rival` (or simply by
  * `currentNode(run).kind === 'rival'`).
+ *
+ * The wing is sized and skilled against the *player*, not the node threat.
+ * Scaling by threat alone made this a step function on the player's squad
+ * headcount — a default 3-pilot squad won ~2% of the time while a
+ * consolidated 6-stack won 100%. Neither is a duel. Now the rival brings one
+ * fewer machine than the player's best squad and flies at the player's best
+ * pilot + a small edge, so the fight lands near even however the player has
+ * organised, and Callouts and loadout decide it.
  */
 function buildRivalSquad(
   map: MapDef,
   threat: 1 | 2 | 3,
   data: GameData,
   pilotsOut: Record<Id, Pilot>,
-  mechsOut: Record<Id, Mech>
+  mechsOut: Record<Id, Mech>,
+  player: { size: number; bestApt: number; hp: number }
 ): Squad | null {
   const rivalDef = Object.values(data.pilots).find((p) => p.archetype === 'rival');
   if (!rivalDef) return null;
-  const gruntDefs = Object.values(data.pilots).filter((p) => p.archetype === 'compact_grunt').slice(0, 2);
+  const gruntDefs = Object.values(data.pilots).filter((p) => p.archetype === 'compact_grunt');
   const compactFrames = Object.values(data.frames).filter((f) => f.faction === 'compact');
   const aceFrame = compactFrames.find((f) => f.silhouette === 'compact_ace') ?? compactFrames[0];
   // Wingmen fly line frames — only the rival gets the ace machine. (Putting
@@ -624,12 +680,15 @@ function buildRivalSquad(
   if (!aceFrame) return null;
 
   const spawnId = 'spawn_rival';
-  // The rival is a duel, not a wall: a modest edge over a mid-run squad.
-  const bonus = Math.max(0, threat - 1) * 5;
   const slots: (SlotAssignment | null)[] = [null, null, null, null, null, null];
   const members: { def: PilotDef; slot: SlotIndex }[] = [{ def: rivalDef, slot: 0 }];
-  if (gruntDefs[0]) members.push({ def: gruntDefs[0], slot: 1 });
-  if (gruntDefs[1]) members.push({ def: gruntDefs[1], slot: 3 });
+  // Grunt count is one below the player's, so the wing *including the rival*
+  // matches their headcount and the fight reads as a matched formation.
+  // Headcount alone is far too coarse a dial (each machine swings the odds
+  // ~50 points); the wing's effective HP is trimmed below to land the balance.
+  const wingCount = Math.max(0, Math.min(gruntDefs.length, player.size - 1));
+  const wingSlots: SlotIndex[] = [1, 3, 4, 2];
+  for (let i = 0; i < wingCount; i++) members.push({ def: gruntDefs[i], slot: wingSlots[i] });
 
   const compactMelee = Object.values(data.weapons).find((w) => w.faction === 'compact' && w.kind === 'melee')?.id ?? null;
   let leaderPilotId: Id | null = null;
@@ -638,14 +697,20 @@ function buildRivalSquad(
     const instanceId = `${member.def.id}#${spawnId}#${member.slot}`;
     const pilot = createPilot(member.def);
     pilot.id = instanceId;
-    if (bonus > 0) {
-      for (const aptKey of Object.keys(pilot.aptitudes) as (keyof typeof pilot.aptitudes)[]) {
-        pilot.aptitudes[aptKey] = Math.min(100, pilot.aptitudes[aptKey] + bonus);
-      }
+    const isRival = member.def.id === rivalDef.id;
+    // Track the player's best pilot rather than the node: the rival edges them
+    // out, the wingmen sit well below. `threat` is only a nudge on top.
+    const target = isRival
+      ? player.bestApt + 12 + (threat - 1) * 3
+      : player.bestApt - 10 + (threat - 1) * 3;
+    const apts = Object.values(pilot.aptitudes);
+    const baseAvg = apts.reduce((a, b) => a + b, 0) / apts.length;
+    const shift = Math.round(target - baseAvg);
+    for (const aptKey of Object.keys(pilot.aptitudes) as (keyof typeof pilot.aptitudes)[]) {
+      pilot.aptitudes[aptKey] = Math.max(5, Math.min(100, pilot.aptitudes[aptKey] + shift));
     }
     pilotsOut[instanceId] = pilot;
 
-    const isRival = member.def.id === rivalDef.id;
     const frame = isRival ? aceFrame : wingFrame;
     const compactRanged = Object.values(data.weapons).find((w) => w.faction === 'compact' && w.kind === 'ranged')?.id ?? null;
     const mechId = `mech_${frame.id}_${spawnId}_${member.slot}`;
@@ -662,6 +727,27 @@ function buildRivalSquad(
     };
     slots[member.slot] = { pilotId: instanceId, mechId };
     if (leaderPilotId === null) leaderPilotId = instanceId;
+  }
+
+  // Trim the wing's effective HP to a fixed multiple of the player's best
+  // squad. Compact frames are simply heavier than Relay ones (a 250 HP ace and
+  // two 190 HP line machines against three starting mechs is 630 vs 377), and
+  // no amount of pilot-aptitude tuning closes a gap that is really tonnage —
+  // sweeps across a 3x aptitude range moved the odds under 5 points. Scaling
+  // HP gives a continuous dial where headcount gave a step function.
+  const enemyHp = members.reduce((sum, m) => {
+    const mech = mechsOut[`mech_${(m.def.id === rivalDef.id ? aceFrame : wingFrame).id}_${spawnId}_${m.slot}`];
+    return sum + (data.frames[mech.frameId]?.hp ?? 0);
+  }, 0);
+  const targetHp = player.hp * RIVAL_HP_RATIO;
+  if (enemyHp > targetHp) {
+    const cut = (enemyHp - targetHp) / enemyHp; // uniform fraction off every machine
+    for (const member of members) {
+      const frame = member.def.id === rivalDef.id ? aceFrame : wingFrame;
+      const mech = mechsOut[`mech_${frame.id}_${spawnId}_${member.slot}`];
+      mech.maxHpPenalty = Math.round(frame.hp * cut);
+      mech.hp = Math.max(1, frame.hp - mech.maxHpPenalty);
+    }
   }
 
   const farPos: Vec2 = { x: Math.max(0, map.width - 2), y: Math.max(0, map.height - 2) };
@@ -715,7 +801,7 @@ export function prepareMap(
   const squads: Squad[] = map.enemySquads.map((spawn) => buildEnemySquad(spawn, node.threat, data, pilots, mechs));
 
   if (node.kind === 'rival') {
-    const rivalSquad = buildRivalSquad(map, node.threat, data, pilots, mechs);
+    const rivalSquad = buildRivalSquad(map, node.threat, data, pilots, mechs, playerBenchmark(run.squads, run.pilots, run.mechs, data));
     if (rivalSquad) squads.push(rivalSquad);
   }
 
