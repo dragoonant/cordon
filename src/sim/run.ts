@@ -220,7 +220,13 @@ function buildSector(rng: Rng, ascension: number, data: GameData, unlocks: Unloc
     for (let row = 0; row < count; row++) {
       let kind = pickWeightedKind(rng);
       if (kind === 'rival' && col < 2) kind = 'battle'; // rival restricted to cols 2-4 unless ascension forces col1
-      nodes.push(makeNode(kind, col, row));
+      // Territory maps carry ~8 garrison squads across 40x26. At threat 1
+      // those are 2-mech spawns and every contact forecasts 100% — the map
+      // becomes a walk. Keep them out of column 1 and floor their threat.
+      if (kind === 'territory' && col < 2) kind = 'battle';
+      const node = makeNode(kind, col, row);
+      if (kind === 'territory') node.threat = Math.max(2, node.threat) as 1 | 2 | 3;
+      nodes.push(node);
     }
     cols.push(nodes);
   }

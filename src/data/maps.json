@@ -1743,7 +1743,7 @@
         "composition": [
           {
             "frameId": "frame_compact_ace",
-            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -1751,7 +1751,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_pulse_cannon",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -1821,7 +1821,7 @@
         "composition": [
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -1829,7 +1829,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -1856,7 +1856,7 @@
         "composition": [
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_c",
@@ -1864,7 +1864,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -1891,7 +1891,7 @@
         "composition": [
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -1899,7 +1899,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_lancer_pod",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -1944,7 +1944,7 @@
         "composition": [
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_c",
@@ -1952,7 +1952,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -2231,7 +2231,7 @@
         "composition": [
           {
             "frameId": "frame_compact_ace",
-            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -2239,7 +2239,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_pulse_cannon",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -2247,7 +2247,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_c",
@@ -2274,7 +2274,7 @@
         "composition": [
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -2282,7 +2282,7 @@
           },
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_c",
@@ -2344,7 +2344,7 @@
         "composition": [
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_c",
@@ -2352,7 +2352,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -2379,7 +2379,7 @@
         "composition": [
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",
@@ -2387,7 +2387,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_lancer_pod",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_b",
@@ -2432,7 +2432,7 @@
         "composition": [
           {
             "frameId": "frame_compact_skirmisher",
-            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponA": "wpn_cmp_glaive",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_c",
@@ -2440,7 +2440,7 @@
           },
           {
             "frameId": "frame_compact_line",
-            "weaponA": "wpn_cmp_glaive",
+            "weaponA": "wpn_cmp_needle_rifle",
             "weaponB": null,
             "system": null,
             "pilotDefId": "pilot_cmp_grunt_a",

@@ -580,6 +580,23 @@ describe('salvageNode', () => {
 // depotStock / depotBuy
 // ---------------------------------------------------------------------------
 
+describe('territory node placement', () => {
+  it('never puts a territory node in column 1, and floors its threat at 2', () => {
+    // Sweep seeds so we see plenty of generated territory nodes.
+    let seen = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const run = newRun(FIXTURE_DATA, fixtureUnlocks(), seed, 0);
+      for (const node of run.sectors.flatMap((sec) => sec.nodes)) {
+        if (node.kind !== 'territory') continue;
+        seen++;
+        expect(node.col).toBeGreaterThanOrEqual(2);
+        expect(node.threat).toBeGreaterThanOrEqual(2);
+      }
+    }
+    expect(seen).toBeGreaterThan(0); // the sweep actually exercised the rule
+  });
+});
+
 describe('recruitableAt / recruitPilot', () => {
   it('offers unlocked pilots who are not already on the roster', () => {
     const run = freshRun();
