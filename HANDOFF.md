@@ -44,7 +44,7 @@ Fable verified these with screenshots, but a fresh eye is worth it:
 - Terrain plates for `urban` are photoreal-aerial rather than cel-shaded; a style pass (regenerate with stronger "painted, flat colors" prompt or a different model via fal-ai) would help. Same for some `terrain_*` textures (now unused by the plate renderer but still in `public/sprites/map/`).
 - Benign Pixi warning on map switch ("textureSource destroyed while still bound") from the render-texture mask pattern in `src/render/map/tiles.ts`. No visual effect.
 - Quitting mid-map restarts that map (no mid-map save).
-- **Territory maps are trivially easy at threat 1** — every contact on Ashline Corridor forecast 100% for a starting squad. `buildEnemySquad` scales with node threat, and a territory node in column 1 is threat 1; the map's 8 squads are individually 2-mech garrisons. Either restrict `territory` nodes to columns 3+ or give the map's spawns a threat floor.
+- **Territory maps may be too demanding for a 6-pilot roster — needs your judgement.** After the weapon-row fix and the threat-2 floor (`4f76450`), playing Ashline Corridor with sensible tactics (main squad assaults, support squad holds) took **2 of the 3 sites** needed for a control win, then stalled: the assault squad was worn down by two fights and the third garrison read 1%. There is no repair mid-map, so attrition is one-way. Either the control threshold should be 2 of 5 rather than 3, or this is the strongest argument yet for the 8-pilot / three-squad change in §3c. **Do not tune this from the numbers alone — play it first.**
 - **Rival and territory nodes are rare enough to be hard to test.** Rival weight is 5, territory 12, out of ~102. Getting an early one took ~25 run rerolls. Consider a debug/QA way to force a node kind.
 - Boss wing is very hard for a fresh squad by design; with equipping fixed it should be beatable with salvaged Compact gear + Callouts. Re-check after item 1.
 - Balance harness (`npx tsx tools/balance/playthrough.ts 20 1`) uses a dumb scripted commander; its 0% boss win rate is mostly the commander.
@@ -88,8 +88,7 @@ Delivered: depot RECRUIT column, two rescue-a-survivor derelicts, hangar hint st
 1. **Anthony plays a territory map.** Everything in §3b was verified by Fable driving the sim, not by a human playing with a mouse. The feel — whether 5 sites on a 40×26 map is the right density, whether 90s is the right hold, whether the CONTROL panel reads at a glance — is exactly what a machine can't check.
 2. **Decide the 8-pilot question** (§3c). It gates three-squad play, which the big maps want.
 3. **Fuel as the leash** (§3b item 1). The biggest missing piece of the territory design.
-4. Threat floor for territory nodes (see §2) — they're currently a walkover in column 1.
-5. Then fog/scouting, and the rival's signature Callout.
+4. Then fog/scouting, and the rival's signature Callout.
 
 
 ---
@@ -106,8 +105,10 @@ Everything below was committed with tests and typecheck green; 309 tests passing
 | `b4c3e84` | Black-map render fix + territory HUD |
 | `7361971` | Recruits, rescue-survivor objectives, hangar hints |
 | `32b7201` | Kessler Anchorage (space) + win-condition signposting |
+| `4f76450` | Territory difficulty: enemy weapon row placement, threat floor |
 
 **Traps worth remembering** (each cost real time):
 - `updateObjectives` skips objectives whose status is `complete`. A player-held site reads `complete`, so sites had to be *exempted* from that skip or they could never be contested again once taken.
 - `checkWinLose` computes `requiredComplete` with `.every()` over required objectives — on an **empty** array that is vacuously `true`, so a map with no required objective wins the instant it loads. Every territory map therefore keeps one required objective (the commander).
 - The fixture surface map's evac station sits at (10,6); a test capture_site placed there silently completed the required objective and ended the map mid-test.
+- **Weapon row multipliers are an authoring trap.** Slots 0-2 are front, 3-5 back; the Glaive has `backMult: 0` and cannot attack at all from a back slot, and rifles are 0.5x in front. Two garrisons with the same frames and weapons read 9% and 100% purely on placement. When authoring `enemySquads`, put melee in slots 0-2 and ranged in 3-5 — `tools/balance/territory_probe.ts` will show you if you got it wrong.
