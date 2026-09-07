@@ -1541,5 +1541,493 @@
     "timeLimit": 720,
     "description": "The final checkpoint before the inner colonies — and the rival's personal hunting ground.",
     "briefing": "This is the gate. Hit the target hard — I want everyone back on the Lantern."
+  },
+  {
+    "id": "map_surface_ashline_corridor",
+    "name": "Ashline Corridor",
+    "kind": "surface",
+    "rows": [
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      ".................ww.....................",
+      ".................ww.....................",
+      "........fffff....ww.....................",
+      ".......fff...f...ww.........uuuuu.......",
+      "......ffff...ff..ww........uu...uu......",
+      ".......fff...f...ww.......uuu...uuu.....",
+      "........fffff..............uu...uu......",
+      ".................ww.........uuuuu.mm....",
+      ".................ww...............mm....",
+      ".................wwuuuuuuu........mm....",
+      ".......mmm.......wwuu...uu.mmm....mm....",
+      ".......mmm.......wwuu...uu.mmm....mm....",
+      ".................wwuu...uu........mm....",
+      ".................wwuuuuuuu........mm....",
+      ".................ww...............mm....",
+      "...........fffff.ww..........fffff......",
+      "..........fff...f...........fff...f.....",
+      ".........ffff...ffw........ffff...ff....",
+      "..........fff...fww.........fff...f.....",
+      "...........fffff.ww..........fffff......",
+      ".................ww.....................",
+      ".................ww.....................",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
+      "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+    ],
+    "weather": "dust",
+    "deployZone": {
+      "pos": {
+        "x": 3,
+        "y": 13
+      },
+      "radius": 3
+    },
+    "carrierOnMap": false,
+    "timeLimit": 900,
+    "controlWin": {
+      "sites": 3,
+      "holdSeconds": 90
+    },
+    "description": "A river corridor between two ridgelines. The Compact holds the crossings, the fuel dump and the colony plateau. Take and hold the ground — or cut the head off.",
+    "briefing": "Five holdings along the Ashline. Hold three of them for ninety seconds and the corridor is ours — or find their commander and end it the short way. They will take them back if you let them.",
+    "objectives": [
+      {
+        "id": "site_ash_relay",
+        "kind": "capture_site",
+        "name": "Ashline Relay Post",
+        "pos": {
+          "x": 11,
+          "y": 6
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "neutral",
+        "captureSeconds": 8,
+        "incomePerMin": 20,
+        "siteVision": 8,
+        "reward": {
+          "scrap": 15,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_ash_depot",
+        "kind": "capture_site",
+        "name": "Rustwater Depot",
+        "pos": {
+          "x": 14,
+          "y": 19
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 8,
+        "incomePerMin": 30,
+        "gateSquadIds": [
+          "sq_ash_wave_south"
+        ],
+        "gateIntervalSeconds": 50,
+        "reward": {
+          "scrap": 25,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_ash_fuel",
+        "kind": "capture_site",
+        "name": "Corridor Fuel Dump",
+        "pos": {
+          "x": 22,
+          "y": 13
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 12,
+        "incomePerMin": 40,
+        "siteVision": 5,
+        "reward": {
+          "scrap": 35,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_ash_colony",
+        "kind": "capture_site",
+        "name": "Ashline Colony",
+        "pos": {
+          "x": 30,
+          "y": 7
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 8,
+        "incomePerMin": 25,
+        "gateSquadIds": [
+          "sq_ash_wave_north"
+        ],
+        "gateIntervalSeconds": 50,
+        "reward": {
+          "scrap": 25,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_ash_forward",
+        "kind": "capture_site",
+        "name": "Forward Picket",
+        "pos": {
+          "x": 32,
+          "y": 19
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 8,
+        "incomePerMin": 20,
+        "siteVision": 6,
+        "reward": {
+          "scrap": 15,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "obj_ash_command",
+        "kind": "destroy_target",
+        "name": "Compact Corridor Command",
+        "pos": {
+          "x": 36,
+          "y": 13
+        },
+        "radius": 2,
+        "required": true,
+        "targetSquadId": "sq_ash_command",
+        "reward": {
+          "scrap": 60,
+          "nerve": 8,
+          "standing": 6,
+          "salvageRolls": 2
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_ash_command",
+        "name": "Corridor Command",
+        "pos": {
+          "x": 36,
+          "y": 13
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 36,
+            "y": 13
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_ace",
+            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 1
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_colony_guard",
+        "name": "Colony Garrison",
+        "pos": {
+          "x": 30,
+          "y": 7
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 30,
+            "y": 7
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_fuel_guard",
+        "name": "Fuel Dump Watch",
+        "pos": {
+          "x": 22,
+          "y": 13
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 22,
+            "y": 13
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_depot_guard",
+        "name": "Depot Watch",
+        "pos": {
+          "x": 14,
+          "y": 19
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 14,
+            "y": 19
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_picket",
+        "name": "Forward Picket Wing",
+        "pos": {
+          "x": 32,
+          "y": 19
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 32,
+            "y": 19
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_patrol",
+        "name": "Corridor Patrol",
+        "pos": {
+          "x": 22,
+          "y": 5
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "patrol",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 22,
+            "y": 5
+          },
+          "patrolPoints": [
+            {
+              "x": 22,
+              "y": 5
+            },
+            {
+              "x": 22,
+              "y": 21
+            },
+            {
+              "x": 30,
+              "y": 13
+            },
+            {
+              "x": 22,
+              "y": 5
+            }
+          ]
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_wave_north",
+        "name": "Northern Response",
+        "pos": {
+          "x": 30,
+          "y": 7
+        },
+        "spawnAt": 60,
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 8,
+          "homePos": {
+            "x": 30,
+            "y": 7
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_ash_wave_south",
+        "name": "Southern Response",
+        "pos": {
+          "x": 14,
+          "y": 19
+        },
+        "spawnAt": 90,
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 8,
+          "homePos": {
+            "x": 14,
+            "y": 19
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      }
+    ]
   }
 ]

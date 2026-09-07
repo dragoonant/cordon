@@ -3,7 +3,7 @@ import type { NodeKind } from '@sim/types';
 import { GLYPH } from '@ui/components/NodeGraph';
 
 /** Node kinds worth explaining on the sector map; 'start' is self-evident and omitted. */
-const LEGEND_KINDS: Exclude<NodeKind, 'start'>[] = ['battle', 'rescue', 'distress', 'salvage', 'depot', 'rival', 'boss'];
+const LEGEND_KINDS: Exclude<NodeKind, 'start'>[] = ['battle', 'rescue', 'distress', 'salvage', 'territory', 'depot', 'rival', 'boss'];
 
 const MEANING: Record<Exclude<NodeKind, 'start'>, string> = {
   battle: 'Fight an enemy squad',
@@ -11,6 +11,7 @@ const MEANING: Record<Exclude<NodeKind, 'start'>, string> = {
   distress: 'Pick a response, take the outcome',
   salvage: 'Recover scrap and spare parts',
   depot: 'Repair mechs, buy gear',
+  territory: 'Hold enemy sites for income and control',
   rival: 'Optional grudge-match duel',
   boss: "Sector's final, hardest fight",
 };

@@ -16,6 +16,7 @@ export const GLYPH: Record<NodeKind, string> = {
   depot: '▣', // white square containing black square
   rival: '☠', // skull and crossbones
   boss: '★', // star
+  territory: '⚑', // flag — ground to take and hold
   start: '●', // circle
 };
 
@@ -24,6 +25,7 @@ const DESCRIPTION: Record<NodeKind, string> = {
   rescue: "Civilians on the line. Hold the timer, don't lose them.",
   distress: "Someone's calling on an open channel. Your call.",
   salvage: "Debris field reading hot. Might be scrap, might be a trap.",
+  territory: "Contested ground. Take their holdings and keep them.",
   depot: 'Friendly dock ahead. Patch the frames, restock the racks.',
   rival: "Signature match, Command. It's them.",
   boss: "This is the chokepoint. Everything we've got.",

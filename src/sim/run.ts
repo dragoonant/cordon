@@ -130,6 +130,7 @@ const NODE_KIND_WEIGHTS: [NodeKind, number][] = [
   ['distress', 10],
   ['depot', 10],
   ['rival', 5],
+  ['territory', 12],
 ];
 
 function pickWeightedKind(rng: Rng): NodeKind {
@@ -492,7 +493,7 @@ export function travelTo(run: RunState, nodeId: Id): void {
 // prepareMap
 // ---------------------------------------------------------------------------
 
-const MAP_ELIGIBLE_KINDS: NodeKind[] = ['battle', 'rescue', 'salvage', 'rival', 'boss'];
+const MAP_ELIGIBLE_KINDS: NodeKind[] = ['battle', 'rescue', 'salvage', 'rival', 'boss', 'territory'];
 
 function pickMapId(node: RunNode, data: GameData, rng: Rng): Id | undefined {
   const all = Object.values(data.maps);
@@ -507,6 +508,16 @@ function pickMapId(node: RunNode, data: GameData, rng: Rng): Id | undefined {
   } else if (node.kind === 'rescue') {
     const preferred = candidates.filter((m) => m.id.includes('rescue'));
     if (preferred.length) candidates = preferred;
+  } else if (node.kind === 'territory') {
+    // Territory nodes need a map with capture_sites; fall back to any map of
+    // the right kind rather than erroring if none has been authored yet.
+    const preferred = all.filter((m) => m.objectives.some((o) => o.kind === 'capture_site'));
+    if (preferred.length) candidates = preferred;
+  }
+  // Territory maps are long and deliberate — keep them off ordinary nodes.
+  if (node.kind !== 'territory') {
+    const nonTerritory = candidates.filter((m) => !m.objectives.some((o) => o.kind === 'capture_site'));
+    if (nonTerritory.length) candidates = nonTerritory;
   }
   if (!candidates.length) candidates = all;
   if (!candidates.length) return undefined;

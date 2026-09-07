@@ -236,13 +236,18 @@ export function createWorld(map: MapDef, seed: number, data: GameData, player: S
   const pendingSpawns: Id[] = [];
 
   for (const def of map.objectives) {
+    const isSite = def.kind === 'capture_site';
+    // Sites resolve their owner up front, not on the first tick: gates must be
+    // live from t=0 and the HUD should show who holds what before you move.
+    const owner: SiteOwner | undefined = isSite ? def.startOwner ?? 'neutral' : undefined;
     objectives[def.id] = {
       id: def.id,
-      status: 'active',
-      progress: 0,
+      status: isSite && owner === 'player' ? 'complete' : 'active',
+      progress: isSite && owner === 'player' ? 1 : 0,
       hp: def.hp,
       pos: { ...def.pos },
       pathIndex: def.kind === 'convoy' ? 0 : undefined,
+      ...(isSite ? { owner, capture: 0, contested: false } : {}),
     };
   }
 

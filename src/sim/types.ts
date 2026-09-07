@@ -644,7 +644,7 @@ export interface WorldState {
 // Run (roguelite layer)
 // ---------------------------------------------------------------------------
 
-export type NodeKind = 'battle' | 'rescue' | 'distress' | 'salvage' | 'depot' | 'rival' | 'boss' | 'start';
+export type NodeKind = 'battle' | 'rescue' | 'distress' | 'salvage' | 'depot' | 'rival' | 'boss' | 'territory' | 'start';
 
 export interface RunNode {
   id: Id;
