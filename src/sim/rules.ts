@@ -17,6 +17,12 @@ import type {
 } from './types';
 
 export const RULES = {
+  /** capture_site: seconds of uncontested presence to flip a site. */
+  SITE_CAPTURE_SECONDS: 8,
+  /** capture_site: seconds between reinforcement waves from an enemy-held gate. */
+  GATE_INTERVAL_SECONDS: 45,
+  /** capture_site: a site pays out income in whole scrap at this cadence. */
+  SITE_INCOME_TICK_SECONDS: 10,
   /** Fixed number of exchange rounds per battle. */
   ROUNDS: 6,
   /** Formation grid size (front 3 + back 3). */

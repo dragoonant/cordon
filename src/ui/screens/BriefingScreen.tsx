@@ -12,6 +12,7 @@ const OBJ_ICON: Record<ObjectiveKind, string> = {
   relay: '◉',
   destroy_target: '☠',
   reach_exit: '➤',
+  capture_site: '⚑',
 };
 
 function poorFit(mobility: Mobility, mapKind: 'space' | 'surface'): boolean {

@@ -150,6 +150,7 @@ export const OBJECTIVE_ICON: Record<ObjectiveKind, string> = {
   relay: '\u{1F4E1}',
   destroy_target: '⚔',
   reach_exit: '\u{1F6AA}',
+  capture_site: '\u{1F6A9}',
 };
 
 export function statusColor(status: string): string {

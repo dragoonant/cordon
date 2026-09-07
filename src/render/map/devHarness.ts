@@ -293,6 +293,8 @@ export function mountMapHarness(el: HTMLElement): MapHarnessHandle {
     events: [],
     rngState: 1,
     pendingSpawns: [],
+    siteScrap: 0,
+    controlHeldFor: 0,
   };
 
   let destroyed = false;

@@ -25,6 +25,7 @@ import {
   SURFACE_EVAC_ID,
   SURFACE_CONVOY_ID,
   SURFACE_RELAY_ID,
+  SURFACE_SITE_ID,
   SURFACE_ENEMY_SQUAD_ID,
   SPACE_ENEMY_SQUAD_ID,
   SPACE_DESTROY_OBJECTIVE_ID,
@@ -287,6 +288,159 @@ describe('rival contact lines', () => {
     enemy.engageCooldown = 0;
     stepWorld(world, map, 0.1, data);
     expect(world.events.filter((e) => e.t === 'rival_contact').length).toBe(count);
+  });
+});
+
+describe('capture_site (territory)', () => {
+  const SITE_POS = { x: 5, y: 9 };
+
+  /** Stand a squad on the site and run the clock. */
+  function holdFor(world: ReturnType<typeof freshSurfaceWorld>['world'], map: any, data: any, squadId: string, seconds: number) {
+    const squad = world.squads[squadId];
+    squad.pos = { ...SITE_POS };
+    squad.path = [];
+    for (let t = 0; t < seconds * 10; t++) {
+      squad.pos = { ...SITE_POS };
+      stepWorld(world, map, 0.1, data);
+    }
+  }
+
+  it('starts neutral and flips to the player after captureSeconds', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    expect(world.objectives[SURFACE_SITE_ID].owner ?? 'neutral').toBe('neutral');
+    holdFor(world, map, data, SQUAD_ALPHA_ID, 5); // captureSeconds is 4
+    expect(world.objectives[SURFACE_SITE_ID].owner).toBe('player');
+    expect(world.events.some((e) => e.t === 'site_captured')).toBe(true);
+  });
+
+  it('stays contestable after capture, so the enemy can take it back', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    holdFor(world, map, data, SQUAD_ALPHA_ID, 5);
+    expect(world.objectives[SURFACE_SITE_ID].owner).toBe('player');
+
+    // Player leaves, enemy walks on.
+    world.squads[SQUAD_ALPHA_ID].pos = { x: 2, y: 2 };
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    for (let t = 0; t < 60; t++) {
+      enemy.pos = { ...SITE_POS };
+      world.squads[SQUAD_ALPHA_ID].pos = { x: 2, y: 2 };
+      stepWorld(world, map, 0.1, data);
+    }
+    expect(world.objectives[SURFACE_SITE_ID].owner).toBe('enemy');
+  });
+
+  it('freezes the capture meter while both sides are present', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    for (let t = 0; t < 60; t++) {
+      world.squads[SQUAD_ALPHA_ID].pos = { ...SITE_POS };
+      enemy.pos = { ...SITE_POS };
+      world.pendingBattle = null;
+      world.phase = 'running';
+      world.squads[SQUAD_ALPHA_ID].engageCooldown = 99;
+      enemy.engageCooldown = 99;
+      stepWorld(world, map, 0.1, data);
+    }
+    expect(world.objectives[SURFACE_SITE_ID].contested).toBe(true);
+    expect(world.objectives[SURFACE_SITE_ID].owner).toBe('neutral');
+  });
+
+  it('pays income only while the player holds it', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    // Nothing held yet.
+    stepWorld(world, map, 0.1, data);
+    expect(world.siteScrap).toBe(0);
+    holdFor(world, map, data, SQUAD_ALPHA_ID, 5);
+    const afterCapture = world.siteScrap;
+    holdFor(world, map, data, SQUAD_ALPHA_ID, 10);
+    // incomePerMin 60 => ~1 scrap/sec.
+    expect(world.siteScrap).toBeGreaterThan(afterCapture + 5);
+  });
+});
+
+describe('reinforcement gates and control win', () => {
+  const SITE_POS = { x: 5, y: 9 };
+
+  /** Adds a gate + controlWin to the fixture map, pointing at the test enemy. */
+  function makeGateMap(map: any) {
+    const site = map.objectives.find((o: any) => o.id === SURFACE_SITE_ID);
+    site.startOwner = 'enemy';
+    site.gateSquadIds = [SURFACE_ENEMY_SQUAD_ID];
+    site.gateIntervalSeconds = 5;
+    map.controlWin = { sites: 1, holdSeconds: 3 };
+    return map;
+  }
+
+  it('an enemy-held gate pushes destroyed squads back onto the map', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    makeGateMap(map);
+    world.objectives[SURFACE_SITE_ID].owner = 'enemy';
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+
+    // Wipe the enemy squad, then let the gate timer elapse.
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    enemy.state = 'destroyed';
+    for (const slot of enemy.slots) {
+      if (slot) world.mechs[slot.mechId].destroyed = true;
+    }
+    for (let t = 0; t < 70; t++) {
+      world.squads[SQUAD_ALPHA_ID].pos = { x: 2, y: 2 };
+      stepWorld(world, map, 0.1, data);
+    }
+    expect(world.events.some((e) => e.t === 'gate_reinforcement')).toBe(true);
+    expect(world.squads[SURFACE_ENEMY_SQUAD_ID].state).not.toBe('destroyed');
+  });
+
+  it('capturing the gate stops the flow', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    makeGateMap(map);
+    world.objectives[SURFACE_SITE_ID].owner = 'player'; // gate taken
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    enemy.state = 'destroyed';
+    for (const slot of enemy.slots) {
+      if (slot) world.mechs[slot.mechId].destroyed = true;
+    }
+    for (let t = 0; t < 70; t++) {
+      world.squads[SQUAD_ALPHA_ID].pos = { ...SITE_POS };
+      stepWorld(world, map, 0.1, data);
+    }
+    expect(world.events.some((e) => e.t === 'gate_reinforcement')).toBe(false);
+  });
+
+  it('holding the required sites for holdSeconds wins the map outright', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    makeGateMap(map);
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    // Take the site (4s) then hold it past controlWin.holdSeconds (3s).
+    for (let t = 0; t < 100; t++) {
+      world.squads[SQUAD_ALPHA_ID].pos = { ...SITE_POS };
+      stepWorld(world, map, 0.1, data);
+      if (world.phase === 'ended') break;
+    }
+    expect(world.objectives[SURFACE_SITE_ID].owner).toBe('player');
+    expect(world.outcome).toBe('victory');
+  });
+
+  it('losing a site resets the control clock', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    makeGateMap(map);
+    map.controlWin = { sites: 1, holdSeconds: 30 }; // long enough to interrupt
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    for (let t = 0; t < 60; t++) {
+      world.squads[SQUAD_ALPHA_ID].pos = { ...SITE_POS };
+      stepWorld(world, map, 0.1, data);
+    }
+    expect(world.objectives[SURFACE_SITE_ID].owner).toBe('player');
+    expect(world.controlHeldFor).toBeGreaterThan(0);
+
+    world.objectives[SURFACE_SITE_ID].owner = 'enemy'; // they take it back
+    stepWorld(world, map, 0.1, data);
+    expect(world.controlHeldFor).toBe(0);
   });
 });
 

@@ -402,6 +402,8 @@ function baseWorld(run: RunState): WorldState {
     events: [],
     rngState: 0,
     pendingSpawns: [],
+  siteScrap: 0,
+  controlHeldFor: 0,
   };
 }
 

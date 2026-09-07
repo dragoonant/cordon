@@ -481,7 +481,11 @@ export type ObjectiveKind =
   | 'derelict' // reach & hold briefly; salvage; may spawn ambush
   | 'relay' // capture: reveals enemies map-wide
   | 'destroy_target' // kill a specific enemy squad (boss)
-  | 'reach_exit'; // get any squad to a point
+  | 'reach_exit' // get any squad to a point
+  | 'capture_site'; // territory: flips owner, pays income, can gate reinforcements
+
+/** Who currently holds a capture_site. */
+export type SiteOwner = 'player' | 'enemy' | 'neutral';
 
 export type ObjectiveStatus = 'pending' | 'active' | 'complete' | 'failed';
 
@@ -499,6 +503,23 @@ export interface ObjectiveDef {
   required: boolean; // failing a required objective fails the map
   ambushSquadIds?: Id[]; // derelict
   reward: { scrap: number; nerve: number; standing: number; recruitPilotId?: Id; salvageRolls: number };
+
+  // --- capture_site (territory) ---------------------------------------
+  /** Seconds of uncontested presence to flip ownership. Default RULES value. */
+  captureSeconds?: number;
+  /** Who holds it when the map starts. Default 'neutral'. */
+  startOwner?: SiteOwner;
+  /** Scrap per minute paid out while the player holds it. */
+  incomePerMin?: number;
+  /** Extra vision radius granted to the player while held. */
+  siteVision?: number;
+  /**
+   * Reinforcement gate: while an *enemy* holds this site, these enemy spawns
+   * keep respawning. Capturing it shuts the flow off.
+   */
+  gateSquadIds?: Id[];
+  /** Seconds between gate respawns. Default RULES value. */
+  gateIntervalSeconds?: number;
 }
 
 export interface ObjectiveState {
@@ -508,6 +529,20 @@ export interface ObjectiveState {
   hp?: number;
   pos: Vec2; // current (convoys move)
   pathIndex?: number;
+  // --- capture_site ---
+  /** Current holder. Undefined for non-site objectives. */
+  owner?: SiteOwner;
+  /**
+   * Capture meter, 0..1, always measured *toward whoever is standing on it*.
+   * Both sides present = contested, meter frozen.
+   */
+  capture?: number;
+  /** Side the capture meter is currently filling for. */
+  capturingFor?: SiteOwner;
+  /** Both sides present right now — surfaced so the HUD can say "CONTESTED". */
+  contested?: boolean;
+  /** Seconds until this gate spawns its next wave (gate sites only). */
+  gateTimer?: number;
 }
 
 export interface MapDef {
@@ -523,6 +558,12 @@ export interface MapDef {
   objectives: ObjectiveDef[];
   enemySquads: EnemySquadSpawn[];
   timeLimit: number; // seconds; 0 = none
+  /**
+   * Territory maps: an alternative win condition — hold `sites` capture_sites
+   * simultaneously for `holdSeconds`. Satisfying this wins the map outright,
+   * in parallel with the ordinary required-objective route.
+   */
+  controlWin?: { sites: number; holdSeconds: number };
   /** Minimum seconds the map must last before exit is allowed (0 = none). */
   description: string;
   briefing: string; // Captain's line
@@ -551,6 +592,8 @@ export type WorldEvent =
   | { t: 'squad_destroyed'; squadId: Id }
   | { t: 'fell_back'; squadId: Id; fromSquadId: Id; standingCost: number }
   | { t: 'rival_contact'; pilotId: Id; line: string }
+  | { t: 'site_captured'; objectiveId: Id; owner: SiteOwner }
+  | { t: 'gate_reinforcement'; objectiveId: Id; squadId: Id }
   | { t: 'squad_docked'; squadId: Id }
   | { t: 'spawn'; squadId: Id }
   | { t: 'carrier_hit'; damage: number; hpAfter: number }
@@ -591,6 +634,10 @@ export interface WorldState {
   rngState: number;
   /** Spawns that haven't happened yet. */
   pendingSpawns: Id[];
+  /** Scrap accrued from held capture_sites; finishMap folds it into the run. */
+  siteScrap: number;
+  /** Seconds the control-win threshold has been satisfied continuously. */
+  controlHeldFor: number;
 }
 
 // ---------------------------------------------------------------------------

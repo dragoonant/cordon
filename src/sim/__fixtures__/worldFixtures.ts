@@ -335,6 +335,7 @@ export const SURFACE_DEPLOY_POS = { x: 2, y: 2 };
 export const SURFACE_EVAC_ID = 'obj_evac_station';
 export const SURFACE_CONVOY_ID = 'obj_convoy';
 export const SURFACE_RELAY_ID = 'obj_relay';
+export const SURFACE_SITE_ID = 'obj_site';
 export const SURFACE_ENEMY_SQUAD_ID = 'sq_enemy_surface';
 export const SURFACE_ENEMY_PILOT_ID = 'pilot_enemy_surface';
 export const SURFACE_ENEMY_MECH_ID = 'mech_enemy_surface';
@@ -392,6 +393,21 @@ function buildSurfaceMap(): MapDef {
         holdSeconds: 3,
         required: false,
         reward: { scrap: 5, nerve: 5, standing: 1, salvageRolls: 0 },
+      },
+      {
+        id: SURFACE_SITE_ID,
+        kind: 'capture_site',
+        name: 'Test Relay Post',
+        // Deliberately clear of the other objectives so site tests don't
+        // accidentally satisfy the required evac and end the map.
+        pos: { x: 5, y: 9 },
+        radius: 2,
+        required: false,
+        startOwner: 'neutral',
+        captureSeconds: 4,
+        incomePerMin: 60,
+        siteVision: 5,
+        reward: { scrap: 0, nerve: 2, standing: 0, salvageRolls: 0 },
       },
     ],
     enemySquads: [

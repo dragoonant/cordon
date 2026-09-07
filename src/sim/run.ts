@@ -957,6 +957,8 @@ export function finishMap(run: RunState, world: WorldState, map: MapDef, data: G
       run.standing = clamp(run.standing - 10, 0, 100);
     }
   }
+  // Territory income: scrap accrued from held capture_sites over the map.
+  scrapGained += Math.floor(world.siteScrap);
   run.scrap += scrapGained;
 
   if (world.outcome === 'victory') node.cleared = true;

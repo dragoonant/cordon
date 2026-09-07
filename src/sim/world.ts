@@ -23,15 +23,17 @@ import type {
   WorldState,
   WorldEvent,
   ObjectiveState,
-  ObjectiveDef,
   BattleSide,
   BattleContext,
   BattleResult,
   ActiveCallout,
   Aptitude,
   Aptitudes,
+  SiteOwner,
+  ObjectiveDef,
 } from './types';
 import { findPath, terrainAt, moveCost, isPassable } from './pathfind';
+import { RULES } from './rules';
 import { Rng, hashString } from './rng';
 
 export interface SideBundle {
@@ -297,6 +299,8 @@ export function createWorld(map: MapDef, seed: number, data: GameData, player: S
     events: [],
     rngState: rng.getState(),
     pendingSpawns,
+    siteScrap: 0,
+    controlHeldFor: 0,
   };
 
   for (const squad of Object.values(squads)) {
@@ -343,7 +347,8 @@ function substep(world: WorldState, map: MapDef, data: GameData, dt: number): vo
   stepMovementAndFuel(world, map, data, dt);
   tickEffects(world, dt);
   applyRadiationDamage(world, map, dt);
-  updateObjectives(world, map, dt);
+  updateObjectives(world, map, dt, data);
+  updateTerritory(world, map, dt);
   updateCarrier(world, map, dt);
   tickPeriodicNerve(world, dt);
   updateVisibility(world, map, data);
@@ -628,10 +633,13 @@ function convoyProgress(path: Vec2[], pos: Vec2, pathIndex: number): number {
   return Math.max(0, Math.min(1, done / total));
 }
 
-function updateObjectives(world: WorldState, map: MapDef, dt: number): void {
+function updateObjectives(world: WorldState, map: MapDef, dt: number, data: GameData): void {
   for (const def of map.objectives) {
     const state = world.objectives[def.id];
-    if (!state || state.status === 'complete' || state.status === 'failed') continue;
+    if (!state) continue;
+    // capture_sites are never finished — a player-held site reads 'complete'
+    // but must stay contestable, or it could never be taken back.
+    if (def.kind !== 'capture_site' && (state.status === 'complete' || state.status === 'failed')) continue;
 
     // Enemies loitering on a convoy/station chip away its HP unless it's
     // actively escorted (stay_with_them / nearby squad).
@@ -673,8 +681,151 @@ function updateObjectives(world: WorldState, map: MapDef, dt: number): void {
           completeObjective(world, map, def, state);
         }
         break;
+      case 'capture_site':
+        updateCaptureSite(world, map, dt, def, state, data);
+        break;
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// capture_site (territory)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pays out income from player-held sites and advances the control-win timer.
+ * Income accrues into world.siteScrap; finishMap folds it into the run, so
+ * holding ground pays even if you never touch another objective.
+ */
+function updateTerritory(world: WorldState, map: MapDef, dt: number): void {
+  const sites = map.objectives.filter((o) => o.kind === 'capture_site');
+  if (sites.length === 0) return;
+
+  let held = 0;
+  let perMin = 0;
+  for (const def of sites) {
+    if (world.objectives[def.id]?.owner !== 'player') continue;
+    held++;
+    perMin += def.incomePerMin ?? 0;
+  }
+  if (perMin > 0) world.siteScrap += (perMin / 60) * dt;
+
+  const win = map.controlWin;
+  if (!win) return;
+  if (held >= win.sites) {
+    world.controlHeldFor += dt;
+    if (world.controlHeldFor >= win.holdSeconds) endMap(world, 'victory');
+  } else {
+    // Losing a site resets the clock — you have to hold it, not visit it.
+    world.controlHeldFor = 0;
+  }
+}
+
+/**
+ * A contestable site. Unlike the hold-style objectives, a site is never
+ * "done": either side can take it, and taking it back is the point. Standing
+ * on it uncontested fills a meter toward your side; when it tops out the site
+ * flips. Both sides present freezes the meter (contested).
+ *
+ * Sites are the strategy layer — they pay scrap, grant vision, and can gate
+ * enemy reinforcements — so the map becomes about holding ground rather than
+ * touching each objective once.
+ */
+function updateCaptureSite(world: WorldState, map: MapDef, dt: number, def: ObjectiveDef, state: ObjectiveState, data: GameData): void {
+  if (state.owner === undefined) state.owner = def.startOwner ?? 'neutral';
+  if (state.capture === undefined) state.capture = 0;
+
+  const playerHere = playerSquadsList(world).some((s) => onMap(s) && livingMechCount(s, world) > 0 && dist(s.pos, state.pos) <= def.radius);
+  const enemyHere = enemySquadsList(world).some((s) => onMap(s) && livingMechCount(s, world) > 0 && dist(s.pos, state.pos) <= def.radius);
+  state.contested = playerHere && enemyHere;
+
+  const claimant: SiteOwner | null = state.contested ? null : playerHere ? 'player' : enemyHere ? 'enemy' : null;
+
+  if (claimant && claimant !== state.owner) {
+    // Switching claimant restarts the meter — you don't inherit their progress.
+    if (state.capturingFor !== claimant) {
+      state.capturingFor = claimant;
+      state.capture = 0;
+    }
+    const seconds = def.captureSeconds ?? RULES.SITE_CAPTURE_SECONDS;
+    state.capture = Math.min(1, state.capture + dt / seconds);
+    if (state.capture >= 1) {
+      state.owner = claimant;
+      state.capture = 0;
+      state.capturingFor = undefined;
+      // 'complete' means player-held, so the existing HUD/reward paths read
+      // sensibly; an enemy-held site goes back to 'active'.
+      state.status = claimant === 'player' ? 'complete' : 'active';
+      pushEvent(world, { t: 'site_captured', objectiveId: def.id, owner: claimant });
+      pushEvent(world, { t: 'objective', objectiveId: def.id, status: state.status });
+      if (claimant === 'player') regenNerveAllPlayers(world, def.reward.nerve);
+    }
+  } else if (!claimant) {
+    // Nobody (or both) on it: the meter bleeds back down.
+    state.capture = Math.max(0, state.capture - dt / (def.captureSeconds ?? RULES.SITE_CAPTURE_SECONDS));
+    if (state.capture === 0) state.capturingFor = undefined;
+  }
+
+  state.progress = state.owner === 'player' ? 1 : state.capture;
+  updateGate(world, map, dt, def, state, data);
+}
+
+/**
+ * Reinforcement gate: while the enemy holds a gate site, it keeps pushing the
+ * listed spawns back onto the map on a timer. Capturing the gate shuts the
+ * flow off — "cut the flow first" is the intended read.
+ */
+function updateGate(world: WorldState, map: MapDef, dt: number, def: ObjectiveDef, state: ObjectiveState, data: GameData): void {
+  if (!def.gateSquadIds || def.gateSquadIds.length === 0) return;
+  if (state.owner !== 'enemy') {
+    state.gateTimer = undefined;
+    return;
+  }
+  const interval = def.gateIntervalSeconds ?? RULES.GATE_INTERVAL_SECONDS;
+  state.gateTimer = (state.gateTimer ?? interval) - dt;
+  if (state.gateTimer > 0) return;
+  state.gateTimer = interval;
+
+  for (const squadId of def.gateSquadIds) {
+    const squad = world.squads[squadId];
+    if (!squad) continue;
+    if (squad.state !== 'destroyed' && onMap(squad)) continue; // still fighting
+    respawnGateSquad(world, squad, state, def.id, data);
+    break; // one wave at a time
+  }
+}
+
+/** Puts a destroyed gate squad back on the map at its gate, at full health. */
+function respawnGateSquad(world: WorldState, squad: Squad, state: ObjectiveState, objectiveId: Id, data: GameData): void {
+  for (const slot of squad.slots) {
+    if (!slot) continue;
+    const mech = world.mechs[slot.mechId];
+    const pilot = world.pilots[slot.pilotId];
+    if (mech) {
+      const frame = data.frames[mech.frameId];
+      mech.destroyed = false;
+      mech.hp = frame ? Math.max(1, frame.hp - mech.maxHpPenalty) : mech.hp;
+    }
+    if (pilot) pilot.alive = true;
+  }
+  squad.state = 'idle';
+  squad.pos = { ...state.pos };
+  squad.path = [];
+  squad.targetPos = null;
+  squad.engageCooldown = 3;
+  squad.effects = [];
+  pushEvent(world, { t: 'gate_reinforcement', objectiveId, squadId: squad.id });
+  pushEvent(world, { t: 'spawn', squadId: squad.id });
+}
+
+/** Sites the player currently holds. */
+export function playerHeldSites(world: WorldState, map: MapDef): ObjectiveDef[] {
+  return map.objectives.filter((o) => o.kind === 'capture_site' && world.objectives[o.id]?.owner === 'player');
+}
+
+/** All capture_sites on the map. */
+export function allSites(map: MapDef): ObjectiveDef[] {
+  return map.objectives.filter((o) => o.kind === 'capture_site');
 }
 
 function forceSpawn(world: WorldState, map: MapDef, squadId: Id): void {
@@ -737,6 +888,11 @@ function updateVisibility(world: WorldState, map: MapDef, data: GameData): void 
   const relayCaptured = map.objectives.some((o) => o.kind === 'relay' && world.objectives[o.id]?.status === 'complete');
   const players = playerSquadsList(world).filter(onMap);
   const visible: Id[] = [];
+  // Held sites watch their own ground — the reason to take a relay post is
+  // that it keeps seeing for you after you've moved on.
+  const watchPosts = map.objectives.filter(
+    (o) => o.kind === 'capture_site' && (o.siteVision ?? 0) > 0 && world.objectives[o.id]?.owner === 'player'
+  );
 
   for (const squad of enemySquadsList(world)) {
     if (!onMap(squad)) continue;
@@ -757,6 +913,14 @@ function updateVisibility(world: WorldState, map: MapDef, data: GameData): void 
       }
     }
     if (!seen && dist(squad.pos, map.deployZone.pos) <= DEPLOY_VISION) seen = true;
+    if (!seen) {
+      for (const site of watchPosts) {
+        if (dist(squad.pos, world.objectives[site.id].pos) <= (site.siteVision ?? 0)) {
+          seen = true;
+          break;
+        }
+      }
+    }
     if (seen) visible.push(squad.id);
   }
 
