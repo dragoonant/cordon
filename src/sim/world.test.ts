@@ -8,6 +8,8 @@ import {
   useOverworldCallout,
   applyBattleResult,
   withdraw,
+  fallBack,
+  FALL_BACK_STANDING_COST,
   playerSquads,
   enemySquads,
   squadAlive,
@@ -244,6 +246,43 @@ function buildMinimalBattleResult(opts: {
     killsByPilot: {},
   };
 }
+
+describe('fallBack', () => {
+  it('breaks off a pending contact: no battle, squad routed and pushed clear', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const playerSquad = world.squads[SQUAD_ALPHA_ID];
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    enemy.pos = { x: playerSquad.pos.x + 0.1, y: playerSquad.pos.y };
+    stepWorld(world, map, 0.1, data);
+    expect(world.phase).toBe('battle_pending');
+
+    const posBefore = { ...playerSquad.pos };
+    const res = fallBack(world, map, data);
+
+    expect(res.ok).toBe(true);
+    expect(res.standingCost).toBe(FALL_BACK_STANDING_COST);
+    expect(world.pendingBattle).toBeNull();
+    expect(world.phase).toBe('running');
+    expect(playerSquad.state).toBe('routed');
+    // Both sides held off, or 'hunt' re-contacts on the very next tick.
+    expect(playerSquad.engageCooldown).toBeGreaterThan(0);
+    expect(enemy.engageCooldown).toBeGreaterThan(0);
+    // Moved away from where contact happened.
+    expect(playerSquad.pos).not.toEqual(posBefore);
+    expect(world.events.some((e) => e.t === 'fell_back')).toBe(true);
+    // No battle was fought.
+    expect(world.lastBattle).toBeNull();
+  });
+
+  it('is a no-op with no pending contact', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const res = fallBack(world, map, data);
+    expect(res.ok).toBe(false);
+    expect(res.standingCost).toBe(0);
+  });
+});
 
 describe('applyBattleResult', () => {
   it('routes the loser toward home and gives the winner a shorter cooldown', () => {

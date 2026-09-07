@@ -1,11 +1,17 @@
 import React from 'react';
 import { Button, Modal, Stat } from '@ui/components';
 import { useStore } from '@ui/store';
+import { FALL_BACK_STANDING_COST } from '@sim/world';
 import { ForecastCallouts } from './ForecastCallouts';
 import { ForecastMechCard } from './ForecastMechCard';
 import { squadMembers } from './mapHelpers';
 
-/** Opens when store.forecast is set and no battle is in progress. No cancel — contact is contact. */
+/**
+ * Opens when store.forecast is set and no battle is in progress. Contact is
+ * normally contact — but below FALL_BACK_THRESHOLD the squad may break off
+ * for Standing, so a hopeless contact is a decision rather than a forced loss.
+ */
+const FALL_BACK_THRESHOLD = 0.25;
 export function ForecastModal() {
   const world = useStore((s) => s.world);
   const map = useStore((s) => s.map);
@@ -15,6 +21,7 @@ export function ForecastModal() {
   const pendingCallouts = useStore((s) => s.pendingCallouts);
   const toggleCallout = useStore((s) => s.toggleCallout);
   const commitBattle = useStore((s) => s.commitBattle);
+  const fallBackFromContact = useStore((s) => s.fallBackFromContact);
 
   const open = !!forecast && !battle;
   if (!open || !world || !map || !data || !world.pendingBattle) return null;
@@ -34,6 +41,9 @@ export function ForecastModal() {
   const headlineColor =
     pilotsAtRisk >= 2 || forecast.winProb < 0.4 ? 'var(--danger)' : pilotsAtRisk >= 1 || forecast.winProb < 0.65 ? 'var(--amber)' : 'var(--ok)';
   // "Why": the two modifiers least likely to be good news first — the ones worth reading before you commit.
+  // Only offered when the fight is genuinely bad — otherwise every contact
+  // becomes a retreat prompt and the map loses its teeth.
+  const canFallBack = forecast.winProb < FALL_BACK_THRESHOLD;
   const whyMods = [...forecast.modifiers].sort((a, b) => Number(a.good === true) - Number(b.good === true)).slice(0, 2);
 
   return (
@@ -106,11 +116,20 @@ export function ForecastModal() {
 
       <div className="row gap-s" style={{ marginTop: 16, justifyContent: 'space-between' }}>
         <span className="muted" style={{ fontSize: 12 }}>
-          No retreat once engaged. Use Callouts wisely.
+          {canFallBack
+            ? `Long odds. Falling back costs ${FALL_BACK_STANDING_COST} Standing and hands them the ground.`
+            : 'No retreat once engaged. Use Callouts wisely.'}
         </span>
-        <Button variant="primary" onClick={commitBattle} data-tutorial="commit-button">
-          COMMIT
-        </Button>
+        <div className="row gap-s">
+          {canFallBack && (
+            <Button onClick={fallBackFromContact} title={`Break off without fighting. -${FALL_BACK_STANDING_COST} Standing.`}>
+              FALL BACK
+            </Button>
+          )}
+          <Button variant="primary" onClick={commitBattle} data-tutorial="commit-button">
+            COMMIT
+          </Button>
+        </div>
       </div>
     </Modal>
   );

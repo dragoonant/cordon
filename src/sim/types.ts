@@ -549,6 +549,7 @@ export type WorldEvent =
   | { t: 'callout'; squadId: Id; pilotId: Id; calloutId: Id; line: string }
   | { t: 'last_transmission'; pilotId: Id; calloutId: Id; line: string }
   | { t: 'squad_destroyed'; squadId: Id }
+  | { t: 'fell_back'; squadId: Id; fromSquadId: Id; standingCost: number }
   | { t: 'squad_docked'; squadId: Id }
   | { t: 'spawn'; squadId: Id }
   | { t: 'carrier_hit'; damage: number; hpAfter: number }

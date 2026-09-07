@@ -1165,6 +1165,54 @@ function finalizeSquadAfterBattle(
   }
 }
 
+/** Standing surrendered for refusing a contact. */
+export const FALL_BACK_STANDING_COST = 6;
+
+/**
+ * Refuses a pending contact: the player squad breaks off instead of
+ * fighting. Mirrors the losing side of a battle — routed state, knocked
+ * back toward the deploy zone, engage cooldown — but with no shots fired
+ * and no salvage. Returns the Standing the run should surrender, which the
+ * caller applies (world.ts has no RunState reference).
+ *
+ * Exists because the rival's 'hunt' AI can corner a squad that has no
+ * winning line at all (the support squad forecasts ~0% against the ace);
+ * without this the encounter is a forced loss rather than a decision.
+ */
+export function fallBack(world: WorldState, map: MapDef, data: GameData): { ok: boolean; reason?: string; standingCost: number } {
+  const pb = world.pendingBattle;
+  if (!pb) return { ok: false, reason: 'no pending contact', standingCost: 0 };
+  const squad = world.squads[pb.squadAId];
+  const enemy = world.squads[pb.squadBId];
+  if (!squad) return { ok: false, reason: 'no squad', standingCost: 0 };
+
+  squad.state = 'routed';
+  squad.engageCooldown = 12; // longer than a rout: you chose the distance
+  const home = map.deployZone.pos;
+  const mobility = squadMobility(squad, world, data, map.kind);
+  const dx = home.x - squad.pos.x;
+  const dy = home.y - squad.pos.y;
+  const len = Math.hypot(dx, dy) || 1;
+  for (let dist = 4; dist > 0; dist -= 0.5) {
+    const cand = { x: squad.pos.x + (dx / len) * dist, y: squad.pos.y + (dy / len) * dist };
+    const tx = Math.floor(cand.x);
+    const ty = Math.floor(cand.y);
+    if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) continue;
+    if (!isPassable(map.tiles[ty][tx], mobility, map.kind)) continue;
+    squad.pos = cand;
+    break;
+  }
+  squad.path = findPath(map, squad.pos, home, mobility);
+  squad.targetPos = { ...home };
+  // Hold the pursuer off too, or 'hunt' re-contacts on the next tick.
+  if (enemy) enemy.engageCooldown = Math.max(enemy.engageCooldown, 10);
+
+  world.pendingBattle = null;
+  world.phase = 'running';
+  pushEvent(world, { t: 'fell_back', squadId: squad.id, fromSquadId: pb.squadBId, standingCost: FALL_BACK_STANDING_COST });
+  return { ok: true, standingCost: FALL_BACK_STANDING_COST };
+}
+
 /**
  * Folds a resolved battle back into the map: copies pilots/mechs, marks
  * destroyed/routed squads, applies last-transmission map effects and the

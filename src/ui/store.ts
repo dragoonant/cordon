@@ -54,6 +54,7 @@ import {
   stepWorld,
   useOverworldCallout,
   withdraw,
+  fallBack,
 } from '@sim/world';
 import { resolveBattle } from '@sim/battle';
 import { forecast as computeForecast } from '@sim/forecast';
@@ -141,6 +142,7 @@ interface Actions {
   // forecast / battle
   toggleCallout(c: ActiveCallout): void;
   commitBattle(): void;
+  fallBackFromContact(): void;
   battleFinished(): void;
   // after map
   finishCurrentMap(): Promise<void>;
@@ -407,6 +409,21 @@ export const useStore = create<Store>((set, get) => ({
     set({ battle: { result, sides: { sideA: sides.sideA, sideB: sides.sideB }, ctx }, forecast: null });
     playMusic('battle');
     // Callout voice lines play from the battle stage as their cut-ins land.
+  },
+
+  /**
+   * Refuse the pending contact: the squad breaks off and runs for the deploy
+   * zone, surrendering Standing. The escape hatch for a contact with no
+   * winning line (see sim/world.ts fallBack).
+   */
+  fallBackFromContact() {
+    const { world, map, data, run } = get();
+    if (!world || !map || !data || !run) return;
+    const res = fallBack(world, map, data);
+    if (!res.ok) return;
+    run.standing = Math.max(0, run.standing - res.standingCost);
+    set({ forecast: null, pendingCallouts: [], battle: null });
+    playSfx('ui_click');
   },
 
   battleFinished() {
