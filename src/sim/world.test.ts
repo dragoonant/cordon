@@ -290,6 +290,60 @@ describe('rival contact lines', () => {
   });
 });
 
+describe('rival blocks victory', () => {
+  /** Turns the ordinary surface spawn into the rival wing. */
+  function makeRival(world: ReturnType<typeof freshSurfaceWorld>['world']) {
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    delete world.squads[SURFACE_ENEMY_SQUAD_ID];
+    enemy.id = 'spawn_rival';
+    world.squads['spawn_rival'] = enemy;
+    return enemy;
+  }
+
+  it('does not end the map while the rival is alive, even with objectives done', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    makeRival(world);
+    for (const def of map.objectives) {
+      if (def.required) world.objectives[def.id].status = 'complete';
+    }
+    stepWorld(world, map, 0.1, data);
+    // Previously the rival was invisible to checkWinLose (it isn't in
+    // map.enemySquads), so the node's whole point could be skipped.
+    expect(world.phase).not.toBe('ended');
+    expect(world.outcome).toBeNull();
+  });
+
+  it('ends in victory once the rival is destroyed', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const rival = makeRival(world);
+    for (const def of map.objectives) {
+      if (def.required) world.objectives[def.id].status = 'complete';
+    }
+    rival.state = 'destroyed';
+    stepWorld(world, map, 0.1, data);
+    expect(world.outcome).toBe('victory');
+  });
+
+  it('falling back also settles it, so the map stays winnable', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const rival = makeRival(world);
+    const p = world.squads[SQUAD_ALPHA_ID];
+    rival.pos = { x: p.pos.x + 0.1, y: p.pos.y };
+    stepWorld(world, map, 0.1, data);
+    expect(world.phase).toBe('battle_pending');
+    expect(fallBack(world, map, data).ok).toBe(true);
+
+    for (const def of map.objectives) {
+      if (def.required) world.objectives[def.id].status = 'complete';
+    }
+    stepWorld(world, map, 0.1, data);
+    expect(world.outcome).toBe('victory');
+  });
+});
+
 describe('fallBack', () => {
   it('breaks off a pending contact: no battle, squad routed and pushed clear', () => {
     const { world, map, data } = freshSurfaceWorld();

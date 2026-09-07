@@ -842,6 +842,25 @@ function endMap(world: WorldState, outcome: 'victory' | 'defeat'): void {
   pushEvent(world, { t: 'map_end', outcome });
 }
 
+/**
+ * Whether the rival encounter has been dealt with, one way or the other.
+ *
+ * The rival squad is built in run.ts and injected into the world, so it is
+ * *not* in map.enemySquads and the boss check never saw it — you could clear
+ * a rival node's required objective and win while Duskfang sat untouched at
+ * his spawn, skipping the only thing the node exists for. Now he blocks
+ * victory the way a boss does.
+ *
+ * Falling back still settles it: you refused the duel and paid Standing for
+ * it, so the map remains winnable rather than becoming an unavoidable loss.
+ */
+function isRivalSettled(world: WorldState): boolean {
+  const rival = world.squads[RIVAL_SPAWN_ID];
+  if (!rival) return true; // not a rival map
+  if (rival.state === 'destroyed') return true;
+  return world.events.some((e) => e.t === 'fell_back' && e.fromSquadId === RIVAL_SPAWN_ID);
+}
+
 function checkWinLose(world: WorldState, map: MapDef): void {
   if (world.phase === 'ended') return;
 
@@ -863,14 +882,15 @@ function checkWinLose(world: WorldState, map: MapDef): void {
   const requiredComplete = requiredDefs.every((o) => world.objectives[o.id]?.status === 'complete');
   const bossSpawns = map.enemySquads.filter((e) => e.isBoss);
   const bossDead = bossSpawns.every((b) => !world.squads[b.id] || world.squads[b.id].state === 'destroyed');
+  const rivalSettled = isRivalSettled(world);
 
-  if (requiredComplete && bossDead) {
+  if (requiredComplete && bossDead && rivalSettled) {
     endMap(world, 'victory');
     return;
   }
 
   if (map.timeLimit > 0 && world.time >= map.timeLimit) {
-    endMap(world, requiredComplete && bossDead ? 'victory' : 'defeat');
+    endMap(world, requiredComplete && bossDead && rivalSettled ? 'victory' : 'defeat');
   }
 }
 
