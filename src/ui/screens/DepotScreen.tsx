@@ -21,6 +21,7 @@ export function DepotScreen() {
   const run = useStore((s) => s.run);
   const depot = useStore((s) => s.depot);
   const buy = useStore((s) => s.buy);
+  const hire = useStore((s) => s.hire);
   const leaveNode = useStore((s) => s.leaveNode);
   const openHangar = useStore((s) => s.openHangar);
   const bump = useStore((s) => s.bump);
@@ -122,6 +123,39 @@ export function DepotScreen() {
             );
           })}
           {depot.frames.length === 0 && <Empty />}
+          <div className="muted" style={{ fontSize: 10, marginTop: 6, lineHeight: 1.4 }}>
+            Bought frames go to the hangar inventory — open the Hangar and BUILD one to make it flyable.
+          </div>
+        </Column>
+        <Column title="Recruits" accent="relay">
+          {depot.recruits.map((o) => {
+            const def = data.pilots[o.id];
+            if (!def) return null;
+            const apt = def.baseAptitudes;
+            return (
+              <div key={o.id} className="offer-row col gap-s">
+                <div className="row gap-s" style={{ justifyContent: 'space-between' }}>
+                  <span>
+                    {def.callsign} <span className="muted">· {def.name}</span>
+                  </span>
+                  <span className="mono" style={{ color: 'var(--amber)' }}>{o.cost}</span>
+                </div>
+                <div className="muted mono" style={{ fontSize: 10 }}>
+                  {def.archetype} · GUN {apt.gunnery} MEL {apt.melee} EVA {apt.evasion} SYS {apt.systems} CMD {apt.command}
+                </div>
+                <div className="muted" style={{ fontSize: 10, lineHeight: 1.35 }}>{def.bio}</div>
+                <Button disabled={run.scrap < o.cost} onClick={() => hire(o.id, o.cost)}>
+                  Hire
+                </Button>
+              </div>
+            );
+          })}
+          {depot.recruits.length === 0 && (
+            <div className="muted" style={{ fontSize: 11, lineHeight: 1.4 }}>
+              Nobody looking for work. Pilots unlock permanently by reaching the boss or beating the rival,
+              and a hired pilot still needs a spare frame to fly.
+            </div>
+          )}
         </Column>
       </div>
 

@@ -1069,6 +1069,46 @@ export function salvageNode(run: RunState, data: GameData): SalvageDrop {
 }
 
 const DEPOT_BASE_COST = { weapon: 40, system: 55, frame: 120 };
+/** Hiring a pilot at a depot. Dearer than a frame — people are the scarce thing. */
+const RECRUIT_BASE_COST = 150;
+
+/**
+ * Pilots the player has permanently unlocked but who aren't on this run's
+ * roster — the hire list at a depot.
+ *
+ * "How do I get more pilots?" had no reliable answer: the only routes were a
+ * random distress event and permanent unlocks that silently seed future runs.
+ * A depot hire is the dependable one you can plan for.
+ */
+export function recruitableAt(run: RunState, data: GameData, unlocks: Unlocks): { id: Id; cost: number }[] {
+  const out: { id: Id; cost: number }[] = [];
+  const discount = run.standing >= 70 ? 0.8 : 1;
+  for (const pilotId of unlocks.pilots) {
+    if (run.pilots[pilotId]) continue; // already flying with us
+    const def = data.pilots[pilotId];
+    if (!def) continue;
+    if (def.faction !== 'relay') continue;
+    if (def.archetype === 'rival' || def.archetype === 'captain') continue;
+    out.push({ id: pilotId, cost: Math.round(RECRUIT_BASE_COST * discount) });
+  }
+  return out;
+}
+
+/** Hires a recruitable pilot onto the run roster. Mutates `run`. */
+export function recruitPilot(
+  run: RunState,
+  data: GameData,
+  pilotId: Id,
+  cost: number
+): { ok: boolean; reason?: string } {
+  if (run.pilots[pilotId]) return { ok: false, reason: 'Already on the roster' };
+  const def = data.pilots[pilotId];
+  if (!def) return { ok: false, reason: 'No such pilot' };
+  if (run.scrap < cost) return { ok: false, reason: 'Insufficient scrap' };
+  run.scrap -= cost;
+  run.pilots[pilotId] = createPilot(def);
+  return { ok: true };
+}
 
 /** Depot stock and prices, seeded by node id + run seed so repeat visits (or reloads) see the same offer. Pure. */
 export function depotStock(

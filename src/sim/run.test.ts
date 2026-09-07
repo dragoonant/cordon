@@ -15,6 +15,8 @@ import {
   resolveDistress,
   salvageNode,
   travelTo,
+  recruitableAt,
+  recruitPilot,
 } from './run';
 import { canPilotFly } from './pilots';
 import { FIXTURE_DATA, fixtureUnlocks, mapSurfaceA } from './__fixtures__/runFixtures';
@@ -577,6 +579,61 @@ describe('salvageNode', () => {
 // ---------------------------------------------------------------------------
 // depotStock / depotBuy
 // ---------------------------------------------------------------------------
+
+describe('recruitableAt / recruitPilot', () => {
+  it('offers unlocked pilots who are not already on the roster', () => {
+    const run = freshRun();
+    const unlocks = fixtureUnlocks();
+    const offered = recruitableAt(run, FIXTURE_DATA, unlocks);
+    for (const o of offered) {
+      expect(run.pilots[o.id]).toBeUndefined();
+      expect(unlocks.pilots).toContain(o.id);
+      expect(o.cost).toBeGreaterThan(0);
+    }
+    // Anyone already flying is not for hire.
+    const onRoster = Object.keys(run.pilots)[0];
+    expect(offered.some((o) => o.id === onRoster)).toBe(false);
+  });
+
+  it('never offers the rival or the captain', () => {
+    const run = freshRun();
+    const unlocks = { ...fixtureUnlocks(), pilots: Object.keys(FIXTURE_DATA.pilots) };
+    const offered = recruitableAt(run, FIXTURE_DATA, unlocks);
+    for (const o of offered) {
+      const def = FIXTURE_DATA.pilots[o.id];
+      expect(def.archetype).not.toBe('rival');
+      expect(def.archetype).not.toBe('captain');
+      expect(def.faction).toBe('relay');
+    }
+  });
+
+  it('hires for scrap and adds the pilot to the roster', () => {
+    const run = freshRun();
+    const unlocks = { ...fixtureUnlocks(), pilots: Object.keys(FIXTURE_DATA.pilots) };
+    const offer = recruitableAt(run, FIXTURE_DATA, unlocks)[0];
+    expect(offer).toBeDefined();
+    run.scrap = offer.cost + 10;
+
+    const r = recruitPilot(run, FIXTURE_DATA, offer.id, offer.cost);
+    expect(r.ok).toBe(true);
+    expect(run.scrap).toBe(10);
+    expect(run.pilots[offer.id]).toBeDefined();
+    expect(run.pilots[offer.id].alive).toBe(true);
+  });
+
+  it('refuses when scrap is short, and refuses a duplicate hire', () => {
+    const run = freshRun();
+    const unlocks = { ...fixtureUnlocks(), pilots: Object.keys(FIXTURE_DATA.pilots) };
+    const offer = recruitableAt(run, FIXTURE_DATA, unlocks)[0];
+    run.scrap = offer.cost - 1;
+    expect(recruitPilot(run, FIXTURE_DATA, offer.id, offer.cost).ok).toBe(false);
+    expect(run.pilots[offer.id]).toBeUndefined();
+
+    run.scrap = offer.cost * 2;
+    expect(recruitPilot(run, FIXTURE_DATA, offer.id, offer.cost).ok).toBe(true);
+    expect(recruitPilot(run, FIXTURE_DATA, offer.id, offer.cost).ok).toBe(false);
+  });
+});
 
 describe('depotStock / depotBuy', () => {
   it('offers 3 weapons, 2 systems, 1 frame at base cost, discounted at standing >= 70', () => {

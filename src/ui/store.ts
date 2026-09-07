@@ -32,6 +32,8 @@ import {
   currentNode,
   depotBuy,
   depotStock,
+  recruitPilot,
+  recruitableAt,
   finishMap,
   newRun,
   prepareMap,
@@ -79,6 +81,8 @@ export interface DepotOffer {
   weapons: { id: Id; cost: number }[];
   systems: { id: Id; cost: number }[];
   frames: { id: Id; cost: number }[];
+  /** Unlocked pilots not currently on the roster — the hire list. */
+  recruits: { id: Id; cost: number }[];
 }
 
 export interface BattleSession {
@@ -149,6 +153,7 @@ interface Actions {
   // events
   chooseDistress(choiceId: Id): Promise<void>;
   buy(kind: 'weapon' | 'system' | 'frame', id: Id, cost: number): void;
+  hire(pilotId: Id, cost: number): void;
   leaveNode(): Promise<void>;
   // run end
   concludeRun(): Promise<void>;
@@ -477,6 +482,19 @@ export const useStore = create<Store>((set, get) => ({
     get().bump();
   },
 
+  hire(pilotId, cost) {
+    const { run, data } = get();
+    if (!run || !data) return;
+    const r = recruitPilot(run, data, pilotId, cost);
+    playSfx(r.ok ? 'ui_confirm' : 'ui_back');
+    if (r.ok) {
+      const depot = get().depot;
+      if (depot) set({ depot: { ...depot, recruits: depot.recruits.filter((o) => o.id !== pilotId) } });
+      void saveNow(get);
+    }
+    get().bump();
+  },
+
   async leaveNode() {
     const { run } = get();
     if (!run) return;
@@ -509,7 +527,7 @@ if (typeof window !== 'undefined') (window as unknown as { __cordon: unknown }).
 // ---------------------------------------------------------------------------
 
 function routeNode(node: RunNode, set: (p: Partial<State>) => void, get: () => Store) {
-  const { run, data } = get();
+  const { run, data, save } = get();
   if (!run || !data) return;
   switch (node.kind) {
     case 'start':
@@ -520,7 +538,8 @@ function routeNode(node: RunNode, set: (p: Partial<State>) => void, get: () => S
       break;
     case 'depot': {
       const stock = depotStock(run, data);
-      set({ screen: 'depot', depot: stock });
+      const recruits = save ? recruitableAt(run, data, save.unlocks) : [];
+      set({ screen: 'depot', depot: { ...stock, recruits } });
       break;
     }
     case 'salvage': {

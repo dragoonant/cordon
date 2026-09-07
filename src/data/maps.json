@@ -250,7 +250,7 @@
       {
         "id": "obj_halcyon_derelict",
         "kind": "derelict",
-        "name": "Drifting Hulk",
+        "name": "Derelict Hauler — Survivor Aboard",
         "pos": {
           "x": 20,
           "y": 3
@@ -264,7 +264,8 @@
           "scrap": 30,
           "nerve": 0,
           "standing": 0,
-          "salvageRolls": 3
+          "salvageRolls": 3,
+          "recruitPilotId": "pilot_wildcard"
         }
       }
     ],
@@ -1128,7 +1129,7 @@
       {
         "id": "obj_saltflats_derelict",
         "kind": "derelict",
-        "name": "Downed Frame Wreckage",
+        "name": "Buried Salvage Rig — Crew Alive",
         "pos": {
           "x": 19,
           "y": 3
@@ -1139,7 +1140,8 @@
           "scrap": 30,
           "nerve": 0,
           "standing": 0,
-          "salvageRolls": 3
+          "salvageRolls": 3,
+          "recruitPilotId": "pilot_salvager"
         }
       }
     ],

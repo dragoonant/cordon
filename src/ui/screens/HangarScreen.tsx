@@ -11,6 +11,7 @@ import { SquadronsColumn } from '@ui/hangar/SquadronsColumn';
 import { UnitActionsModal } from '@ui/hangar/UnitActionsModal';
 import { UnitAssignModal } from '@ui/hangar/UnitAssignModal';
 import { useStore } from '@ui/store';
+import { HangarHints } from '@ui/hangar/HangarHints';
 
 type CellRef = { squadId: Id; slot: SlotIndex };
 
@@ -138,6 +139,7 @@ export function HangarScreen() {
           DONE
         </Button>
       </div>
+      <HangarHints run={run} data={data} />
       <div className="hangar-columns">
         <RosterPanel run={run} data={data} />
         <div className="col gap-m" style={{ minHeight: 0, height: '100%' }}>
