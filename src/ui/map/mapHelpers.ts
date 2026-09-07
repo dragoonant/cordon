@@ -186,6 +186,10 @@ export function worldEventText(e: WorldEvent, world: WorldState, data: GameData)
       return `${callsign(e.pilotId)} (last transmission): "${e.line}"`;
     case 'squad_destroyed':
       return `${squadName(e.squadId)} destroyed.`;
+    case 'fell_back':
+      return `${squadName(e.squadId)} broke off from ${squadName(e.fromSquadId)}. -${e.standingCost} Standing.`;
+    case 'rival_contact':
+      return `${callsign(e.pilotId)}: "${e.line}"`;
     case 'squad_docked':
       return `${squadName(e.squadId)} docked.`;
     case 'spawn':

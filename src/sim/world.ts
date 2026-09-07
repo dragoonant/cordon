@@ -347,7 +347,7 @@ function substep(world: WorldState, map: MapDef, data: GameData, dt: number): vo
   updateCarrier(world, map, dt);
   tickPeriodicNerve(world, dt);
   updateVisibility(world, map, data);
-  detectContact(world, map);
+  detectContact(world, map, data);
   checkWinLose(world, map);
 }
 
@@ -765,7 +765,7 @@ function updateVisibility(world: WorldState, map: MapDef, data: GameData): void 
 
 // --- contact -------------------------------------------------------------
 
-function detectContact(world: WorldState, map: MapDef): void {
+function detectContact(world: WorldState, map: MapDef, data: GameData): void {
   if (world.phase !== 'running') return;
   const players = playerSquadsList(world).filter((s) => onMap(s) && s.engageCooldown <= 0 && s.state !== 'engaged');
   const enemies = enemySquadsList(world).filter((s) => onMap(s) && s.engageCooldown <= 0 && s.state !== 'engaged');
@@ -786,10 +786,52 @@ function detectContact(world: WorldState, map: MapDef): void {
         e.path = [];
         e.state = 'engaged';
         pushEvent(world, { t: 'contact', squadAId: p.id, squadBId: e.id });
+        emitRivalContact(world, p, e, data);
         return; // only one battle at a time
       }
     }
   }
+}
+
+/**
+ * The rival encounter's one scripted beat: when a squad first meets the rival
+ * wing, a pilot who has something to say to them says it, and the rival
+ * answers. Every pilot already ships `lines.rivalContact` in pilots.json —
+ * it had no consumer until now.
+ *
+ * Fires at most once per map (RIVAL_SPAWN_ID is a single squad), and only for
+ * pilots with authored lines, so grunt-only squads stay silent.
+ */
+const RIVAL_SPAWN_ID = 'spawn_rival';
+
+function emitRivalContact(world: WorldState, player: Squad, enemy: Squad, data: GameData): void {
+  if (enemy.id !== RIVAL_SPAWN_ID) return;
+  if (world.events.some((e) => e.t === 'rival_contact')) return; // once per map
+
+  const rng = new Rng(world.rngState);
+  const speak = (pilotId: Id | undefined): void => {
+    if (!pilotId) return;
+    const def = data.pilots[pilotDefIdOfLocal(pilotId)];
+    const pool = def?.lines.rivalContact;
+    if (!pool || pool.length === 0) return;
+    pushEvent(world, { t: 'rival_contact', pilotId, line: rng.pick(pool) });
+  };
+
+  // One of ours — prefer the squad leader, else the first pilot with lines.
+  const ourPilots = player.slots.filter((s) => s !== null).map((s) => s!.pilotId);
+  const lead = ourPilots.find((id) => id === player.leaderPilotId) ?? ourPilots[0];
+  speak(lead);
+  // ...and Duskfang answers.
+  const theirs = enemy.slots.filter((s) => s !== null).map((s) => s!.pilotId);
+  speak(theirs.find((id) => data.pilots[pilotDefIdOfLocal(id)]?.archetype === 'rival'));
+
+  world.rngState = rng.getState();
+}
+
+/** Enemy pilot instance ids are `${defId}#${spawnId}#${slot}`; player ids pass through. */
+function pilotDefIdOfLocal(pilotId: Id): Id {
+  const i = pilotId.indexOf('#');
+  return i === -1 ? pilotId : pilotId.slice(0, i);
 }
 
 // --- win / lose ----------------------------------------------------------

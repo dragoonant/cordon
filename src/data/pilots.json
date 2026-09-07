@@ -287,6 +287,7 @@
       "allyDown": ["Reform and press on.", "Careless. Watch your spacing.", "Acceptable losses. Continue."],
       "victory": ["As it should be.", "The cordon holds. Withdraw."],
       "retreat": ["Not worth finishing today. Falling back.", "I'll see you next time, Relay."],
+      "rivalContact": ["Lantern. You brought the whole family this time.", "You have been busy. It will not be enough.", "I was starting to think you were avoiding me."],
       "finisher": "I don't lose twice — Last Word!",
       "finisherName": "Last Word"
     },

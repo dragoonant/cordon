@@ -48,6 +48,7 @@ function baseLines(): PilotLines {
     allyDown: ['We lost someone!'],
     victory: ['That is the fight.'],
     retreat: ['Falling back!'],
+    rivalContact: ['So it is you.'],
     finisher: 'Finish it!',
     finisherName: 'Overdrive',
   };

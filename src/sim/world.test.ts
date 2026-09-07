@@ -247,6 +247,49 @@ function buildMinimalBattleResult(opts: {
   };
 }
 
+describe('rival contact lines', () => {
+  it('stays silent for an ordinary contact', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const p = world.squads[SQUAD_ALPHA_ID];
+    world.squads[SURFACE_ENEMY_SQUAD_ID].pos = { x: p.pos.x + 0.1, y: p.pos.y };
+    stepWorld(world, map, 0.1, data);
+    expect(world.events.some((e) => e.t === 'rival_contact')).toBe(false);
+  });
+
+  it('fires once when the rival wing is met, with both sides speaking', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    const p = world.squads[SQUAD_ALPHA_ID];
+    // Rename the ordinary spawn to the rival id so detectContact treats it as
+    // the rival wing (buildRivalSquad lives in run.ts and isn't under test here).
+    const enemy = world.squads[SURFACE_ENEMY_SQUAD_ID];
+    delete world.squads[SURFACE_ENEMY_SQUAD_ID];
+    enemy.id = 'spawn_rival';
+    world.squads['spawn_rival'] = enemy;
+    enemy.pos = { x: p.pos.x + 0.1, y: p.pos.y };
+
+    stepWorld(world, map, 0.1, data);
+    const said = world.events.filter((e) => e.t === 'rival_contact');
+    expect(said.length).toBeGreaterThan(0);
+    for (const e of said) {
+      expect(typeof (e as { line: string }).line).toBe('string');
+      expect((e as { line: string }).line.length).toBeGreaterThan(0);
+    }
+
+    // Never repeats on the same map.
+    const count = said.length;
+    world.pendingBattle = null;
+    world.phase = 'running';
+    p.state = 'idle';
+    p.engageCooldown = 0;
+    enemy.state = 'idle';
+    enemy.engageCooldown = 0;
+    stepWorld(world, map, 0.1, data);
+    expect(world.events.filter((e) => e.t === 'rival_contact').length).toBe(count);
+  });
+});
+
 describe('fallBack', () => {
   it('breaks off a pending contact: no battle, squad routed and pushed clear', () => {
     const { world, map, data } = freshSurfaceWorld();

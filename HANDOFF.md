@@ -48,8 +48,9 @@ Fable verified these with screenshots, but a fresh eye is worth it:
 ### 3a. Rival (item 4) — beyond the bug fix
 - ~~Forecast FALL BACK below ~20% win~~ — **DONE** (`ef18c72`), threshold 25%, costs 6 Standing.
 - ~~Scale the rival to the player~~ — **DONE** (`3eb2398`), but note the lever turned out to be *effective HP*, not aptitude; aptitude alone barely moves the resolver.
-- Still open: give the rival a signature Callout and a taunt line on contact (data exists in `pilots.json` `rivalContact`).
-- Still open (balance): the support squad (rookie/engineer/scout) deals only ~64–80 damage and forecasts 0% against the ace. FALL BACK is its escape hatch rather than a fix; if that squad is meant to be able to fight at all, it needs real weapons, not scaling.
+- ~~Taunt line on contact~~ — **DONE**. `lines.rivalContact` existed for 8 pilots and had **no consumer at all**; `world.ts` `emitRivalContact()` now fires a `rival_contact` event once per map when a squad first meets the rival wing: one of yours speaks, Duskfang answers (3 new lines added for him). Text-only — the 117 voice clips are pre-generated and these lines have no audio. Verified in browser: Ferrous "You haven't changed. I have." / Duskfang "You have been busy. It will not be enough."
+- Still open: the rival's *signature Callout* (he only has `co_redline`/`co_come_get_some`).
+- **Not** a balance bug (checked 2026-09-06 with the new `tools/balance/squad_probe.ts`): the support squad's 0% against the ace looked broken, but it beats `patrol` and `hunt` spawns (89–100% at threat 2, 59–71% at threat 3) and only loses to `guard` spawns — which are two 190 HP line frames, the heaviest ordinary squad. So Lantern Two screens light contacts and must avoid hard points, which reads as intended. No buff applied; FALL BACK is the right answer for when it gets cornered.
 
 ### 3b. Territory maps (item 6) — the big one
 Goal: bring back OB64's "hold and take ground" instead of "rush the points."
