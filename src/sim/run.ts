@@ -509,10 +509,13 @@ function pickMapId(node: RunNode, data: GameData, rng: Rng): Id | undefined {
     const preferred = candidates.filter((m) => m.id.includes('rescue'));
     if (preferred.length) candidates = preferred;
   } else if (node.kind === 'territory') {
-    // Territory nodes need a map with capture_sites; fall back to any map of
-    // the right kind rather than erroring if none has been authored yet.
-    const preferred = all.filter((m) => m.objectives.some((o) => o.kind === 'capture_site'));
-    if (preferred.length) candidates = preferred;
+    // Territory nodes need a map with capture_sites. Prefer one of the node's
+    // own mapKind, but take a territory map of the other kind over a
+    // non-territory map — the node kind matters more than the backdrop.
+    const sameKind = candidates.filter((m) => m.objectives.some((o) => o.kind === 'capture_site'));
+    const anyKind = all.filter((m) => m.objectives.some((o) => o.kind === 'capture_site'));
+    if (sameKind.length) candidates = sameKind;
+    else if (anyKind.length) candidates = anyKind;
   }
   // Territory maps are long and deliberate — keep them off ordinary nodes.
   if (node.kind !== 'territory') {

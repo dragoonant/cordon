@@ -23,9 +23,22 @@ export function objectiveWinText(o: ObjectiveDef, map: MapDef): string {
     }
     case 'reach_exit':
       return `Get a surviving squad to ${o.name}.`;
+    case 'capture_site': {
+      const bits = [`Stand on ${o.name} uncontested to take it — and hold it, they will take it back`];
+      if (o.incomePerMin) bits.push(`pays ${o.incomePerMin} scrap/min while held`);
+      if (o.gateSquadIds?.length) bits.push('shuts off their reinforcements when captured');
+      return `${bits.join('; ')}.`;
+    }
     default:
       return o.name;
   }
+}
+
+/** The control-victory line for territory maps, or null if the map has none. */
+export function controlWinText(map: MapDef): string | null {
+  if (!map.controlWin) return null;
+  const total = map.objectives.filter((o) => o.kind === 'capture_site').length;
+  return `Or take the ground: hold ${map.controlWin.sites} of ${total} sites at once for ${map.controlWin.holdSeconds}s. Losing one resets the clock.`;
 }
 
 /** One line enumerating how this map can be lost, derived from its rules. */

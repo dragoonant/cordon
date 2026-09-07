@@ -2031,5 +2031,493 @@
         ]
       }
     ]
+  },
+  {
+    "id": "map_space_kessler_anchorage",
+    "name": "Kessler Anchorage",
+    "kind": "space",
+    "rows": [
+      "########################################",
+      "........................................",
+      "........................................",
+      ".................dd.....................",
+      ".................dd.....................",
+      ".......ddd.......dd.....................",
+      "......dddd.......dd.........r...r.......",
+      ".....ddddd...d...dd........rr...rr......",
+      "......ddddddd....dd.........r...r.......",
+      ".......ddddd.....dd.....................",
+      ".................dd.....................",
+      "........................................",
+      "....................s...s...............",
+      "...................ss...ss..............",
+      "....................s...s...............",
+      "..............................ddd.......",
+      ".................dd.........ddddddd.....",
+      "............ddddddd........ddddddddd....",
+      "...........dd...ddd.......ddddd...ddd...",
+      "..........ddd...ddd........dddd...dd....",
+      "...........dd...ddd.........ddd...d.....",
+      "............ddddddd...........ddd.......",
+      ".................dd.....................",
+      ".................dd.....................",
+      "........................................",
+      "########################################"
+    ],
+    "weather": "none",
+    "deployZone": {
+      "pos": {
+        "x": 3,
+        "y": 13
+      },
+      "radius": 3
+    },
+    "carrierOnMap": true,
+    "timeLimit": 900,
+    "controlWin": {
+      "sites": 3,
+      "holdSeconds": 90
+    },
+    "description": "A shipping anchorage strung between debris fields. The Compact runs the mooring spars and the fuel tender; take three and the lane is ours.",
+    "briefing": "Kessler Anchorage. Five moorings, and the Lantern is on the map with us — mind her. Hold three for ninety seconds, or gut their picket command.",
+    "objectives": [
+      {
+        "id": "site_kes_north",
+        "kind": "capture_site",
+        "name": "North Mooring Spar",
+        "pos": {
+          "x": 11,
+          "y": 6
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "neutral",
+        "captureSeconds": 8,
+        "incomePerMin": 8,
+        "siteVision": 8,
+        "reward": {
+          "scrap": 15,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_kes_south",
+        "kind": "capture_site",
+        "name": "South Mooring Spar",
+        "pos": {
+          "x": 14,
+          "y": 19
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 8,
+        "incomePerMin": 10,
+        "gateSquadIds": [
+          "sq_kes_wave_south"
+        ],
+        "gateIntervalSeconds": 50,
+        "reward": {
+          "scrap": 25,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_kes_tender",
+        "kind": "capture_site",
+        "name": "Fuel Tender",
+        "pos": {
+          "x": 22,
+          "y": 13
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 12,
+        "incomePerMin": 14,
+        "siteVision": 5,
+        "reward": {
+          "scrap": 35,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_kes_relay",
+        "kind": "capture_site",
+        "name": "Anchorage Relay",
+        "pos": {
+          "x": 30,
+          "y": 7
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 8,
+        "incomePerMin": 10,
+        "gateSquadIds": [
+          "sq_kes_wave_north"
+        ],
+        "gateIntervalSeconds": 50,
+        "reward": {
+          "scrap": 25,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "site_kes_yard",
+        "kind": "capture_site",
+        "name": "Breaker Yard",
+        "pos": {
+          "x": 32,
+          "y": 19
+        },
+        "radius": 2,
+        "required": false,
+        "startOwner": "enemy",
+        "captureSeconds": 8,
+        "incomePerMin": 8,
+        "siteVision": 6,
+        "reward": {
+          "scrap": 15,
+          "nerve": 3,
+          "standing": 1,
+          "salvageRolls": 0
+        }
+      },
+      {
+        "id": "obj_kes_command",
+        "kind": "destroy_target",
+        "name": "Compact Picket Command",
+        "pos": {
+          "x": 36,
+          "y": 13
+        },
+        "radius": 2,
+        "required": true,
+        "targetSquadId": "sq_kes_command",
+        "reward": {
+          "scrap": 60,
+          "nerve": 8,
+          "standing": 6,
+          "salvageRolls": 2
+        }
+      }
+    ],
+    "enemySquads": [
+      {
+        "id": "sq_kes_command",
+        "name": "Picket Command",
+        "pos": {
+          "x": 36,
+          "y": 13
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 36,
+            "y": 13
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_ace",
+            "weaponA": "wpn_cmp_pulse_cannon",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 1
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_relay_guard",
+        "name": "Relay Watch",
+        "pos": {
+          "x": 30,
+          "y": 7
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 30,
+            "y": 7
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_tender_guard",
+        "name": "Tender Watch",
+        "pos": {
+          "x": 22,
+          "y": 13
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 22,
+            "y": 13
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_south_guard",
+        "name": "South Spar Watch",
+        "pos": {
+          "x": 14,
+          "y": 19
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 14,
+            "y": 19
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_yard_guard",
+        "name": "Breaker Yard Wing",
+        "pos": {
+          "x": 32,
+          "y": 19
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "guard",
+          "aggroRadius": 5,
+          "homePos": {
+            "x": 32,
+            "y": 19
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_patrol",
+        "name": "Lane Patrol",
+        "pos": {
+          "x": 22,
+          "y": 5
+        },
+        "spawnAt": 0,
+        "ai": {
+          "behavior": "patrol",
+          "aggroRadius": 6,
+          "homePos": {
+            "x": 22,
+            "y": 5
+          },
+          "patrolPoints": [
+            {
+              "x": 22,
+              "y": 5
+            },
+            {
+              "x": 22,
+              "y": 21
+            },
+            {
+              "x": 30,
+              "y": 13
+            },
+            {
+              "x": 22,
+              "y": 5
+            }
+          ]
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_wave_north",
+        "name": "Northern Relief",
+        "pos": {
+          "x": 30,
+          "y": 7
+        },
+        "spawnAt": 60,
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 8,
+          "homePos": {
+            "x": 30,
+            "y": 7
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_glaive",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_b",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      },
+      {
+        "id": "sq_kes_wave_south",
+        "name": "Southern Relief",
+        "pos": {
+          "x": 14,
+          "y": 19
+        },
+        "spawnAt": 90,
+        "ai": {
+          "behavior": "intercept_objective",
+          "aggroRadius": 8,
+          "homePos": {
+            "x": 14,
+            "y": 19
+          }
+        },
+        "composition": [
+          {
+            "frameId": "frame_compact_line",
+            "weaponA": "wpn_cmp_needle_rifle",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_a",
+            "slot": 0
+          },
+          {
+            "frameId": "frame_compact_skirmisher",
+            "weaponA": "wpn_cmp_lancer_pod",
+            "weaponB": null,
+            "system": null,
+            "pilotDefId": "pilot_cmp_grunt_c",
+            "slot": 3
+          }
+        ]
+      }
+    ]
   }
 ]

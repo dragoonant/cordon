@@ -1,6 +1,6 @@
 import React from 'react';
 import type { GameData, MapDef, Vec2, WorldState } from '@sim/types';
-import { enemySquads, squadHpSummary } from '@sim/world';
+import { enemySquads, playerSquads, squadHpSummary } from '@sim/world';
 import { Bar, Panel } from '@ui/components';
 import { OBJECTIVE_ICON, statusColor } from './mapHelpers';
 import { ControlBanner, SiteRow } from './SiteRow';
@@ -10,6 +10,18 @@ interface Props {
   data: GameData;
   map: MapDef;
   onCenter: (pos: Vec2) => void;
+}
+
+/**
+ * A convoy only advances while a squad is within 2 tiles of it (see
+ * isConvoyEscorted in world.ts). The briefing says so, but nothing said it
+ * mid-map — a convoy that has quietly stopped looks identical to one that is
+ * moving, which is an easy way to lose a rescue without ever knowing why.
+ */
+function convoyEscorted(world: WorldState, pos: Vec2): boolean {
+  return playerSquads(world).some(
+    (s) => s.state !== 'docked' && s.state !== 'destroyed' && Math.hypot(s.pos.x - pos.x, s.pos.y - pos.y) <= 2
+  );
 }
 
 /** Right HUD panel: objectives + visible-enemy contacts. */
@@ -51,6 +63,11 @@ export function ObjectivesPanel({ world, data, map, onCenter }: Props) {
                 {typeof state.hp === 'number' && objDef.hp ? (
                   <Bar value={state.hp} max={objDef.hp} height={4} color="var(--ok)" />
                 ) : null}
+                {objDef.kind === 'convoy' && state.status === 'active' && !convoyEscorted(world, state.pos) && (
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--amber)' }}>
+                    NOT ESCORTED — bring a squad within 2 tiles
+                  </div>
+                )}
               </div>
             );
           })}

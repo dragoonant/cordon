@@ -52,7 +52,7 @@ describe('loadGameData', () => {
     expect(Object.keys(data.pilots)).toHaveLength(13);
     expect(Object.keys(data.callouts)).toHaveLength(27);
     expect(Object.keys(data.certs)).toHaveLength(8);
-    expect(Object.keys(data.maps)).toHaveLength(8);
+    expect(Object.keys(data.maps)).toHaveLength(9);
     expect(Object.keys(data.events)).toHaveLength(6);
   });
 

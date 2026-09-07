@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '@ui/store';
 import { Button, ItemTooltip, Panel, Portrait, Ticker, useData } from '@ui/components';
 import type { Mobility, ObjectiveKind } from '@sim/types';
-import { failStateText, objectiveWinText } from './howToWin';
+import { controlWinText, failStateText, objectiveWinText } from './howToWin';
 
 const OBJ_ICON: Record<ObjectiveKind, string> = {
   evac_station: '✚',
@@ -110,6 +110,12 @@ export function BriefingScreen() {
               {map.objectives.every((o) => !o.required) && (
                 <div className="muted mono" style={{ fontSize: 11 }}>
                   No required objectives — everything here is optional.
+                </div>
+              )}
+              {controlWinText(map) && (
+                <div className="row gap-s" style={{ fontSize: 12, alignItems: 'baseline', marginTop: 2 }}>
+                  <span className="mono" style={{ color: 'var(--ok)' }}>⚑</span>
+                  <span style={{ color: 'var(--ok)' }}>{controlWinText(map)}</span>
                 </div>
               )}
               <div className="muted mono" style={{ fontSize: 10, marginTop: 4 }}>
