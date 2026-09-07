@@ -616,13 +616,16 @@ function buildRivalSquad(
   const rivalDef = Object.values(data.pilots).find((p) => p.archetype === 'rival');
   if (!rivalDef) return null;
   const gruntDefs = Object.values(data.pilots).filter((p) => p.archetype === 'compact_grunt').slice(0, 2);
-  const aceFrame =
-    Object.values(data.frames).find((f) => f.silhouette === 'compact_ace' && f.faction === 'compact') ??
-    Object.values(data.frames).find((f) => f.faction === 'compact');
+  const compactFrames = Object.values(data.frames).filter((f) => f.faction === 'compact');
+  const aceFrame = compactFrames.find((f) => f.silhouette === 'compact_ace') ?? compactFrames[0];
+  // Wingmen fly line frames — only the rival gets the ace machine. (Putting
+  // all three in the ace frame made the encounter three bosses at once.)
+  const wingFrame = compactFrames.find((f) => f.silhouette === 'compact_line') ?? aceFrame;
   if (!aceFrame) return null;
 
   const spawnId = 'spawn_rival';
-  const bonus = Math.max(0, threat - 1) * 10;
+  // The rival is a duel, not a wall: a modest edge over a mid-run squad.
+  const bonus = Math.max(0, threat - 1) * 5;
   const slots: (SlotAssignment | null)[] = [null, null, null, null, null, null];
   const members: { def: PilotDef; slot: SlotIndex }[] = [{ def: rivalDef, slot: 0 }];
   if (gruntDefs[0]) members.push({ def: gruntDefs[0], slot: 1 });
@@ -642,15 +645,18 @@ function buildRivalSquad(
     }
     pilotsOut[instanceId] = pilot;
 
-    const mechId = `mech_${aceFrame.id}_${spawnId}_${member.slot}`;
+    const isRival = member.def.id === rivalDef.id;
+    const frame = isRival ? aceFrame : wingFrame;
+    const compactRanged = Object.values(data.weapons).find((w) => w.faction === 'compact' && w.kind === 'ranged')?.id ?? null;
+    const mechId = `mech_${frame.id}_${spawnId}_${member.slot}`;
     mechsOut[mechId] = {
       id: mechId,
-      frameId: aceFrame.id,
-      weaponA: compactMelee,
-      weaponB: null,
+      frameId: frame.id,
+      weaponA: isRival ? compactMelee : member.slot >= 3 ? compactRanged : compactMelee,
+      weaponB: isRival ? compactRanged : null,
       system: null,
       system2: null,
-      hp: aceFrame.hp,
+      hp: frame.hp,
       maxHpPenalty: 0,
       destroyed: false,
     };
