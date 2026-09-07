@@ -3,6 +3,7 @@ import type { GameData, MapDef, Vec2, WorldState } from '@sim/types';
 import { enemySquads, squadHpSummary } from '@sim/world';
 import { Bar, Panel } from '@ui/components';
 import { OBJECTIVE_ICON, statusColor } from './mapHelpers';
+import { ControlBanner, SiteRow } from './SiteRow';
 
 interface Props {
   world: WorldState;
@@ -17,11 +18,16 @@ export function ObjectivesPanel({ world, data, map, onCenter }: Props) {
 
   return (
     <div style={wrapStyle} data-tutorial="objectives-panel">
+      {map.controlWin && <ControlBanner world={world} map={map} />}
       <Panel title="OBJECTIVES" accent="compact" padded style={{ pointerEvents: 'auto' }}>
         <div className="col gap-s">
           {map.objectives.map((objDef) => {
             const state = world.objectives[objDef.id];
             if (!state) return null;
+            // Sites own their row: who holds it, the capture meter, contested.
+            if (objDef.kind === 'capture_site') {
+              return <SiteRow key={objDef.id} def={objDef} state={state} onCenter={onCenter} />;
+            }
             return (
               <div key={objDef.id} className="objective-row">
                 <div className="row gap-s" style={{ justifyContent: 'space-between' }}>

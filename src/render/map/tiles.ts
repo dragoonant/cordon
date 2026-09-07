@@ -432,6 +432,13 @@ function drawGrid(map: MapDef, offsetX: number, offsetY: number): Graphics {
 // Bake
 // ---------------------------------------------------------------------------
 
+/**
+ * Largest baked-tile texture edge we will ask the GPU for, in device pixels.
+ * WebGL implementations commonly cap at 4096; staying under it keeps a
+ * margin for drivers that report less.
+ */
+const MAX_BAKE_DIMENSION = 4000;
+
 export async function bakeTiles(app: Application, map: MapDef): Promise<Sprite> {
   const bounds = mapIsoBounds(map);
   const offsetX = -bounds.minX;
@@ -447,7 +454,16 @@ export async function bakeTiles(app: Application, map: MapDef): Promise<Sprite> 
   const container = new Container();
   container.addChild(plateResult.container, tintResult.container, drawGrid(map, offsetX, offsetY));
 
-  const texture = app.renderer.generateTexture(container);
+  // The baked plate is one texture covering the whole iso diamond, and
+  // generateTexture multiplies by the renderer resolution — so on a HiDPI
+  // display a large map silently blows past the GPU's max texture size and
+  // bakes to nothing. (A 40x26 map is 3168x1584 CSS px; at resolution 2 that
+  // is 6336x3168, over the common 4096 limit, and the map rendered black.)
+  // Clamp the bake resolution to fit the budget; big maps lose a little
+  // crispness rather than disappearing.
+  const maxDim = Math.max(boundsW, boundsH);
+  const resolution = Math.max(0.5, Math.min(app.renderer.resolution, MAX_BAKE_DIMENSION / Math.max(1, maxDim)));
+  const texture = app.renderer.generateTexture({ target: container, resolution });
   // Clear masks via the runtime setter before destroying anything, same
   // "avoid stale GPU bind-group" reasoning as the old bake.
   plateResult.maskedObject.mask = null;

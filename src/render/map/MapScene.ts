@@ -207,7 +207,11 @@ export class MapScene {
     // Blocked/structure tiles render as raised SRW-style cube obstacles, not baked terrain — live
     // entities (see cubes.ts) so squads depth-sort against them via entitiesLayer's zIndex sort.
     this.blockedCubes = buildBlockedCubes(map);
-    this.entitiesLayer.addChild(...this.blockedCubes);
+    // Guard the spread: Pixi's addChild() with no arguments dereferences
+    // children[0].parent and throws, which aborted the whole scene load and
+    // left the map black. Every shipped map happened to have at least one
+    // blocked/structure tile until Ashline Corridor, which has none.
+    if (this.blockedCubes.length > 0) this.entitiesLayer.addChild(...this.blockedCubes);
 
     const bounds = mapIsoBounds(map);
     this.camera = new Camera(bounds);
