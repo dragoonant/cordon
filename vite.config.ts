@@ -14,7 +14,9 @@ export default defineConfig({
       '@audio': fileURLToPath(new URL('./src/audio', import.meta.url)),
     },
   },
-  server: { port: 5173, strictPort: false },
+  // Honor the port the harness assigns (PORT); fall back to Vite's default
+  // for a plain `npm run dev`. Not strict, so a busy port just increments.
+  server: { port: Number(process.env.PORT) || 5173, strictPort: false },
   test: {
     include: ['src/**/*.test.ts', 'tools/**/*.test.ts'],
     environment: 'node',
