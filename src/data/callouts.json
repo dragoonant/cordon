@@ -16,7 +16,7 @@
     "kind": "prebattle",
     "line": "Break formation!",
     "label": "Break Formation",
-    "description": "The squad ignores row rules this battle: back row can melee, front row can fire.",
+    "description": "The squad ignores row rules this battle: back row can melee, front row can fire — but your back row loses its cover and takes full damage.",
     "tradeoff": "The squad loses its defensive row bonus for the whole fight.",
     "nerveCost": 3
   },
