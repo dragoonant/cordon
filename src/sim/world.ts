@@ -48,6 +48,15 @@ const VISION_BASE = 6;
 const DEPLOY_VISION = 8;
 const CARRIER_RADIUS = 1.5;
 const CARRIER_DPS = 5;
+/** Seconds a freshly routed squad stays out of contact. */
+const ROUT_COOLDOWN_BASE = 10;
+/** Added to the cooldown for each previous rout on this map. */
+const ROUT_COOLDOWN_STEP = 12;
+const ROUT_COOLDOWN_MAX = 60;
+/** A squad this broken (fraction of max HP) leaves the map instead of rallying again. */
+const ROUT_WITHDRAW_HP_FRACTION = 0.3;
+/** Routs after which a badly damaged squad withdraws for good. */
+const ROUT_WITHDRAW_COUNT = 3;
 
 // ---------------------------------------------------------------------------
 // small pure helpers
@@ -89,6 +98,17 @@ function livingMechCount(squad: Squad, world: WorldState): number {
     if (mech && !mech.destroyed && mech.hp > 0) n++;
   }
   return n;
+}
+
+/** Current HP across a squad's living mechs, as a fraction of their frames' max. */
+function squadHpFraction(squad: Squad, world: WorldState, data: GameData): number {
+  let hp = 0;
+  let max = 0;
+  for (const { mech, frame } of livingMechsOf(squad, world, data)) {
+    hp += Math.max(0, mech.hp);
+    max += Math.max(1, frame.hp - mech.maxHpPenalty);
+  }
+  return max > 0 ? hp / max : 0;
 }
 
 function livingMechsOf(squad: Squad, world: WorldState, data: GameData): { mech: Mech; frame: FrameDef }[] {
@@ -713,7 +733,7 @@ function updateTerritory(world: WorldState, map: MapDef, dt: number): void {
     held++;
     perMin += def.incomePerMin ?? 0;
   }
-  if (perMin > 0) world.siteScrap += (perMin / 60) * dt;
+  if (perMin > 0) world.siteScrap = Math.min(RULES.SITE_INCOME_CAP, world.siteScrap + (perMin / 60) * dt);
 
   const win = map.controlWin;
   if (!win) return;
@@ -1366,7 +1386,13 @@ function finalizeSquadAfterBattle(
 
   if (lost) {
     squad.state = 'routed';
-    squad.engageCooldown = 8;
+    // Each successive rout keeps them out longer. A squad routs on morale
+    // rather than dying, so without this a beaten squad walks straight back
+    // into the same fight the moment the cooldown lapses — on a territory
+    // map, where their home *is* the site you are standing on, that turned
+    // into fighting the same 100%-win battle every 8 seconds.
+    squad.routCount = (squad.routCount ?? 0) + 1;
+    squad.engageCooldown = Math.min(ROUT_COOLDOWN_MAX, ROUT_COOLDOWN_BASE + ROUT_COOLDOWN_STEP * (squad.routCount - 1));
     const home = isPlayer ? map.deployZone.pos : squad.ai?.homePos ?? squad.pos;
     const mobility = squadMobility(squad, world, data, map.kind);
     // Knock the loser back a few tiles toward home so it isn't left standing
@@ -1385,6 +1411,14 @@ function finalizeSquadAfterBattle(
     }
     squad.path = findPath(map, squad.pos, home, mobility);
     squad.targetPos = { ...home };
+
+    // A squad that has been broken repeatedly and is badly shot up gives up
+    // the map rather than feeding itself back in piecemeal.
+    if (!isPlayer && (squad.routCount ?? 0) >= ROUT_WITHDRAW_COUNT && squadHpFraction(squad, world, data) < ROUT_WITHDRAW_HP_FRACTION) {
+      squad.state = 'destroyed';
+      squad.path = [];
+      pushEvent(world, { t: 'squad_destroyed', squadId });
+    }
   } else if (won) {
     squad.state = 'idle';
     squad.engageCooldown = 3;

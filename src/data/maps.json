@@ -1603,7 +1603,7 @@
         "required": false,
         "startOwner": "neutral",
         "captureSeconds": 8,
-        "incomePerMin": 20,
+        "incomePerMin": 8,
         "siteVision": 8,
         "reward": {
           "scrap": 15,
@@ -1624,7 +1624,7 @@
         "required": false,
         "startOwner": "enemy",
         "captureSeconds": 8,
-        "incomePerMin": 30,
+        "incomePerMin": 10,
         "gateSquadIds": [
           "sq_ash_wave_south"
         ],
@@ -1648,7 +1648,7 @@
         "required": false,
         "startOwner": "enemy",
         "captureSeconds": 12,
-        "incomePerMin": 40,
+        "incomePerMin": 14,
         "siteVision": 5,
         "reward": {
           "scrap": 35,
@@ -1669,7 +1669,7 @@
         "required": false,
         "startOwner": "enemy",
         "captureSeconds": 8,
-        "incomePerMin": 25,
+        "incomePerMin": 10,
         "gateSquadIds": [
           "sq_ash_wave_north"
         ],
@@ -1693,7 +1693,7 @@
         "required": false,
         "startOwner": "enemy",
         "captureSeconds": 8,
-        "incomePerMin": 20,
+        "incomePerMin": 8,
         "siteVision": 6,
         "reward": {
           "scrap": 15,

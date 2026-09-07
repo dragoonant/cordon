@@ -264,6 +264,12 @@ export interface Squad {
   maxFuel: number;
   morale: number; // 0..100
   state: SquadState;
+  /**
+   * How many times this squad has been beaten and routed on this map. Each
+   * rout keeps it off the board longer, so a broken squad stops trickling
+   * back into the same fight.
+   */
+  routCount?: number;
   /** Per-map cooldown after a battle before it can re-engage (seconds). */
   engageCooldown: number;
   /** Active overworld callout effects with remaining seconds. */

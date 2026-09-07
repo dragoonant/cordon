@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { RULES } from './rules';
 import {
   createWorld,
   stepWorld,
@@ -348,6 +349,16 @@ describe('capture_site (territory)', () => {
     expect(world.objectives[SURFACE_SITE_ID].owner).toBe('neutral');
   });
 
+  it('caps total site income so a stall cannot farm the economy', () => {
+    const { world, map, data } = freshSurfaceWorld();
+    deploySquad(world, map, SQUAD_ALPHA_ID, data);
+    holdFor(world, map, data, SQUAD_ALPHA_ID, 5);
+    // Fixture site pays 60/min = 1/sec; run far past the cap.
+    world.siteScrap = RULES.SITE_INCOME_CAP - 1;
+    holdFor(world, map, data, SQUAD_ALPHA_ID, 30);
+    expect(world.siteScrap).toBeLessThanOrEqual(RULES.SITE_INCOME_CAP);
+  });
+
   it('pays income only while the player holds it', () => {
     const { world, map, data } = freshSurfaceWorld();
     deploySquad(world, map, SQUAD_ALPHA_ID, data);
@@ -560,7 +571,8 @@ describe('applyBattleResult', () => {
     expect(world.phase).toBe('running');
     expect(world.pendingBattle).toBeNull();
     expect(world.squads[SQUAD_ALPHA_ID].state).toBe('routed');
-    expect(world.squads[SQUAD_ALPHA_ID].engageCooldown).toBe(8);
+    expect(world.squads[SQUAD_ALPHA_ID].engageCooldown).toBe(10); // ROUT_COOLDOWN_BASE
+    expect(world.squads[SQUAD_ALPHA_ID].routCount).toBe(1);
     expect(world.squads[SQUAD_ALPHA_ID].morale).toBe(40);
     expect(world.squads[SQUAD_ALPHA_ID].path.length).toBeGreaterThan(0);
     expect(world.squads[SURFACE_ENEMY_SQUAD_ID].state).toBe('idle');

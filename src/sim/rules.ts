@@ -21,8 +21,13 @@ export const RULES = {
   SITE_CAPTURE_SECONDS: 8,
   /** capture_site: seconds between reinforcement waves from an enemy-held gate. */
   GATE_INTERVAL_SECONDS: 45,
-  /** capture_site: a site pays out income in whole scrap at this cadence. */
-  SITE_INCOME_TICK_SECONDS: 10,
+  /**
+   * Most scrap one map's capture_sites can pay, however long you hold them.
+   * Normal play never reaches it (a control win ends the map at ~90s of
+   * holding); it exists so stalling on a held map can't farm the economy —
+   * an uncapped 900s hold paid over 1000 scrap, or eight frames.
+   */
+  SITE_INCOME_CAP: 150,
   /** Fixed number of exchange rounds per battle. */
   ROUNDS: 6,
   /** Formation grid size (front 3 + back 3). */
