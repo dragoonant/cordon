@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '@ui/store';
 import type { Faction } from '@sim/types';
+import { assetUrl } from '../../assetUrl';
 
 export interface PortraitProps {
   pilotDefId: string;
@@ -29,7 +30,7 @@ export function Portrait({ pilotDefId, expression = 'neutral', size = 64, factio
   const resolvedFaction: Faction = faction ?? def?.faction ?? 'neutral';
   const accent = ACCENT[resolvedFaction];
   const label = initialsOf(def?.callsign ?? def?.name ?? pilotDefId);
-  const src = `/portraits/${pilotDefId}_${expression}.png`;
+  const src = assetUrl(`/portraits/${pilotDefId}_${expression}.png`);
 
   const dimStyle: React.CSSProperties = dimmed ? { filter: 'grayscale(1) brightness(0.6)', opacity: 0.4 } : {};
 

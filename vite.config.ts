@@ -3,6 +3,11 @@ import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
+  // Relative, so the built bundle resolves its own assets against whatever
+  // path it's served from. GitHub Pages serves this repo at /cordon/, where
+  // Vite's default root-absolute '/assets/...' URLs 404 into a black screen.
+  // Runtime-built asset URLs go through src/assetUrl.ts for the same reason.
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {

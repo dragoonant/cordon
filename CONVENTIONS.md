@@ -11,6 +11,7 @@ Read this before touching any file. The design doc is `GDD.md`; the type contrac
 5. **Data is JSON in `src/data/`**, loaded by `src/data/index.ts` into a `GameData`. Never hardcode a frame/weapon/pilot in code.
 6. **Renderers read, never write.** `src/render/` consumes `WorldState` / `BattleResult.events`. It dispatches player intents through the store, which calls sim functions.
 7. **The battle stage plays back `BattleEvent[]`.** It never computes outcomes.
+8. **Every runtime asset URL goes through `assetUrl()`** (`src/assetUrl.ts`). A bare `/sprites/...` or `/audio/...` string works under `npm run dev` and silently 404s on GitHub Pages, which serves the game from `/cordon/`, not the domain root. Write the path root-absolute as before and wrap it — the helper is idempotent, and the shared loaders (`probeAsset`, `probeFirstExisting`) already apply it, so anything reached through them needs nothing extra.
 
 ## Layout
 

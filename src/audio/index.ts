@@ -20,6 +20,7 @@ import { Howl } from 'howler';
 
 import { createProceduralMusic, type MusicTrack } from './procMusic';
 import { getSfxAudioContext, playBattleSfx, playMapSfx, playSfx, setSfxVolume, type SfxName } from './sfx';
+import { assetUrl } from '../assetUrl';
 
 export { playBattleSfx, playMapSfx, playSfx, type SfxName };
 
@@ -106,7 +107,7 @@ export async function loadVoiceManifest(url = '/audio/voice/manifest.json'): Pro
   }
 
   try {
-    const resp = await fetch(url);
+    const resp = await fetch(assetUrl(url));
     if (!resp.ok) {
       voiceManifest = null;
       return null;
@@ -162,7 +163,7 @@ export async function playVoice(pilotDefId: string, lineKey: string): Promise<bo
   return new Promise((resolve) => {
     try {
       currentVoiceHowl = new Howl({
-        src: [voiceUrl],
+        src: [assetUrl(voiceUrl)],
         html5: true,
         onend: () => {
           currentVoiceHowl = null;
@@ -222,7 +223,7 @@ async function musicTrackExists(track: string): Promise<boolean> {
   }
 
   try {
-    const url = `/audio/music/${track}.mp3`;
+    const url = assetUrl(`/audio/music/${track}.mp3`);
     const resp = await fetch(url, { method: 'HEAD' });
     // Dev servers answer unknown paths with index.html + 200 (SPA fallback),
     // so require an audio content-type before believing the track exists.
@@ -258,7 +259,7 @@ export function playMusic(track: 'title' | 'map_space' | 'map_surface' | 'battle
       {
         try {
           newPlayer = new Howl({
-            src: [`/audio/music/${track}.mp3`],
+            src: [assetUrl(`/audio/music/${track}.mp3`)],
             loop: true,
             volume: 0, // start silent; faded in below like the fallback path
             html5: true,

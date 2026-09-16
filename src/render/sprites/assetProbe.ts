@@ -8,9 +8,14 @@
  * network when invoked, so importing this module is always safe.
  */
 
+import { assetUrl } from '../../assetUrl';
+
 const existsCache = new Map<string, Promise<boolean>>();
 
-export function probeAsset(url: string): Promise<boolean> {
+export function probeAsset(rawUrl: string): Promise<boolean> {
+  // Rebased here so callers can keep writing root-absolute paths; the same
+  // resolved URL is what probeFirstExisting hands back to the image loaders.
+  const url = assetUrl(rawUrl);
   const cached = existsCache.get(url);
   if (cached) return cached;
   const p = (async () => {
@@ -43,7 +48,7 @@ export function clearAssetProbeCache(): void {
  */
 export async function probeFirstExisting(baseUrl: string, exts: readonly string[]): Promise<string | null> {
   for (const ext of exts) {
-    const url = `${baseUrl}.${ext}`;
+    const url = assetUrl(`${baseUrl}.${ext}`);
     if (await probeAsset(url)) return url;
   }
   return null;

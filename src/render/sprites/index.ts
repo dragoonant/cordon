@@ -23,6 +23,7 @@ import { getCachedTexture, clearSpriteCache as clearCache } from './textureCache
 import { attachPointsFor, boundsFor, buildFrameContainer } from './drawFrame';
 import { buildWeaponOverlay } from './drawWeapon';
 import { buildPortraitContainer, type Expression } from './drawPortrait';
+import { assetUrl } from '../../assetUrl';
 
 export { FACTION_ACCENT };
 export type { Expression };
@@ -55,7 +56,7 @@ function loadFacingTable(): Promise<Record<string, Facing>> {
   facingTable ??= (async () => {
     try {
       if (typeof fetch !== 'function') return {};
-      const res = await fetch('/sprites/frames/facing.json');
+      const res = await fetch(assetUrl('/sprites/frames/facing.json'));
       if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json')) return {};
       const json = (await res.json()) as Record<string, unknown>;
       const out: Record<string, Facing> = {};
