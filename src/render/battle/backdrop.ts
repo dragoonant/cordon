@@ -11,6 +11,7 @@
  */
 import { Assets, Container, FillGradient, Graphics, Sprite, type Texture } from 'pixi.js';
 import type { MapKind, Terrain } from '@sim/types';
+import { assetUrl } from '../../assetUrl';
 
 const SPACE_BASE = 0x05060c;
 const SPACE_FAR = 0x11142a;
@@ -32,7 +33,7 @@ function loadManifest(): Promise<BackdropManifest | null> {
   manifestPromise ??= (async () => {
     try {
       if (typeof fetch !== 'function') return null;
-      const res = await fetch('/sprites/backdrops/manifest.json');
+      const res = await fetch(assetUrl('/sprites/backdrops/manifest.json'));
       if (!res.ok) return null;
       const data = (await res.json()) as Partial<BackdropManifest>;
       if (data?.version !== 1 || typeof data.terrains !== 'object' || data.terrains === null) return null;
@@ -95,7 +96,7 @@ async function buildPaintedBackdrop(terrain: Terrain, seed: number, w: number, h
   const paths = manifest?.terrains[terrain];
   if (!paths || paths.length === 0) return null;
   const path = pickVariant(paths, seed);
-  const texture = await loadBackdropTexture(`/${path}`);
+  const texture = await loadBackdropTexture(assetUrl(path));
   if (!texture || texture.width <= 0 || texture.height <= 0) return null;
 
   const root = new Container();

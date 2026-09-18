@@ -34,6 +34,20 @@ npm run build
 npm run preview
 ```
 
+## Deploy
+
+Pushing to `main` builds the app and publishes `dist/` to GitHub Pages via
+`.github/workflows/pages.yml` — https://dragoonant.github.io/cordon/.
+
+The repository root is *not* servable: `index.html` points at the unbuilt
+`/src/main.tsx`, so serving it raw renders an empty black page. Pages must be
+set to **Settings → Pages → Source: GitHub Actions**, not "Deploy from a
+branch".
+
+Vite's `base` is `'./'` so the bundle resolves its own assets from whatever
+subpath it lands on. URLs built at runtime need `assetUrl()` — see
+CONVENTIONS.md §8.
+
 ## How to play
 
 **New Run:** start a new roguelite attempt with 6 unlocked pilots and 2 starter squads. **Node Map:** the sector branches before you — pick your route, then click a glowing node. **Briefing:** see what's waiting. **Launch:** deploy squads from the *Lantern* (the carrier). **Real-time Map:** click a squad to select it, then click the map to move. Fuel drains with movement; refuel at the carrier. **Contact:** when a squad touches an enemy squad, the **Forecast** screen appears. **Callouts:** pre-battle powers that cost Nerve. Pick them, study the variance band, commit. **Battle:** watch your squads fight — it's full-screen and skippable. **Objectives:** hold waypoints inside the ring while enemies stay out. Complete all required objectives = victory. **Back to the Map:** win the node and return to the sector. **The Hangar** (between maps) lets you repair, reassign pilots to mechs, swap weapons and systems, and manage loadouts. **Death is permanent for the run:** when a pilot is destroyed in battle, they stay gone until the next run — their squad is orphaned, and their friends know it. **Reach the boss:** the sector ends with one final stronghold.
