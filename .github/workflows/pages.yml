@@ -10,6 +10,11 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # Build and test on PRs too, so a change that would break the deploy is
+  # caught before it reaches main. PRs stop short of publishing (see the
+  # event guards below) — main is the only thing that deploys.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -19,7 +24,7 @@ permissions:
 
 # Let an in-flight deploy finish rather than cancelling it mid-publish.
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -35,12 +40,15 @@ jobs:
       - run: npm test
       - run: npm run build
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: dist
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
